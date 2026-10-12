@@ -1,4 +1,5 @@
 create extension if not exists pg_trgm with schema extensions;
+create extension if not exists pgcrypto with schema extensions;
 set search_path = public, extensions;
 --
 -- PostgreSQL database dump
@@ -974,7 +975,7 @@ CREATE INDEX idx_protocolo_historico_protocolo ON public.protocolo_historico USI
 -- Name: idx_protocolos_assunto_trgm; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_protocolos_assunto_trgm ON public.protocolos USING gin (assunto public.gin_trgm_ops);
+CREATE INDEX idx_protocolos_assunto_trgm ON public.protocolos USING gin (assunto extensions.gin_trgm_ops);
 
 
 --
@@ -1002,7 +1003,7 @@ CREATE INDEX idx_protocolos_data_conclusao ON public.protocolos USING btree (dat
 -- Name: idx_protocolos_descricao_trgm; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_protocolos_descricao_trgm ON public.protocolos USING gin (descricao public.gin_trgm_ops);
+CREATE INDEX idx_protocolos_descricao_trgm ON public.protocolos USING gin (descricao extensions.gin_trgm_ops);
 
 
 --
@@ -1037,7 +1038,7 @@ CREATE INDEX idx_protocolos_nao_antigos ON public.protocolos USING btree (data_a
 -- Name: idx_protocolos_numero_trgm; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_protocolos_numero_trgm ON public.protocolos USING gin (numero public.gin_trgm_ops);
+CREATE INDEX idx_protocolos_numero_trgm ON public.protocolos USING gin (numero extensions.gin_trgm_ops);
 
 
 --
@@ -1072,7 +1073,7 @@ CREATE INDEX idx_protocolos_secretaria ON public.protocolos USING btree (secreta
 -- Name: idx_protocolos_solicitante_trgm; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_protocolos_solicitante_trgm ON public.protocolos USING gin (solicitante public.gin_trgm_ops);
+CREATE INDEX idx_protocolos_solicitante_trgm ON public.protocolos USING gin (solicitante extensions.gin_trgm_ops);
 
 
 --
