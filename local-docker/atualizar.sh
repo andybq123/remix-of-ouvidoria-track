@@ -24,21 +24,56 @@ git pull --ff-only
 cd local-docker
 
 echo "==> Reconstruindo e reiniciando o sistema (modo: $MODO)..."
+LOG_BUILD="/tmp/controle-seta-build.log"
+: > "$LOG_BUILD"
 if [ "$MODO" = "prod" ]; then
-  docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+  ( docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build >"$LOG_BUILD" 2>&1 ) &
 else
-  docker compose up -d
+  ( docker compose up -d --build >"$LOG_BUILD" 2>&1 ) &
 fi
+PID_COMPOSE=$!
 
-echo "==> Aguardando o sistema subir..."
-for i in $(seq 1 60); do
+# ---- Barra de progresso (build + inicialização) ----
+TOTAL=900      # limite de 15 minutos
+INTERVALO=2
+ELAPSED=0
+
+draw_bar() {
+  local pct=$(( ELAPSED * 100 / TOTAL ))
+  [ "$pct" -gt 99 ] && pct=99
+  local preenchido=$(( pct * 30 / 100 ))
+  local vazio=$(( 30 - preenchido ))
+  local mm=$(( ELAPSED / 60 ))
+  local ss=$(( ELAPSED % 60 ))
+  printf "\r[%s%s] %3d%%  %02d:%02d decorridos   " \
+    "$(printf '%*s' "$preenchido" '' | tr ' ' '#')" \
+    "$(printf '%*s' "$vazio" '' | tr ' ' '-')" \
+    "$pct" "$mm" "$ss"
+}
+
+echo "==> Aguardando o sistema subir (compilando e iniciando)..."
+while [ "$ELAPSED" -lt "$TOTAL" ]; do
   if curl -fsS http://127.0.0.1:8080 >/dev/null 2>&1; then
-    echo "==> Sistema atualizado e no ar!"
+    ELAPSED=$TOTAL
+    draw_bar
+    printf "\n==> Sistema atualizado e no ar!\n"
     exit 0
   fi
-  sleep 5
+  if ! kill -0 "$PID_COMPOSE" 2>/dev/null; then
+    printf "\nERRO: o build/container terminou antes de responder. Últimas linhas do log:\n"
+    tail -n 20 "$LOG_BUILD"
+    echo ""
+    echo "Veja o log completo em: $LOG_BUILD"
+    exit 1
+  fi
+  draw_bar
+  sleep "$INTERVALO"
+  ELAPSED=$(( ELAPSED + INTERVALO ))
 done
 
-echo "ATENÇÃO: o sistema ainda não respondeu. Veja os logs com:"
-echo "  docker compose logs -f app"
+printf "\nATENÇÃO: o sistema ainda não respondeu após 15 minutos.\n"
+echo "Últimas linhas do log de build:"
+tail -n 20 "$LOG_BUILD"
+echo ""
+echo "Veja os logs com: docker compose logs -f app"
 exit 1
