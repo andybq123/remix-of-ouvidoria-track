@@ -68,7 +68,7 @@ export const saveAiProvider = createServerFn({ method: "POST" })
     patch[`${col}_model`] = data.model ? data.model : null;
     if (data.clearKey) patch[`${col}_api_key`] = null;
     else if (data.apiKey) patch[`${col}_api_key`] = data.apiKey;
-    const { error } = await context.supabase.from("ai_config").update(patch as any).eq("id", true);
+    const { error } = await context.supabase.from("ai_config").upsert({ id: true, ...patch } as any, { onConflict: "id" });
     if (error) throw error;
     await invalidate();
     return { ok: true, reply };
@@ -82,8 +82,7 @@ export const saveAiPriority = createServerFn({ method: "POST" })
     const priority = data.priority.filter((p, i, a) => a.indexOf(p) === i);
     const { error } = await context.supabase
       .from("ai_config")
-      .update({ priority, provider: priority[0] === "gemini" ? "gemini" : "lovable", updated_at: new Date().toISOString(), updated_by: context.userId } as any)
-      .eq("id", true);
+      .upsert({ id: true, priority, provider: priority[0] === "gemini" ? "gemini" : "lovable", updated_at: new Date().toISOString(), updated_by: context.userId } as any, { onConflict: "id" });
     if (error) throw error;
     await invalidate();
     return { ok: true };

@@ -29,12 +29,40 @@ if [ -z "${SETA_REEXEC:-}" ]; then
   SETA_REEXEC=1 exec ./atualizar.sh "$@"
 fi
 
-echo "==> Reconstruindo e reiniciando o sistema (modo: $MODO)..."
 LOG_BUILD="/tmp/controle-seta-build.log"
 : > "$LOG_BUILD"
-# Para o sistema antigo e apaga a compilação anterior, para garantir que a versão nova seja usada
+TOTAL=900
+PRONTO=0
+
+if [ "$MODO" = "prod" ]; then
+  # Baixa a compilação pronta feita pelo GitHub (rápido, sem compilar na VPS)
+  SHA="$(git -C .. rev-parse HEAD)"
+  REPO_URL="$(git -C .. config --get remote.origin.url | sed -E 's#https://[^@]*@#https://#; s#\.git$##')"
+  URL="$REPO_URL/releases/download/vps-latest/vps-build.tar.gz"
+  echo "==> Baixando versão já compilada do GitHub (até 6 min se acabou de ser alterada)..."
+  for i in $(seq 1 36); do
+    rm -rf /tmp/seta-build && mkdir -p /tmp/seta-build
+    if curl -fsSL "$URL" -o /tmp/seta-build/b.tgz 2>/dev/null \
+       && tar -xzf /tmp/seta-build/b.tgz -C /tmp/seta-build \
+       && [ "$(cat /tmp/seta-build/.output/VERSION 2>/dev/null)" = "$SHA" ]; then
+      PRONTO=1; break
+    fi
+    printf "\r   aguardando compilação no GitHub... %ds   " $(( i * 10 ))
+    sleep 10
+  done
+  echo ""
+  if [ "$PRONTO" = "1" ]; then
+    rm -rf ../.output && mv /tmp/seta-build/.output ../.output
+    echo "==> Versão compilada baixada. Reiniciando..."
+    TOTAL=120
+  else
+    echo "==> Compilação do GitHub indisponível; compilando na VPS (lento)..."
+    rm -rf ../.output ../node_modules/.vite 2>/dev/null || true
+  fi
+fi
+
+echo "==> Reiniciando o sistema (modo: $MODO)..."
 docker compose -f docker-compose.yml -f docker-compose.prod.yml rm -sf app >/dev/null 2>&1 || true
-rm -rf ../.output ../node_modules/.vite 2>/dev/null || true
 if [ "$MODO" = "prod" ]; then
   ( docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate >"$LOG_BUILD" 2>&1 ) &
 else
@@ -42,8 +70,6 @@ else
 fi
 PID_COMPOSE=$!
 
-# ---- Barra de progresso (build + inicialização) ----
-TOTAL=900      # limite de 15 minutos
 INTERVALO=2
 ELAPSED=0
 
