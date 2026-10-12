@@ -61,9 +61,10 @@ while [ "$ELAPSED" -lt "$TOTAL" ]; do
     printf "\n==> Sistema atualizado e no ar!\n"
     exit 0
   fi
-  if ! kill -0 "$PID_COMPOSE" 2>/dev/null; then
+  if ! kill -0 "$PID_COMPOSE" 2>/dev/null && [ -z "$(docker compose ps -q --status running app 2>/dev/null)" ]; then
     printf "\nERRO: o build/container terminou antes de responder. Últimas linhas do log:\n"
     tail -n 20 "$LOG_BUILD"
+    docker compose logs app --tail 30 2>/dev/null || true
     echo ""
     echo "Veja o log completo em: $LOG_BUILD"
     exit 1
