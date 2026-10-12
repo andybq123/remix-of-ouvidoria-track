@@ -41,7 +41,8 @@ sed -i "s#^site_url = .*#site_url = \"https://$DOMAIN\"#" supabase/config.toml
 sed -i "s#^additional_redirect_urls = .*#additional_redirect_urls = [\"https://$DOMAIN\"]#" supabase/config.toml
 
 # 6. Sobe o banco
-npx --yes supabase start
+npx --yes supabase stop --no-backup >/dev/null 2>&1 || true
+npx --yes supabase start -x vector,logflare,studio,imgproxy,edge-runtime,mailpit,inbucket,postgres-meta --ignore-health-check
 eval "$(npx --yes supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
 
 # 7. Gera .env.local (mantém tokens se já existir)

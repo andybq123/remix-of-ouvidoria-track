@@ -49,7 +49,7 @@ export const Route = createFileRoute("/_authenticated/protocolos-antigos/$source
     </div>
   ),
   errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-red-600">Erro: {error.message}</div>
+    <div className="p-6 text-sm text-red-600">Erro: {error instanceof Error ? error.message : String(error)}</div>
   ),
 });
 
