@@ -20,8 +20,10 @@ if [ ! -d .git ]; then
   echo "Clone primeiro: git clone https://SEU_TOKEN@github.com/USUARIO/REPO.git"
   exit 1
 fi
-git pull --ff-only
+git fetch origin
+git reset --hard origin/main   # descarta alterações locais (o .env NÃO é afetado)
 cd local-docker
+chmod +x atualizar.sh
 
 echo "==> Reconstruindo e reiniciando o sistema (modo: $MODO)..."
 LOG_BUILD="/tmp/controle-seta-build.log"
