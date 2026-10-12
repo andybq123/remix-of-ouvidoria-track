@@ -82,7 +82,7 @@ export const saveAiPriority = createServerFn({ method: "POST" })
     const priority = data.priority.filter((p, i, a) => a.indexOf(p) === i);
     const { error } = await context.supabase
       .from("ai_config")
-      .update({ priority, provider: priority[0] === "gemini" ? "gemini" : "lovable", updated_at: new Date().toISOString(), updated_by: context.userId } as any)
+      .update({ priority, provider: priority[0], updated_at: new Date().toISOString(), updated_by: context.userId } as any)
       .eq("id", true);
     if (error) throw error;
     await invalidate();
