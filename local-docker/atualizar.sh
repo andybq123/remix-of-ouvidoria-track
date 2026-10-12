@@ -13,8 +13,8 @@ cd "$(dirname "$0")"
 MODO="prod"
 [ "${1:-}" = "--dev" ] && MODO="dev"
 
-echo "==> Baixando alterações do GitHub..."
 cd ..
+if [ -z "${SETA_REEXEC:-}" ]; then echo "==> Baixando alterações do GitHub..."; fi
 if [ ! -d .git ]; then
   echo "ERRO: esta pasta não é um clone do GitHub."
   echo "Clone primeiro: git clone https://SEU_TOKEN@github.com/USUARIO/REPO.git"
@@ -24,6 +24,10 @@ git fetch origin
 git reset --hard origin/main   # descarta alterações locais (o .env NÃO é afetado)
 cd local-docker
 chmod +x atualizar.sh
+# Reinicia com a versão recém-baixada do script (evita rodar a versão antiga)
+if [ -z "${SETA_REEXEC:-}" ]; then
+  SETA_REEXEC=1 exec ./atualizar.sh "$@"
+fi
 
 echo "==> Reconstruindo e reiniciando o sistema (modo: $MODO)..."
 LOG_BUILD="/tmp/controle-seta-build.log"
