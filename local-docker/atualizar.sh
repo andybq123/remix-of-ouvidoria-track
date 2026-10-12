@@ -53,6 +53,26 @@ if [ "$MODO" = "prod" ]; then
   echo ""
   if [ "$PRONTO" = "1" ]; then
     rm -rf ../.output && mv /tmp/seta-build/.output ../.output
+    # A compilação do GitHub vem apontando para o banco da nuvem.
+    # Troca pelos endereços/chaves do banco LOCAL definidos em .env.local.
+    LOCAL_URL="$(grep -E '^VITE_SUPABASE_URL=' .env.local | head -1 | cut -d= -f2- | tr -d '"')"
+    LOCAL_KEY="$(grep -E '^VITE_SUPABASE_PUBLISHABLE_KEY=' .env.local | head -1 | cut -d= -f2- | tr -d '"')"
+    LOCAL_PID="$(grep -E '^VITE_SUPABASE_PROJECT_ID=' .env.local | head -1 | cut -d= -f2- | tr -d '"')"
+    CLOUD_URL="$(grep -E '^VITE_SUPABASE_URL=' ../.env | head -1 | cut -d= -f2- | tr -d '"')"
+    CLOUD_KEY="$(grep -E '^VITE_SUPABASE_PUBLISHABLE_KEY=' ../.env | head -1 | cut -d= -f2- | tr -d '"')"
+    CLOUD_PID="$(grep -E '^VITE_SUPABASE_PROJECT_ID=' ../.env | head -1 | cut -d= -f2- | tr -d '"')"
+    if [ -n "$LOCAL_URL" ] && [ -n "$LOCAL_KEY" ] && [ -n "$CLOUD_URL" ] && [ -n "$CLOUD_KEY" ]; then
+      grep -rlF -e "$CLOUD_URL" -e "$CLOUD_KEY" ../.output 2>/dev/null | while read -r f; do
+        sed -i -e "s#${CLOUD_URL}#${LOCAL_URL}#g" -e "s#${CLOUD_KEY}#${LOCAL_KEY}#g" "$f"
+        [ -n "$CLOUD_PID" ] && [ -n "$LOCAL_PID" ] && sed -i "s#${CLOUD_PID}#${LOCAL_PID}#g" "$f"
+      done
+      if grep -rqF "$CLOUD_URL" ../.output 2>/dev/null; then
+        echo "ERRO: não consegui apontar o sistema para o banco local."; exit 1
+      fi
+      echo "==> Sistema apontado para o banco local ($LOCAL_URL)."
+    else
+      echo "ERRO: .env.local sem VITE_SUPABASE_URL/VITE_SUPABASE_PUBLISHABLE_KEY."; exit 1
+    fi
     echo "==> Versão compilada baixada. Reiniciando..."
     TOTAL=120
   else
