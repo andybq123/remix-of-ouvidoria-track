@@ -12,4 +12,10 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    server: {
+      // Permite acesso por qualquer domínio (VPS com subdomínio próprio)
+      allowedHosts: true,
+    },
+  },
 });
