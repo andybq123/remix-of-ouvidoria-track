@@ -15,7 +15,7 @@ import { Mail, Plus, Trash2, AlertCircle, CheckCircle2, Clock, RefreshCw, Shield
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useServerFn } from "@tanstack/react-start";
-import { sincronizarGmail, ressincronizarGmail, reverificarEmails, backfillUrls1Doc, reprocessarEmail } from "@/lib/gmail-sync.functions";
+import { sincronizarGmail, ressincronizarGmail, reverificarEmails, backfillUrls1Doc, reprocessarEmail, testarContaImap } from "@/lib/gmail-sync.functions";
 
 const SYNC_INTERVAL_MIN = 3;
 
@@ -226,7 +226,7 @@ function EmailInboxPage() {
     }
   }
 
-  const syncAccounts = accounts.filter((a: any) => a.provider === "gmail" && a.ativo);
+  const syncAccounts = accounts.filter((a: any) => (a.provider === "gmail" || a.provider === "imap") && a.ativo);
   const ultimaSync = syncAccounts
     .map((a: any) => a.ultima_sincronizacao ? new Date(a.ultima_sincronizacao).getTime() : 0)
     .reduce((max, t) => Math.max(max, t), 0);
@@ -398,12 +398,12 @@ function EmailInboxPage() {
           <Card>
             <CardHeader>
               <CardTitle>Como funciona</CardTitle>
-              <CardDescription>O sistema usa a conta Gmail conectada à Lovable para ler a caixa de entrada automaticamente.</CardDescription>
+              <CardDescription>O sistema lê a caixa do Gmail com uma senha de app e cria os protocolos automaticamente a cada 3 minutos.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               <div>
                 <h3 className="font-semibold mb-1">1. Cadastre a conta</h3>
-                <p className="text-muted-foreground">Na aba "Contas", clique em <strong>Nova conta</strong> e informe o e-mail conectado ao Gmail.</p>
+                <p className="text-muted-foreground">Na conta Google, ative a <strong>verificação em 2 etapas</strong> e crie uma <strong>senha de app</strong> em myaccount.google.com/apppasswords. Depois, na aba "Contas", clique em <strong>Nova conta</strong>, informe o e-mail e a senha de app, teste e cadastre.</p>
               </div>
               <div>
                 <h3 className="font-semibold mb-1">2. Sincronização automática</h3>
@@ -423,29 +423,45 @@ function EmailInboxPage() {
 
 function NovaContaDialog({ secretarias }: { secretarias: any[] }) {
   const qc = useQueryClient();
+  const testar = useServerFn(testarContaImap);
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
   const [descricao, setDescricao] = useState("");
   const [secId, setSecId] = useState<string>("");
+  const [teste, setTeste] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const mTeste = useMutation({
+    mutationFn: () => testar({ data: { user: email.trim(), pass: senha } }),
+    onSuccess: (r: any) => setTeste({ ok: true, msg: `Conectado! ${r.mensagens} e-mail(s) na caixa de entrada.` }),
+    onError: (e: any) => setTeste({ ok: false, msg: e?.message ?? "Falha" }),
+  });
 
   const criar = useMutation({
     mutationFn: async () => {
+      await testar({ data: { user: email.trim(), pass: senha } });
       const { data: { user } } = await supabase.auth.getUser();
       const payload: any = {
         email: email.trim().toLowerCase(),
         descricao: descricao || null,
         secretaria_id: secId || null,
         created_by: user?.id,
-        provider: "gmail",
+        provider: "imap",
+        imap_host: "imap.gmail.com",
+        imap_port: 993,
+        imap_tls: true,
+        imap_user: email.trim(),
+        imap_password: senha.replace(/\s+/g, ""),
+        ativo: true,
       };
       const { error } = await supabase.from("email_inbox_accounts").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["email-inbox-accounts"] });
-      toast.success("Conta cadastrada");
+      toast.success("Conta Gmail cadastrada — coleta automática a cada 3 minutos");
       setOpen(false);
-      setEmail(""); setDescricao(""); setSecId("");
+      setEmail(""); setSenha(""); setDescricao(""); setSecId(""); setTeste(null);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -454,14 +470,21 @@ function NovaContaDialog({ secretarias }: { secretarias: any[] }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> Nova conta</Button></DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Cadastrar conta Gmail</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Configurar conta Gmail</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div className="rounded-md border border-blue-500/30 bg-blue-500/5 p-3 text-xs text-muted-foreground">
-            O sistema consulta diretamente a caixa do Gmail conectado pela Lovable. A leitura é automática a cada 3 minutos.
+          <div className="rounded-md border p-3 text-xs text-muted-foreground space-y-1">
+            <p><strong>1.</strong> Na conta Google, ative a verificação em 2 etapas.</p>
+            <p><strong>2.</strong> Crie uma senha de app em{" "}
+              <a className="underline" href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer">myaccount.google.com/apppasswords</a> (16 letras).</p>
+            <p><strong>3.</strong> Cole abaixo, clique em Testar e depois em Cadastrar. A leitura é automática a cada 3 minutos.</p>
           </div>
           <div className="space-y-1.5">
-            <Label>E-mail *</Label>
+            <Label>E-mail Gmail *</Label>
             <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="setamonitoramento75@gmail.com" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Senha de app *</Label>
+            <Input type="password" value={senha} onChange={e => setSenha(e.target.value)} placeholder="abcd efgh ijkl mnop" />
           </div>
           <div className="space-y-1.5">
             <Label>Descrição</Label>
@@ -475,12 +498,18 @@ function NovaContaDialog({ secretarias }: { secretarias: any[] }) {
                 {secretarias.map(s => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">Se vincular, todos os e-mails dessa conta serão direcionados a essa secretaria.</p>
           </div>
+          {teste && (
+            <div className={`flex items-start gap-2 rounded-md border p-2 text-sm ${teste.ok ? "border-primary/40" : "border-destructive/50 text-destructive"}`}>
+              {teste.ok ? <CheckCircle2 className="h-4 w-4 mt-0.5" /> : <AlertCircle className="h-4 w-4 mt-0.5" />}
+              <span>{teste.msg}</span>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => criar.mutate()} disabled={!email || criar.isPending}>Cadastrar</Button>
+          <Button variant="outline" onClick={() => mTeste.mutate()} disabled={!email || !senha || mTeste.isPending}>{mTeste.isPending ? "Testando…" : "Testar conexão"}</Button>
+          <Button onClick={() => criar.mutate()} disabled={!email || !senha || criar.isPending}>{criar.isPending ? "Validando…" : "Cadastrar"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -15,5 +15,22 @@ services:
       - "host.docker.internal:host-gateway"
     command: sh -c "npm i -g bun@1 && rm -f package-lock.json && bun install && npx vite dev --host 0.0.0.0 --port 8080"
 
+  # Coleta automática de e-mails (Gmail) a cada 3 minutos
+  coletor-email:
+    image: curlimages/curl:latest
+    restart: unless-stopped
+    env_file: .env.local
+    depends_on:
+      - app
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Coleta de e-mails a cada 3 minutos iniciada"
+        while true; do
+          sleep 180
+          curl -s -m 170 -X POST -H "Authorization: Bearer $${CRON_SECRET}" http://app:8080/api/public/email-sync | head -c 300
+          echo " [$$(date '+%d/%m %H:%M')]"
+        done
+
 volumes:
   app_node_modules:

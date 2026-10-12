@@ -1,4 +1,4 @@
-export type AiProvider = "grok" | "gemini" | "lovable";
+export type AiProvider = "grok" | "gemini";
 
 type LoadedConfig = {
   at: number;
@@ -13,7 +13,7 @@ type LoadedConfig = {
 let cached: LoadedConfig | null = null;
 const TTL_MS = 30_000;
 
-const KNOWN: AiProvider[] = ["grok", "gemini", "lovable"];
+const KNOWN: AiProvider[] = ["grok", "gemini"];
 function normalizePriority(input: unknown): AiProvider[] {
   const arr = Array.isArray(input) ? input : [];
   const out: AiProvider[] = [];
@@ -49,7 +49,7 @@ async function loadConfig(): Promise<LoadedConfig> {
   } catch {
     cached = {
       at: Date.now(),
-      priority: ["lovable", "gemini", "grok"],
+      priority: ["grok", "gemini"],
       grokApiKey: null,
       geminiApiKey: null,
       grokModel: null,
@@ -91,18 +91,6 @@ async function callGemini(apiKey: string, model: string, messages: ChatMessage[]
   const body: any = { model, messages };
   if (responseFormat === "json_object") body.response_format = { type: "json_object" };
   return fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}
-
-async function callLovable(model: string, messages: ChatMessage[], responseFormat?: "json_object") {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
-  const body: any = { model, messages };
-  if (responseFormat === "json_object") body.response_format = { type: "json_object" };
-  return fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -189,28 +177,6 @@ async function tryGrok(apiKey: string, chosen: string, messages: ChatMessage[], 
   throw new Error(`Groq falhou (status ${lastStatus}): ${lastText.slice(0, 200)}`);
 }
 
-async function tryLovable(chosen: string, messages: ChatMessage[], responseFormat?: "json_object"): Promise<AiChatResult> {
-  let lastStatus = 0;
-  let lastText = "";
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await callLovable(chosen, messages, responseFormat);
-    if (res.ok) {
-      const json = await res.json();
-      return { content: json.choices?.[0]?.message?.content ?? "", provider: "lovable", model: chosen };
-    }
-    lastStatus = res.status;
-    lastText = await res.text().catch(() => "");
-    if (res.status === 429) throw new Error("Limite de requisições atingido na Lovable AI.");
-    if (res.status === 402) throw new Error("Créditos de IA esgotados na Lovable.");
-    if ([500, 502, 503, 504].includes(res.status) && attempt < 2) {
-      await sleep(800 * Math.pow(2, attempt));
-      continue;
-    }
-    break;
-  }
-  throw new Error(`Lovable AI falhou (status ${lastStatus}): ${lastText.slice(0, 200)}`);
-}
-
 export async function aiChatDetailed({ messages, model, responseFormat }: AiChatOptions): Promise<AiChatResult> {
   const cfg = await loadConfig();
   const errors: string[] = [];
@@ -226,9 +192,6 @@ export async function aiChatDetailed({ messages, model, responseFormat }: AiChat
         if (!key) { errors.push("gemini: sem API key"); continue; }
         return await tryGemini(key, model || cfg.geminiModel || "gemini-2.5-flash", messages, responseFormat);
       }
-      if (p === "lovable") {
-        return await tryLovable(model || cfg.lovableModel || "google/gemini-2.5-flash", messages, responseFormat);
-      }
     } catch (e: any) {
       errors.push(`${p}: ${e?.message ?? "erro"}`);
       continue;
@@ -240,4 +203,22 @@ export async function aiChatDetailed({ messages, model, responseFormat }: AiChat
 export async function aiChat(opts: AiChatOptions): Promise<string> {
   const r = await aiChatDetailed(opts);
   return r.content;
+}
+
+/** Testa um provedor específico (sem fallback), usando a chave salva ou uma chave informada. */
+export async function aiTestProvider(provider: AiProvider, override?: { apiKey?: string; model?: string }): Promise<AiChatResult> {
+  invalidateAiConfigCache();
+  const cfg = await loadConfig();
+  const messages: ChatMessage[] = [
+    { role: "system", content: "Responda apenas com a palavra: OK" },
+    { role: "user", content: "ping" },
+  ];
+  if (provider === "grok") {
+    const key = (override?.apiKey || cfg.grokApiKey || "").trim();
+    if (!key) throw new Error("Groq sem API key cadastrada.");
+    return await tryGrok(key, override?.model || cfg.grokModel || "llama-3.3-70b-versatile", messages);
+  }
+  const key = (override?.apiKey || cfg.geminiApiKey || "").trim();
+  if (!key) throw new Error("Gemini sem API key cadastrada.");
+  return await tryGemini(key, override?.model || cfg.geminiModel || "gemini-2.5-flash", messages);
 }
