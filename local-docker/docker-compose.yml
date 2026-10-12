@@ -13,7 +13,7 @@ services:
       - "127.0.0.1:8080:8080"
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    command: sh -c "npm i -g bun@1 && rm -f package-lock.json && bun install && bunx --bun vite dev --host 0.0.0.0 --port 8080"
+    command: sh -c "npm i -g bun@1 && rm -f package-lock.json && bun install && npx vite dev --host 0.0.0.0 --port 8080"
 
 volumes:
   app_node_modules:
