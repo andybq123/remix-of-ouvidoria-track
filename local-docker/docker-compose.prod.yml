@@ -2,4 +2,7 @@
 # Uso: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 services:
   app:
+    environment:
+      # Mais memória para a compilação (evita "JavaScript heap out of memory")
+      NODE_OPTIONS: "--max-old-space-size=5120"
     command: sh -c "npm i -g bun@1 && rm -f package-lock.json && bun install && bun run build && npx vite preview --host 0.0.0.0 --port 8080"
