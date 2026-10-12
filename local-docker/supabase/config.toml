@@ -1,0 +1,21 @@
+project_id = "seta-local"
+
+[api]
+port = 54321
+schemas = ["public"]
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+port = 54323
+
+[auth]
+site_url = "http://localhost:8080"
+additional_redirect_urls = ["http://localhost:8080"]
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
