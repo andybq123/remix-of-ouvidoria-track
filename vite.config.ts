@@ -17,5 +17,8 @@ export default defineConfig({
       // Permite acesso por qualquer domínio (VPS com subdomínio próprio)
       allowedHosts: true,
     },
+    preview: {
+      allowedHosts: true,
+    },
   },
 });
