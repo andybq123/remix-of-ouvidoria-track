@@ -519,7 +519,7 @@ const GMAIL_GATEWAY = "https://connector-gateway.lovable.dev/google_mail/gmail/v
 function gmailHeaders(): HeadersInit {
   const lov = process.env.LOVABLE_API_KEY;
   const gm = process.env.GOOGLE_MAIL_API_KEY;
-  if (!lov || !gm) throw new Error("Conexão Gmail não configurada");
+  if (!lov || !gm) throw new Error("Conta antiga (conexão da nuvem). Em E-mail → Contas → Nova conta, cadastre este mesmo e-mail com a senha de app para ativar a coleta.");
   return { Authorization: `Bearer ${lov}`, "X-Connection-Api-Key": gm };
 }
 

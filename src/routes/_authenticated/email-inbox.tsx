@@ -454,8 +454,17 @@ function NovaContaDialog({ secretarias }: { secretarias: any[] }) {
         imap_password: senha.replace(/\s+/g, ""),
         ativo: true,
       };
-      const { error } = await supabase.from("email_inbox_accounts").insert(payload);
-      if (error) throw error;
+      // Se o e-mail já existe (ex.: conta antiga ligada pela nuvem), converte para senha de app.
+      const { data: existente } = await supabase
+        .from("email_inbox_accounts").select("id").eq("email", payload.email).maybeSingle();
+      if (existente?.id) {
+        const { created_by: _cb, ...upd } = payload;
+        const { error } = await supabase.from("email_inbox_accounts").update(upd).eq("id", existente.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("email_inbox_accounts").insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["email-inbox-accounts"] });
