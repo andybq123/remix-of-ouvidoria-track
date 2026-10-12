@@ -9,64 +9,40 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as ConsultaRouteImport } from './routes/consulta'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as InicioRouteImport } from './routes/inicio'
-import { Route as OuvidoriaRouteImport } from './routes/ouvidoria'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as AuthenticatedAssuntosRouteImport } from './routes/_authenticated/assuntos'
-import { Route as AuthenticatedAtrasadosRouteImport } from './routes/_authenticated/atrasados'
-import { Route as AuthenticatedColetorRouteImport } from './routes/_authenticated/coletor'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedEmailInboxRouteImport } from './routes/_authenticated/email-inbox'
-import { Route as AuthenticatedIaConfigRouteImport } from './routes/_authenticated/ia-config'
-import { Route as AuthenticatedMapaRouteImport } from './routes/_authenticated/mapa'
-import { Route as AuthenticatedProtocolosRouteImport } from './routes/_authenticated/protocolos'
-import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
-import { Route as AuthenticatedSaudeRouteImport } from './routes/_authenticated/saude'
-import { Route as AuthenticatedSecretariasRouteImport } from './routes/_authenticated/secretarias'
-import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticated/tarefas'
+import { Route as OuvidoriaRouteImport } from './routes/ouvidoria'
+import { Route as InicioRouteImport } from './routes/inicio'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as ConsultaRouteImport } from './routes/consulta'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
-import { Route as AuthenticatedProtocolosAntigosIndexRouteImport } from './routes/_authenticated/protocolos-antigos.index'
+import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticated/tarefas'
+import { Route as AuthenticatedSecretariasRouteImport } from './routes/_authenticated/secretarias'
+import { Route as AuthenticatedSaudeRouteImport } from './routes/_authenticated/saude'
+import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
+import { Route as AuthenticatedProtocolosRouteImport } from './routes/_authenticated/protocolos'
+import { Route as AuthenticatedMapaRouteImport } from './routes/_authenticated/mapa'
+import { Route as AuthenticatedIaConfigRouteImport } from './routes/_authenticated/ia-config'
+import { Route as AuthenticatedEmailInboxRouteImport } from './routes/_authenticated/email-inbox'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedColetorRouteImport } from './routes/_authenticated/coletor'
+import { Route as AuthenticatedAtrasadosRouteImport } from './routes/_authenticated/atrasados'
+import { Route as AuthenticatedAssuntosRouteImport } from './routes/_authenticated/assuntos'
 import { Route as AuthenticatedRelatoriosIndexRouteImport } from './routes/_authenticated/relatorios.index'
-import { Route as ApiPublicCheckProtocolosRouteImport } from './routes/api/public/check-protocolos'
-import { Route as ApiPublicEmailSyncRouteImport } from './routes/api/public/email-sync'
-import { Route as ApiPublicGmailSyncRouteImport } from './routes/api/public/gmail-sync'
+import { Route as AuthenticatedProtocolosAntigosIndexRouteImport } from './routes/_authenticated/protocolos-antigos.index'
 import { Route as ApiPublicIngestProtocolosRouteImport } from './routes/api/public/ingest-protocolos'
-import { Route as AuthenticatedProtocolosAntigosSourceNumeroRouteImport } from './routes/_authenticated/protocolos-antigos.$source.$numero'
-import { Route as AuthenticatedRelatoriosSecretariaIdRouteImport } from './routes/_authenticated/relatorios.secretaria.$id'
+import { Route as ApiPublicGmailSyncRouteImport } from './routes/api/public/gmail-sync'
+import { Route as ApiPublicEmailSyncRouteImport } from './routes/api/public/email-sync'
+import { Route as ApiPublicCheckProtocolosRouteImport } from './routes/api/public/check-protocolos'
 import { Route as ApiPublicInboundEmailTokenRouteImport } from './routes/api/public/inbound-email.$token'
+import { Route as AuthenticatedRelatoriosSecretariaIdRouteImport } from './routes/_authenticated/relatorios.secretaria.$id'
+import { Route as AuthenticatedProtocolosAntigosSourceNumeroRouteImport } from './routes/_authenticated/protocolos-antigos.$source.$numero'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConsultaRoute = ConsultaRouteImport.update({
-  id: '/consulta',
-  path: '/consulta',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InicioRoute = InicioRouteImport.update({
-  id: '/inicio',
-  path: '/inicio',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OuvidoriaRoute = OuvidoriaRouteImport.update({
@@ -74,59 +50,43 @@ const OuvidoriaRoute = OuvidoriaRouteImport.update({
   path: '/ouvidoria',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const InicioRoute = InicioRouteImport.update({
+  id: '/inicio',
+  path: '/inicio',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAssuntosRoute = AuthenticatedAssuntosRouteImport.update({
-  id: '/assuntos',
-  path: '/assuntos',
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsultaRoute = ConsultaRouteImport.update({
+  id: '/consulta',
+  path: '/consulta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAtrasadosRoute = AuthenticatedAtrasadosRouteImport.update({
-  id: '/atrasados',
-  path: '/atrasados',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedColetorRoute = AuthenticatedColetorRouteImport.update({
-  id: '/coletor',
-  path: '/coletor',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedEmailInboxRoute = AuthenticatedEmailInboxRouteImport.update({
-  id: '/email-inbox',
-  path: '/email-inbox',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedIaConfigRoute = AuthenticatedIaConfigRouteImport.update({
-  id: '/ia-config',
-  path: '/ia-config',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedMapaRoute = AuthenticatedMapaRouteImport.update({
-  id: '/mapa',
-  path: '/mapa',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedProtocolosRoute = AuthenticatedProtocolosRouteImport.update({
-  id: '/protocolos',
-  path: '/protocolos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
-  id: '/relatorios',
-  path: '/relatorios',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSaudeRoute = AuthenticatedSaudeRouteImport.update({
-  id: '/saude',
-  path: '/saude',
+const AuthenticatedTarefasRoute = AuthenticatedTarefasRouteImport.update({
+  id: '/tarefas',
+  path: '/tarefas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSecretariasRoute =
@@ -135,55 +95,95 @@ const AuthenticatedSecretariasRoute =
     path: '/secretarias',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedTarefasRoute = AuthenticatedTarefasRouteImport.update({
-  id: '/tarefas',
-  path: '/tarefas',
+const AuthenticatedSaudeRoute = AuthenticatedSaudeRouteImport.update({
+  id: '/saude',
+  path: '/saude',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
+const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedProtocolosAntigosIndexRoute =
-  AuthenticatedProtocolosAntigosIndexRouteImport.update({
-    id: '/protocolos-antigos/',
-    path: '/protocolos-antigos/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
+const AuthenticatedProtocolosRoute = AuthenticatedProtocolosRouteImport.update({
+  id: '/protocolos',
+  path: '/protocolos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMapaRoute = AuthenticatedMapaRouteImport.update({
+  id: '/mapa',
+  path: '/mapa',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedIaConfigRoute = AuthenticatedIaConfigRouteImport.update({
+  id: '/ia-config',
+  path: '/ia-config',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEmailInboxRoute = AuthenticatedEmailInboxRouteImport.update({
+  id: '/email-inbox',
+  path: '/email-inbox',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedColetorRoute = AuthenticatedColetorRouteImport.update({
+  id: '/coletor',
+  path: '/coletor',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAtrasadosRoute = AuthenticatedAtrasadosRouteImport.update({
+  id: '/atrasados',
+  path: '/atrasados',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAssuntosRoute = AuthenticatedAssuntosRouteImport.update({
+  id: '/assuntos',
+  path: '/assuntos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRelatoriosIndexRoute =
   AuthenticatedRelatoriosIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedRelatoriosRoute,
   } as any)
-const ApiPublicCheckProtocolosRoute =
-  ApiPublicCheckProtocolosRouteImport.update({
-    id: '/api/public/check-protocolos',
-    path: '/api/public/check-protocolos',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedProtocolosAntigosIndexRoute =
+  AuthenticatedProtocolosAntigosIndexRouteImport.update({
+    id: '/protocolos-antigos/',
+    path: '/protocolos-antigos/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicEmailSyncRoute = ApiPublicEmailSyncRouteImport.update({
-  id: '/api/public/email-sync',
-  path: '/api/public/email-sync',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicGmailSyncRoute = ApiPublicGmailSyncRouteImport.update({
-  id: '/api/public/gmail-sync',
-  path: '/api/public/gmail-sync',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicIngestProtocolosRoute =
   ApiPublicIngestProtocolosRouteImport.update({
     id: '/api/public/ingest-protocolos',
     path: '/api/public/ingest-protocolos',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedProtocolosAntigosSourceNumeroRoute =
-  AuthenticatedProtocolosAntigosSourceNumeroRouteImport.update({
-    id: '/protocolos-antigos/$source/$numero',
-    path: '/protocolos-antigos/$source/$numero',
-    getParentRoute: () => AuthenticatedRouteRoute,
+const ApiPublicGmailSyncRoute = ApiPublicGmailSyncRouteImport.update({
+  id: '/api/public/gmail-sync',
+  path: '/api/public/gmail-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicEmailSyncRoute = ApiPublicEmailSyncRouteImport.update({
+  id: '/api/public/email-sync',
+  path: '/api/public/email-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCheckProtocolosRoute =
+  ApiPublicCheckProtocolosRouteImport.update({
+    id: '/api/public/check-protocolos',
+    path: '/api/public/check-protocolos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicInboundEmailTokenRoute =
+  ApiPublicInboundEmailTokenRouteImport.update({
+    id: '/api/public/inbound-email/$token',
+    path: '/api/public/inbound-email/$token',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const AuthenticatedRelatoriosSecretariaIdRoute =
   AuthenticatedRelatoriosSecretariaIdRouteImport.update({
@@ -191,11 +191,11 @@ const AuthenticatedRelatoriosSecretariaIdRoute =
     path: '/secretaria/$id',
     getParentRoute: () => AuthenticatedRelatoriosRoute,
   } as any)
-const ApiPublicInboundEmailTokenRoute =
-  ApiPublicInboundEmailTokenRouteImport.update({
-    id: '/api/public/inbound-email/$token',
-    path: '/api/public/inbound-email/$token',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedProtocolosAntigosSourceNumeroRoute =
+  AuthenticatedProtocolosAntigosSourceNumeroRouteImport.update({
+    id: '/protocolos-antigos/$source/$numero',
+    path: '/protocolos-antigos/$source/$numero',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -406,46 +406,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/consulta': {
-      id: '/consulta'
-      path: '/consulta'
-      fullPath: '/consulta'
-      preLoaderRoute: typeof ConsultaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/inicio': {
-      id: '/inicio'
-      path: '/inicio'
-      fullPath: '/inicio'
-      preLoaderRoute: typeof InicioRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ouvidoria': {
@@ -455,88 +420,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OuvidoriaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
+    '/inicio': {
+      id: '/inicio'
+      path: '/inicio'
+      fullPath: '/inicio'
+      preLoaderRoute: typeof InicioRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/assuntos': {
-      id: '/_authenticated/assuntos'
-      path: '/assuntos'
-      fullPath: '/assuntos'
-      preLoaderRoute: typeof AuthenticatedAssuntosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/atrasados': {
-      id: '/_authenticated/atrasados'
-      path: '/atrasados'
-      fullPath: '/atrasados'
-      preLoaderRoute: typeof AuthenticatedAtrasadosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/consulta': {
+      id: '/consulta'
+      path: '/consulta'
+      fullPath: '/consulta'
+      preLoaderRoute: typeof ConsultaRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/coletor': {
-      id: '/_authenticated/coletor'
-      path: '/coletor'
-      fullPath: '/coletor'
-      preLoaderRoute: typeof AuthenticatedColetorRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/email-inbox': {
-      id: '/_authenticated/email-inbox'
-      path: '/email-inbox'
-      fullPath: '/email-inbox'
-      preLoaderRoute: typeof AuthenticatedEmailInboxRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/ia-config': {
-      id: '/_authenticated/ia-config'
-      path: '/ia-config'
-      fullPath: '/ia-config'
-      preLoaderRoute: typeof AuthenticatedIaConfigRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/mapa': {
-      id: '/_authenticated/mapa'
-      path: '/mapa'
-      fullPath: '/mapa'
-      preLoaderRoute: typeof AuthenticatedMapaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/protocolos': {
-      id: '/_authenticated/protocolos'
-      path: '/protocolos'
-      fullPath: '/protocolos'
-      preLoaderRoute: typeof AuthenticatedProtocolosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/relatorios': {
-      id: '/_authenticated/relatorios'
-      path: '/relatorios'
-      fullPath: '/relatorios'
-      preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/saude': {
-      id: '/_authenticated/saude'
-      path: '/saude'
-      fullPath: '/saude'
-      preLoaderRoute: typeof AuthenticatedSaudeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/secretarias': {
-      id: '/_authenticated/secretarias'
-      path: '/secretarias'
-      fullPath: '/secretarias'
-      preLoaderRoute: typeof AuthenticatedSecretariasRouteImport
+    '/_authenticated/users': {
+      id: '/_authenticated/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tarefas': {
@@ -546,18 +476,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTarefasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/users': {
-      id: '/_authenticated/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AuthenticatedUsersRouteImport
+    '/_authenticated/secretarias': {
+      id: '/_authenticated/secretarias'
+      path: '/secretarias'
+      fullPath: '/secretarias'
+      preLoaderRoute: typeof AuthenticatedSecretariasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/protocolos-antigos/': {
-      id: '/_authenticated/protocolos-antigos/'
-      path: '/protocolos-antigos'
-      fullPath: '/protocolos-antigos/'
-      preLoaderRoute: typeof AuthenticatedProtocolosAntigosIndexRouteImport
+    '/_authenticated/saude': {
+      id: '/_authenticated/saude'
+      path: '/saude'
+      fullPath: '/saude'
+      preLoaderRoute: typeof AuthenticatedSaudeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios': {
+      id: '/_authenticated/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/protocolos': {
+      id: '/_authenticated/protocolos'
+      path: '/protocolos'
+      fullPath: '/protocolos'
+      preLoaderRoute: typeof AuthenticatedProtocolosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mapa': {
+      id: '/_authenticated/mapa'
+      path: '/mapa'
+      fullPath: '/mapa'
+      preLoaderRoute: typeof AuthenticatedMapaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ia-config': {
+      id: '/_authenticated/ia-config'
+      path: '/ia-config'
+      fullPath: '/ia-config'
+      preLoaderRoute: typeof AuthenticatedIaConfigRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/email-inbox': {
+      id: '/_authenticated/email-inbox'
+      path: '/email-inbox'
+      fullPath: '/email-inbox'
+      preLoaderRoute: typeof AuthenticatedEmailInboxRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/coletor': {
+      id: '/_authenticated/coletor'
+      path: '/coletor'
+      fullPath: '/coletor'
+      preLoaderRoute: typeof AuthenticatedColetorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/atrasados': {
+      id: '/_authenticated/atrasados'
+      path: '/atrasados'
+      fullPath: '/atrasados'
+      preLoaderRoute: typeof AuthenticatedAtrasadosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/assuntos': {
+      id: '/_authenticated/assuntos'
+      path: '/assuntos'
+      fullPath: '/assuntos'
+      preLoaderRoute: typeof AuthenticatedAssuntosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/relatorios/': {
@@ -567,18 +560,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRelatoriosIndexRouteImport
       parentRoute: typeof AuthenticatedRelatoriosRoute
     }
-    '/api/public/check-protocolos': {
-      id: '/api/public/check-protocolos'
-      path: '/api/public/check-protocolos'
-      fullPath: '/api/public/check-protocolos'
-      preLoaderRoute: typeof ApiPublicCheckProtocolosRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/protocolos-antigos/': {
+      id: '/_authenticated/protocolos-antigos/'
+      path: '/protocolos-antigos'
+      fullPath: '/protocolos-antigos/'
+      preLoaderRoute: typeof AuthenticatedProtocolosAntigosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/email-sync': {
-      id: '/api/public/email-sync'
-      path: '/api/public/email-sync'
-      fullPath: '/api/public/email-sync'
-      preLoaderRoute: typeof ApiPublicEmailSyncRouteImport
+    '/api/public/ingest-protocolos': {
+      id: '/api/public/ingest-protocolos'
+      path: '/api/public/ingest-protocolos'
+      fullPath: '/api/public/ingest-protocolos'
+      preLoaderRoute: typeof ApiPublicIngestProtocolosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/gmail-sync': {
@@ -588,19 +581,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicGmailSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/ingest-protocolos': {
-      id: '/api/public/ingest-protocolos'
-      path: '/api/public/ingest-protocolos'
-      fullPath: '/api/public/ingest-protocolos'
-      preLoaderRoute: typeof ApiPublicIngestProtocolosRouteImport
+    '/api/public/email-sync': {
+      id: '/api/public/email-sync'
+      path: '/api/public/email-sync'
+      fullPath: '/api/public/email-sync'
+      preLoaderRoute: typeof ApiPublicEmailSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/protocolos-antigos/$source/$numero': {
-      id: '/_authenticated/protocolos-antigos/$source/$numero'
-      path: '/protocolos-antigos/$source/$numero'
-      fullPath: '/protocolos-antigos/$source/$numero'
-      preLoaderRoute: typeof AuthenticatedProtocolosAntigosSourceNumeroRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/api/public/check-protocolos': {
+      id: '/api/public/check-protocolos'
+      path: '/api/public/check-protocolos'
+      fullPath: '/api/public/check-protocolos'
+      preLoaderRoute: typeof ApiPublicCheckProtocolosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/inbound-email/$token': {
+      id: '/api/public/inbound-email/$token'
+      path: '/api/public/inbound-email/$token'
+      fullPath: '/api/public/inbound-email/$token'
+      preLoaderRoute: typeof ApiPublicInboundEmailTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/relatorios/secretaria/$id': {
       id: '/_authenticated/relatorios/secretaria/$id'
@@ -609,12 +609,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRelatoriosSecretariaIdRouteImport
       parentRoute: typeof AuthenticatedRelatoriosRoute
     }
-    '/api/public/inbound-email/$token': {
-      id: '/api/public/inbound-email/$token'
-      path: '/api/public/inbound-email/$token'
-      fullPath: '/api/public/inbound-email/$token'
-      preLoaderRoute: typeof ApiPublicInboundEmailTokenRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/protocolos-antigos/$source/$numero': {
+      id: '/_authenticated/protocolos-antigos/$source/$numero'
+      path: '/protocolos-antigos/$source/$numero'
+      fullPath: '/protocolos-antigos/$source/$numero'
+      preLoaderRoute: typeof AuthenticatedProtocolosAntigosSourceNumeroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
