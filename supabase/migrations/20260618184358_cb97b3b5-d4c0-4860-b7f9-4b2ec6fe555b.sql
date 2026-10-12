@@ -1,1 +1,0 @@
-DELETE FROM public.protocolos WHERE id = '52310b25-44dd-47e8-bd63-1c60bdfc407d';

@@ -1,1 +1,0 @@
-UPDATE public.protocolos SET numero = '1.960/2026' WHERE numero = 'OUV-2026-789016';

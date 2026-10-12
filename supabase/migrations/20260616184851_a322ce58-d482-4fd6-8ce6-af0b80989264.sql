@@ -1,1 +1,0 @@
-DELETE FROM public.protocolos WHERE date(created_at) = '2026-06-15' AND created_by IS NULL;

@@ -1,2 +1,0 @@
-ALTER TABLE public.protocolos ADD COLUMN IF NOT EXISTS triagem_pendente boolean NOT NULL DEFAULT false;
-CREATE INDEX IF NOT EXISTS idx_protocolos_triagem_pendente ON public.protocolos(triagem_pendente) WHERE triagem_pendente = true;

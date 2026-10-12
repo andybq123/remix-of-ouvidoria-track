@@ -1,1 +1,0 @@
-ALTER TABLE public.protocolos ADD COLUMN IF NOT EXISTS resolucao text;
