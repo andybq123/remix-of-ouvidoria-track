@@ -69,6 +69,10 @@ if [ "$MODO" = "prod" ]; then
       if grep -rqF "$CLOUD_URL" ../.output 2>/dev/null; then
         echo "ERRO: não consegui apontar o sistema para o banco local."; exit 1
       fi
+      # Os arquivos mudaram de tamanho: atualiza o mapa interno do servidor,
+      # senão o navegador recebe arquivos cortados (tela em branco).
+      node ./corrigir-tamanhos.mjs ../.output || {
+        echo "ERRO: não consegui ajustar os tamanhos dos arquivos."; exit 1; }
       echo "==> Sistema apontado para o banco local ($LOCAL_URL)."
     else
       echo "ERRO: .env.local sem VITE_SUPABASE_URL/VITE_SUPABASE_PUBLISHABLE_KEY."; exit 1
