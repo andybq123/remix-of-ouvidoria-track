@@ -1,0 +1,5 @@
+# Modo produção: compila o sistema uma vez e serve a versão otimizada.
+# Uso: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+services:
+  app:
+    command: sh -c "npm i -g bun@1 && rm -f package-lock.json && bun install && bun run build && npx vite preview --host 0.0.0.0 --port 8080"
