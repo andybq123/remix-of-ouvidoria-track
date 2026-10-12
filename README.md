@@ -1,28 +1,77 @@
-# Remix of Ouvidoria Track
+# Controle SETA — Sistema de Ouvidoria e Transparência
 
-Chat estou trabalhando na ouvidoria de uma prefeitura e prexiso de um sistema onde eu posso informar o protocolo da ouvidoria que tem duracao de  até 30 dias podendo ser prorrogado por mais 30 e temos tbm a LIE que tem duracao de 20 dias pode do prorrogar por Mais 10
+Sistema completo de gestão de ouvidoria para prefeituras: cadastro e acompanhamento de protocolos, triagem inteligente de e-mails com IA, controle de prazos legais, mapa de unidades da Saúde e relatórios gerenciais.
 
+> ⚠️ **EM DESENVOLVIMENTO** — O código está público apenas para fins de versionamento. **A instalação ainda NÃO está liberada** (veja a seção [Instalador](#-instalador--bloqueado-temporariamente)).
 
+---
 
-Preciso que nesse sistema eu possa cadastrar as secretarias, os responsaveis por cada secretaria e que na dashboard do sistema ele me mantenha informado quanto aos prazos
+## O que o sistema faz
 
-This project was built with [Lovable](https://lovable.dev).
+### Protocolos
+- **Cadastro de protocolos** de Ouvidoria, LAI/E-SIC e outros tipos, com assunto, conteúdo, secretaria responsável e unidade.
+- **Controle de prazos legais centralizado**:
+  - Ouvidoria: 30 dias, com prorrogação de mais 30.
+  - LAI/E-SIC: 20 dias, com prorrogação de mais 10.
+  - Badges visuais de prazo (em dia, próximo do vencimento, atrasado) na listagem e na ficha do protocolo.
+- **Ficha completa do protocolo**: histórico, anexos, tramitação e responsável.
+- **Conclusão em massa**: cole uma lista em texto com protocolo, data e link do documento (1Doc) e o sistema conclui vários de uma vez; protocolos inexistentes podem ser criados e concluídos direto na triagem.
+- **Protocolos antigos**: importação e consulta de acervos anteriores, com localização por número/source.
+- **Validações de triagem** para evitar cadastros duplicados ou incompletos.
 
-## Build with Lovable
+### Triagem inteligente de e-mails (IA)
+- **Coleta automática de e-mails (Gmail/IMAP)** a cada 3 minutos, com histórico de processamento e ressincronização individual das mensagens que falharam.
+- **Triagem com IA** (Groq e Gemini, configuráveis individualmente, com IA principal e reserva): extrai protocolo, tipo de pedido, secretaria e assunto do e-mail.
+- **Configuração da conta Gmail pela própria tela do sistema** (senha de app, teste de conexão).
+- Histórico de e-mails processados com badge indicando qual IA fez a triagem.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/ae019e94-6f46-47ad-8824-924077b8b89f).
+### Painel e relatórios
+- **Dashboard operacional** com KPIs, atrasados e prazos a vencer.
+- **Relatórios com filtro de unidade** e gráficos (incluindo pizza dos relatórios da Saúde).
+- **Busca global avançada** por assunto e conteúdo das ouvidorias.
+- **Notificações em tempo real** entre usuários conectados.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+### Mapa da Saúde
+- Mapa com **pontos apenas das unidades da Saúde**, com popup de resumo dos últimos 3 meses.
+- Cadastro de **novo ponto vinculado à secretaria**.
 
-## Development
+### Administração
+- **Secretarias, assuntos, usuários e tarefas**.
+- **Responsáveis por secretaria** (titular e substituto).
+- Perfis de acesso: **administrador** (acesso total) e **usuário** (leitura de protocolos, sem configuração).
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+---
 
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+## Tecnologias
+
+- **Frontend/Backend**: React 19 + TanStack Start (SSR) + Tailwind CSS v4
+- **Banco de dados**: PostgreSQL (com Row Level Security em todas as tabelas)
+- **IA**: Groq e Gemini (via chave própria, configurável na tela do sistema)
+- **E-mail**: coleta IMAP de Gmail via serviço agendado
+- **Hospedagem**: Lovable Cloud (nuvem) ou VPS Linux própria (Docker + Caddy)
+
+---
+
+## 🚫 Instalador — bloqueado temporariamente
+
+O instalador para VPS (`local-docker/deploy-vps.sh`) e o instalador local (`local-docker/`) **existem no repositório, mas a instalação pública ainda não está habilitada**, porque o projeto está em desenvolvimento ativo.
+
+**Etapa pendente (não publicada):** a configuração segura do ambiente — o arquivo de chaves do banco de dados e o provisionamento do primeiro administrador. **Sem essa etapa o sistema não sobe**, o que impede instalações não autorizadas enquanto o projeto está aberto.
+
+Quando a versão final for liberada, esta seção será substituída pelo passo a passo completo (requisitos, instalação em VPS com subdomínio e HTTPS automático, criação do admin e configuração do Gmail).
+
+Enquanto isso, **não execute** os scripts da pasta `local-docker/`: além de não funcionarem por falta da etapa pendente, um deploy novo criaria um banco de dados vazio.
+
+---
+
+## Status
+
+| Módulo | Status |
+|---|---|
+| Protocolos, prazos e SLA | ✅ Em uso |
+| Triagem de e-mails com IA (Groq/Gemini) | ✅ Em uso |
+| Coleta automática de Gmail (3 min) | ✅ Em uso |
+| Dashboard, relatórios e gráficos | ✅ Em uso |
+| Mapa da Saúde | ✅ Em uso |
+| Responsáveis por secretaria | ✅ Em uso |
+| Instalador público | 🔒 Bloqueado até a versão final |
