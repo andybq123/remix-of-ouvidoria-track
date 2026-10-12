@@ -5,4 +5,8 @@ services:
     environment:
       # Mais memória para a compilação (evita "JavaScript heap out of memory")
       NODE_OPTIONS: "--max-old-space-size=5120"
-    command: sh -c "npm i -g bun@1 && rm -f package-lock.json && bun install && bun run build && npx vite preview --host 0.0.0.0 --port 8080"
+      # Compila para servidor Node.js (em vez de Cloudflare)
+      NITRO_PRESET: "node-server"
+      HOST: "0.0.0.0"
+      PORT: "8080"
+    command: sh -c "npm i -g bun@1 && rm -f package-lock.json && bun install && bun run build && NODE_OPTIONS= node .output/server/index.mjs"
