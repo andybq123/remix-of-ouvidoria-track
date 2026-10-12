@@ -114,18 +114,6 @@ for t in secretarias locais assuntos allowed_emails profiles user_roles secretar
   ins "$t"
 done
 cat <<'SQL'
--- Configuração de IA: só importa se a VPS ainda não tiver nenhuma (preserva suas chaves)
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM public.ai_config) THEN
-SQL
-ins ai_config | sed '1s/^DO \$\$ DECLARE/DECLARE_PLACEHOLDER/' >/dev/null
-cat <<'SQL'
-    NULL;
-  END IF;
-END $$;
-SQL
-echo "DO \$x\$ BEGIN IF NOT EXISTS (SELECT 1 FROM public.ai_config) THEN NULL; END IF; END \$x\$;"
-cat <<'SQL'
 SET session_replication_role = origin;
 COMMIT;
 SQL
