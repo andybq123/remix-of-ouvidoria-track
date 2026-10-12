@@ -6,159 +6,67 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Sparkles, KeyRound, CheckCircle2, AlertCircle, ArrowUp, ArrowDown } from "lucide-react";
+import { Sparkles, KeyRound, ArrowUp, ArrowDown, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { getAiConfig, saveAiConfig, testAiConfig } from "@/lib/ai-config.functions";
+import { getAiConfig, saveAiProvider, saveAiPriority, testAiProvider } from "@/lib/ai-config.functions";
 
 export const Route = createFileRoute("/_authenticated/ia-config")({
   head: () => ({
     meta: [
-      { title: "Configuração de IA" },
-      { name: "description", content: "Defina a ordem de prioridade entre Grok, Gemini e Lovable AI." },
+      { title: "Configuração de IA — Controle SETA" },
+      { name: "description", content: "Configure as IAs Groq e Google Gemini individualmente e a ordem de uso." },
+      { property: "og:title", content: "Configuração de IA — Controle SETA" },
+      { property: "og:description", content: "Configure as IAs Groq e Google Gemini individualmente." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: IAConfigPage,
 });
 
-type Prov = "grok" | "gemini" | "lovable";
-const LABELS: Record<Prov, string> = { grok: "Groq", gemini: "Google Gemini", lovable: "Lovable AI" };
+type Prov = "grok" | "gemini";
+const LABELS: Record<Prov, string> = { grok: "Groq", gemini: "Google Gemini" };
+const DEFAULTS: Record<Prov, string> = { grok: "llama-3.3-70b-versatile", gemini: "gemini-2.5-flash" };
+const KEY_HELP: Record<Prov, { url: string; placeholder: string }> = {
+  grok: { url: "https://console.groq.com/keys", placeholder: "gsk_..." },
+  gemini: { url: "https://aistudio.google.com/apikey", placeholder: "AIza..." },
+};
+const MODELS: Record<Prov, { value: string; label: string }[]> = {
+  grok: [
+    { value: "llama-3.3-70b-versatile", label: "Llama 3.3 70B Versatile (recomendado)" },
+    { value: "llama-3.1-8b-instant", label: "Llama 3.1 8B Instant (mais rápido)" },
+    { value: "openai/gpt-oss-120b", label: "GPT-OSS 120B" },
+    { value: "openai/gpt-oss-20b", label: "GPT-OSS 20B" },
+    { value: "meta-llama/llama-4-scout-17b-16e-instruct", label: "Llama 4 Scout 17B" },
+    { value: "meta-llama/llama-4-maverick-17b-128e-instruct", label: "Llama 4 Maverick 17B" },
+  ],
+  gemini: [
+    { value: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash Lite" },
+    { value: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite" },
+    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (recomendado)" },
+    { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite" },
+    { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+    { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
+  ],
+};
 
 function IAConfigPage() {
   const qc = useQueryClient();
   const getCfg = useServerFn(getAiConfig);
-  const saveCfg = useServerFn(saveAiConfig);
-  const testCfg = useServerFn(testAiConfig);
+  const savePrio = useServerFn(saveAiPriority);
+  const { data, isLoading } = useQuery({ queryKey: ["ai-config"], queryFn: () => getCfg({}) });
+  const [priority, setPriority] = useState<Prov[]>(["grok", "gemini"]);
+  useEffect(() => { if (data) setPriority(data.priority as Prov[]); }, [data]);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["ai-config"],
-    queryFn: () => getCfg({}),
-  });
-
-  const [priority, setPriority] = useState<Prov[]>(["lovable", "gemini", "grok"]);
-  const [grokKey, setGrokKey] = useState("");
-  const [geminiKey, setGeminiKey] = useState("");
-  const [grokModel, setGrokModel] = useState("");
-  const [geminiModel, setGeminiModel] = useState("");
-  const [lovableModel, setLovableModel] = useState("");
-
-  useEffect(() => {
-    if (data) {
-      setPriority(data.priority as Prov[]);
-      setGrokModel(data.grok?.model ?? "");
-      setGeminiModel(data.gemini?.model ?? "");
-      setLovableModel(data.lovable?.model ?? "");
-    }
-  }, [data]);
-
-  const mSave = useMutation({
-    mutationFn: (opts: { clearGrokKey?: boolean; clearGeminiKey?: boolean }) =>
-      saveCfg({
-        data: {
-          priority,
-          grokApiKey: grokKey || undefined,
-          clearGrokKey: opts.clearGrokKey,
-          grokModel: grokModel || undefined,
-          geminiApiKey: geminiKey || undefined,
-          clearGeminiKey: opts.clearGeminiKey,
-          geminiModel: geminiModel || undefined,
-          lovableModel: lovableModel || undefined,
-        },
-      }),
-    onSuccess: () => {
-      toast.success("Configuração salva");
-      setGrokKey("");
-      setGeminiKey("");
-      qc.invalidateQueries({ queryKey: ["ai-config"] });
-    },
+  const mPrio = useMutation({
+    mutationFn: (p: Prov[]) => savePrio({ data: { priority: p } }),
+    onSuccess: () => { toast.success("Ordem salva"); qc.invalidateQueries({ queryKey: ["ai-config"] }); },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar"),
   });
 
-  const mTest = useMutation({
-    mutationFn: () => testCfg({}),
-    onSuccess: (r: any) => toast.success(`IA respondeu: ${r?.reply || "OK"}`),
-    onError: (e: any) => toast.error(e?.message ?? "Falha no teste"),
-  });
-
-  const MODEL_OPTIONS: Record<Prov, { value: string; label: string; hint?: string }[]> = {
-    grok: [
-      { value: "llama-3.3-70b-versatile", label: "Llama 3.3 70B Versatile", hint: "Padrão recomendado" },
-      { value: "llama-3.1-8b-instant", label: "Llama 3.1 8B Instant", hint: "Mais rápido e barato" },
-      { value: "llama-3.1-70b-versatile", label: "Llama 3.1 70B Versatile" },
-      { value: "openai/gpt-oss-120b", label: "GPT-OSS 120B" },
-      { value: "openai/gpt-oss-20b", label: "GPT-OSS 20B" },
-      { value: "meta-llama/llama-4-scout-17b-16e-instruct", label: "Llama 4 Scout 17B" },
-      { value: "meta-llama/llama-4-maverick-17b-128e-instruct", label: "Llama 4 Maverick 17B" },
-      { value: "deepseek-r1-distill-llama-70b", label: "DeepSeek R1 Distill Llama 70B" },
-    ],
-    lovable: [
-      { value: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro", hint: "Mais capaz, raciocínio complexo" },
-      { value: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash", hint: "Equilíbrio custo/qualidade (padrão)" },
-      { value: "google/gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite", hint: "Mais rápido e barato" },
-      { value: "google/gemini-3.1-pro-preview", label: "Gemini 3.1 Pro (preview)", hint: "Próxima geração — raciocínio" },
-      { value: "google/gemini-3.6-flash", label: "Gemini 3.6 Flash", hint: "Última geração Flash" },
-      { value: "google/gemini-3.5-flash", label: "Gemini 3.5 Flash", hint: "Rápido e eficiente" },
-      { value: "openai/gpt-5", label: "GPT-5", hint: "OpenAI — all-rounder" },
-      { value: "openai/gpt-5-mini", label: "GPT-5 Mini", hint: "OpenAI — custo menor" },
-      { value: "openai/gpt-5-nano", label: "GPT-5 Nano", hint: "OpenAI — mais rápido" },
-      { value: "openai/gpt-5.4", label: "GPT-5.4", hint: "OpenAI — geração atual" },
-      { value: "openai/gpt-5.4-mini", label: "GPT-5.4 Mini" },
-      { value: "openai/gpt-5.5", label: "GPT-5.5", hint: "OpenAI — frontier" },
-    ],
-    gemini: [
-      { value: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash Lite", hint: "Nova geração rápida/barata" },
-      { value: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite", hint: "Gemini 3.1 leve" },
-      { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", hint: "Mais capaz" },
-      { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", hint: "Padrão recomendado" },
-      { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite", hint: "Mais rápido/barato" },
-      { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
-      { value: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash Lite" },
-      { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
-      { value: "gemini-1.5-flash-8b", label: "Gemini 1.5 Flash 8B" },
-    ],
-  };
-
-  const defaults: Record<Prov, string> = {
-    grok: "llama-3.3-70b-versatile",
-    gemini: "gemini-2.5-flash",
-    lovable: "google/gemini-2.5-flash",
-  };
-
-  const move = (i: number, dir: -1 | 1) => {
-    const j = i + dir;
-    if (j < 0 || j >= priority.length) return;
-    const next = [...priority];
-    [next[i], next[j]] = [next[j], next[i]];
-    setPriority(next);
-  };
-
-  const renderModelSelect = (p: Prov, value: string, onChange: (v: string) => void) => {
-    const options = MODEL_OPTIONS[p];
-    const selectValue = value && options.some((o) => o.value === value) ? value : "__default__";
-    return (
-      <div className="space-y-2">
-        <Select value={selectValue} onValueChange={(v) => onChange(v === "__default__" ? "" : v)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecionar modelo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__default__">Padrão ({defaults[p]})</SelectItem>
-            {options.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                <span className="font-medium">{o.label}</span>
-                {o.hint && <span className="text-muted-foreground"> — {o.hint}</span>}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Ou informe um ID customizado</Label>
-          <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={defaults[p]} />
-        </div>
-      </div>
-    );
-  };
+  const swap = () => { const n = [...priority].reverse() as Prov[]; setPriority(n); mPrio.mutate(n); };
 
   return (
     <div className="max-w-3xl space-y-4">
@@ -167,150 +75,120 @@ function IAConfigPage() {
           <Sparkles className="h-6 w-6" /> Configuração de IA
         </h1>
         <p className="text-sm text-muted-foreground">
-          Defina a ordem de prioridade entre os provedores. O sistema tenta o primeiro; se falhar,
-          faz fallback para o próximo automaticamente.
+          O sistema usa somente Groq e Google Gemini. Cada uma é configurada e testada separadamente.
         </p>
       </div>
 
       {isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
 
-      {!isLoading && (
+      {data && (
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Ordem de prioridade (fallback)</CardTitle>
-              <CardDescription>
-                Use as setas para reordenar. Ex.: Grok principal → fallback Gemini → fallback Lovable.
-              </CardDescription>
+              <CardTitle>Ordem de uso</CardTitle>
+              <CardDescription>A primeira é a principal; se falhar, o sistema usa a segunda automaticamente.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               {priority.map((p, i) => (
                 <div key={p} className="flex items-center justify-between rounded-md border p-3">
                   <div className="flex items-center gap-3">
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-                      {i + 1}
-                    </span>
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">{i + 1}</span>
                     <span className="font-medium">{LABELS[p]}</span>
-                    {i === 0 && <span className="text-xs text-muted-foreground">principal</span>}
-                    {i > 0 && <span className="text-xs text-muted-foreground">fallback</span>}
+                    <span className="text-xs text-muted-foreground">{i === 0 ? "principal" : "reserva"}</span>
                   </div>
-                  <div className="flex gap-1">
-                    <Button variant="outline" size="icon" onClick={() => move(i, -1)} disabled={i === 0}>
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="icon" onClick={() => move(i, 1)} disabled={i === priority.length - 1}>
-                      <ArrowDown className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Button variant="outline" size="icon" onClick={swap} disabled={mPrio.isPending} aria-label="Inverter ordem">
+                    {i === 0 ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />}
+                  </Button>
                 </div>
               ))}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><KeyRound className="h-4 w-4" /> Groq</CardTitle>
-              <CardDescription>
-                API key em{" "}
-                <a className="underline" href="https://console.groq.com/keys" target="_blank" rel="noreferrer">console.groq.com/keys</a>.
-                Armazenada apenas no backend.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {data?.grok?.hasKey ? (
-                <Alert>
-                  <CheckCircle2 className="h-4 w-4" />
-                  <AlertTitle>Chave configurada</AlertTitle>
-                  <AlertDescription>
-                    Atual: <code>{data.grok.apiKeyMasked}</code>. Preencha para substituir ou remova.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Nenhuma chave configurada</AlertTitle>
-                  <AlertDescription>Cadastre uma API key para usar o Groq.</AlertDescription>
-                </Alert>
-              )}
-              <div className="space-y-1.5">
-                <Label>Nova API key</Label>
-                <Input type="password" autoComplete="off" value={grokKey} onChange={(e) => setGrokKey(e.target.value)} placeholder="gsk_..." />
-              </div>
-              {data?.grok?.hasKey && (
-                <Button variant="outline" size="sm" onClick={() => mSave.mutate({ clearGrokKey: true })} disabled={mSave.isPending}>
-                  Remover chave atual
-                </Button>
-              )}
-              <div className="pt-2">
-                <Label className="mb-1 block">Modelo Groq</Label>
-                {renderModelSelect("grok", grokModel, setGrokModel)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><KeyRound className="h-4 w-4" /> Google Gemini</CardTitle>
-              <CardDescription>
-                API key em{" "}
-                <a className="underline" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">
-                  aistudio.google.com/app/apikey
-                </a>. Armazenada apenas no backend.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {data?.gemini?.hasKey ? (
-                <Alert>
-                  <CheckCircle2 className="h-4 w-4" />
-                  <AlertTitle>Chave configurada</AlertTitle>
-                  <AlertDescription>
-                    Atual: <code>{data.gemini.apiKeyMasked}</code>. Preencha para substituir ou remova.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Nenhuma chave configurada</AlertTitle>
-                  <AlertDescription>Cadastre uma API key para usar o Gemini direto.</AlertDescription>
-                </Alert>
-              )}
-              <div className="space-y-1.5">
-                <Label>Nova API key</Label>
-                <Input type="password" autoComplete="off" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="AIza..." />
-              </div>
-              {data?.gemini?.hasKey && (
-                <Button variant="outline" size="sm" onClick={() => mSave.mutate({ clearGeminiKey: true })} disabled={mSave.isPending}>
-                  Remover chave atual
-                </Button>
-              )}
-              <div className="pt-2">
-                <Label className="mb-1 block">Modelo Gemini</Label>
-                {renderModelSelect("gemini", geminiModel, setGeminiModel)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Lovable AI</CardTitle>
-              <CardDescription>Não requer API key; usa os créditos do workspace.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Label className="mb-1 block">Modelo Lovable</Label>
-              {renderModelSelect("lovable", lovableModel, setLovableModel)}
-            </CardContent>
-          </Card>
-
-          <div className="flex gap-2">
-            <Button onClick={() => mSave.mutate({})} disabled={mSave.isPending}>
-              {mSave.isPending ? "Salvando…" : "Salvar configuração"}
-            </Button>
-            <Button variant="outline" onClick={() => mTest.mutate()} disabled={mTest.isPending}>
-              {mTest.isPending ? "Testando…" : "Testar conexão"}
-            </Button>
-          </div>
+          {(["grok", "gemini"] as Prov[]).map((p) => (
+            <ProviderCard key={p} provider={p} info={data[p]} />
+          ))}
         </>
       )}
     </div>
+  );
+}
+
+function ProviderCard({ provider, info }: { provider: Prov; info: { hasKey: boolean; apiKeyMasked: string | null; model: string } }) {
+  const qc = useQueryClient();
+  const save = useServerFn(saveAiProvider);
+  const test = useServerFn(testAiProvider);
+  const [key, setKey] = useState("");
+  const [model, setModel] = useState(info.model);
+  const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+  useEffect(() => setModel(info.model), [info.model]);
+
+  const mSave = useMutation({
+    mutationFn: (clearKey?: boolean) =>
+      save({ data: { provider, apiKey: key || undefined, model: model || undefined, clearKey, validate: !!key } }),
+    onSuccess: (r: any, clearKey) => {
+      toast.success(clearKey ? "Chave removida" : `${LABELS[provider]} salvo${r?.reply ? " e validado" : ""}`);
+      if (r?.reply) setStatus({ ok: true, msg: `Chave válida — ${r.reply}` });
+      setKey("");
+      qc.invalidateQueries({ queryKey: ["ai-config"] });
+    },
+    onError: (e: any) => {
+      setStatus({ ok: false, msg: e?.message ?? "Erro" });
+      toast.error(`Não salvo: ${e?.message ?? "erro"}`);
+    },
+  });
+
+  const mTest = useMutation({
+    mutationFn: () => test({ data: { provider } }),
+    onSuccess: (r: any) => setStatus({ ok: true, msg: `Funcionando — modelo ${r.model} respondeu "${r.reply}"` }),
+    onError: (e: any) => setStatus({ ok: false, msg: e?.message ?? "Falha no teste" }),
+  });
+
+  const sel = MODELS[provider].some((o) => o.value === model) ? model : model ? "__custom__" : "__default__";
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <KeyRound className="h-5 w-5" /> {LABELS[provider]}
+          {info.hasKey ? <Badge variant="secondary">Chave cadastrada {info.apiKeyMasked}</Badge> : <Badge variant="outline">Sem chave</Badge>}
+        </CardTitle>
+        <CardDescription>
+          Pegue a chave em{" "}
+          <a className="underline" href={KEY_HELP[provider].url} target="_blank" rel="noreferrer">{KEY_HELP[provider].url.replace("https://", "")}</a>.
+          Ao salvar uma chave nova, ela é testada antes de ser gravada.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="space-y-1.5">
+          <Label>Nova API key</Label>
+          <Input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder={info.hasKey ? "Deixe vazio para manter a atual" : KEY_HELP[provider].placeholder} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Modelo</Label>
+          <Select value={sel} onValueChange={(v) => setModel(v === "__default__" ? "" : v === "__custom__" ? model : v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__default__">Padrão ({DEFAULTS[provider]})</SelectItem>
+              {MODELS[provider].map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+              {sel === "__custom__" && <SelectItem value="__custom__">Personalizado: {model}</SelectItem>}
+            </SelectContent>
+          </Select>
+          <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder={`Ou digite outro modelo (padrão ${DEFAULTS[provider]})`} />
+        </div>
+        {status && (
+          <div className={`flex items-start gap-2 rounded-md border p-2 text-sm ${status.ok ? "border-primary/40" : "border-destructive/50 text-destructive"}`}>
+            {status.ok ? <CheckCircle2 className="h-4 w-4 mt-0.5" /> : <AlertCircle className="h-4 w-4 mt-0.5" />}
+            <span className="break-all">{status.msg}</span>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => mSave.mutate(false)} disabled={mSave.isPending}>{mSave.isPending ? "Validando…" : "Salvar"}</Button>
+          <Button variant="outline" onClick={() => mTest.mutate()} disabled={!info.hasKey || mTest.isPending}>{mTest.isPending ? "Testando…" : "Testar"}</Button>
+          {info.hasKey && (
+            <Button variant="ghost" onClick={() => confirm(`Remover a chave do ${LABELS[provider]}?`) && mSave.mutate(true)}>Remover chave</Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
