@@ -1,0 +1,41 @@
+name: Compilar versão da VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-vps
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: rm -f package-lock.json && bun install
+      - name: Build (Node server)
+        env:
+          NITRO_PRESET: node-server
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: bun run build
+      - name: Empacotar
+        run: |
+          echo "${GITHUB_SHA}" > .output/VERSION
+          tar -czf vps-build.tar.gz .output
+      - name: Publicar pacote (release vps-latest)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete vps-latest -y --cleanup-tag || true
+          gh release create vps-latest vps-build.tar.gz --title "VPS build ${GITHUB_SHA::7}" --notes "Compilação automática para a VPS" --target "${GITHUB_SHA}"
