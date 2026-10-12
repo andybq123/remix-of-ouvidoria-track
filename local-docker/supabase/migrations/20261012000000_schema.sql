@@ -4,7 +4,6 @@ set search_path = public, extensions;
 -- PostgreSQL database dump
 --
 
-\restrict O4Z0HwcgLxMCNKtRDlaqpMgcPt5LvVnPKqqN7yO4aqDDWRRnaN0LmlMqcKVAqX6
 
 -- Dumped from database version 17.11
 -- Dumped by pg_dump version 17.9
@@ -1660,7 +1659,6 @@ ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict O4Z0HwcgLxMCNKtRDlaqpMgcPt5LvVnPKqqN7yO4aqDDWRRnaN0LmlMqcKVAqX6
 
 
 -- Gatilho de cadastro (cria perfil e papel a partir de allowed_emails)
