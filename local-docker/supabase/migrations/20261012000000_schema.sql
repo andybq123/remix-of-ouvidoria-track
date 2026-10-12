@@ -1,3 +1,5 @@
+create extension if not exists pg_trgm with schema extensions;
+set search_path = public, extensions;
 --
 -- PostgreSQL database dump
 --
@@ -1660,3 +1662,12 @@ ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 
 \unrestrict O4Z0HwcgLxMCNKtRDlaqpMgcPt5LvVnPKqqN7yO4aqDDWRRnaN0LmlMqcKVAqX6
 
+
+-- Gatilho de cadastro (cria perfil e papel a partir de allowed_emails)
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert on auth.users
+  for each row execute function public.handle_new_user();
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to authenticated, service_role;
+grant select on public.secretarias, public.locais to anon;
+grant execute on all functions in schema public to authenticated, service_role;
