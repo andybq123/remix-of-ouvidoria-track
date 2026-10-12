@@ -32,10 +32,13 @@ fi
 echo "==> Reconstruindo e reiniciando o sistema (modo: $MODO)..."
 LOG_BUILD="/tmp/controle-seta-build.log"
 : > "$LOG_BUILD"
+# Para o sistema antigo e apaga a compilação anterior, para garantir que a versão nova seja usada
+docker compose -f docker-compose.yml -f docker-compose.prod.yml rm -sf app >/dev/null 2>&1 || true
+rm -rf ../.output ../node_modules/.vite 2>/dev/null || true
 if [ "$MODO" = "prod" ]; then
-  ( docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build >"$LOG_BUILD" 2>&1 ) &
+  ( docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate >"$LOG_BUILD" 2>&1 ) &
 else
-  ( docker compose up -d --build >"$LOG_BUILD" 2>&1 ) &
+  ( docker compose up -d --force-recreate >"$LOG_BUILD" 2>&1 ) &
 fi
 PID_COMPOSE=$!
 
