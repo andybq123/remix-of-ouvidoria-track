@@ -62,7 +62,7 @@ export function temAcentoQuebrado(s: string | null | undefined): boolean {
   return !!s && (/\uFFFD/.test(s) || /[ÃÂ][\u0080-\u00BF]/.test(s));
 }
 
-export function corrigirAcentos(s: string, extra: string[] = []): string;
+export function corrigirAcentos(s: string, extra?: string[]): string;
 export function corrigirAcentos(s: string | null | undefined, extra?: string[]): string | null | undefined;
 export function corrigirAcentos(s: string | null | undefined, extra: string[] = []) {
   if (!s || !temAcentoQuebrado(s)) return s;
