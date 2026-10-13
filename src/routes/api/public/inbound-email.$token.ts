@@ -51,7 +51,7 @@ export const Route = createFileRoute("/api/public/inbound-email/$token")({
   server: {
     handlers: {
       POST: async ({ request, params }) => processInbound(params.token, request),
-      GET: async ({ params }) => Response.json({ ok: true, token: params.token.slice(0, 8) + "…" }),
+      GET: async () => Response.json({ ok: true }),
     },
   },
 });

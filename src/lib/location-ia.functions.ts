@@ -7,13 +7,13 @@ const NOMINATIM_HEADERS = {
 };
 
 const Input = z.object({
-  assunto: z.string().optional().default(""),
-  descricao: z.string().optional().default(""),
-  endereco: z.string().optional().default(""),
-  solicitante: z.string().optional().default(""),
-  secretaria: z.string().optional().default(""),
-  local: z.string().optional().default(""),
-  categoria: z.string().optional().default(""),
+  assunto: z.string().max(300).optional().default(""),
+  descricao: z.string().max(4000).optional().default(""),
+  endereco: z.string().max(300).optional().default(""),
+  solicitante: z.string().max(300).optional().default(""),
+  secretaria: z.string().max(300).optional().default(""),
+  local: z.string().max(300).optional().default(""),
+  categoria: z.string().max(300).optional().default(""),
 });
 
 type NominatimHit = {
