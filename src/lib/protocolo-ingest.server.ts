@@ -165,29 +165,57 @@ function detectarAcao(assunto: string, corpo: string): "conclusao" | "atualizaca
 }
 
 // Extrai o link "Acompanhar online" do corpo do e-mail do 1Doc.
-// Procura primeiro pelo padrão "Acompanhar online" seguido de URL próxima,
-// e cai para qualquer URL de 1doc.com.br como fallback.
+// Considera HTML (href) e texto, decodifica entidades/quoted-printable,
+// desembrulha redirecionadores e valida a URL antes de aceitar.
+export function limparUrl1doc(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  let u = String(raw).trim()
+    .replace(/=\r?\n/g, "")            // soft line break quoted-printable
+    .replace(/=3D/gi, "=")
+    .replace(/&amp;/gi, "&").replace(/&#x3D;|&#61;/gi, "=").replace(/&#x2F;|&#47;/gi, "/")
+    .replace(/^[<\["'(]+/, "").replace(/[>\]"').,;:!?]+$/, "")
+    .replace(/\s+/g, "");
+  for (let i = 0; i < 3; i++) {
+    let parsed: URL;
+    try { parsed = new URL(u); } catch { return null; }
+    // Desembrulha redirecionadores (Google, Outlook SafeLinks, etc.)
+    const inner = parsed.searchParams.get("q") || parsed.searchParams.get("url") || parsed.searchParams.get("u") || parsed.searchParams.get("target");
+    if (inner && /^https?:\/\//i.test(inner) && !/1doc/i.test(parsed.hostname)) { u = inner; continue; }
+    if (!/^https?:$/.test(parsed.protocol)) return null;
+    return parsed.toString();
+  }
+  return null;
+}
+
 function extrairLinkAcompanhar(corpo: string): string | null {
   if (!corpo) return null;
-  const texto = corpo.replace(/\r\n/g, "\n");
-  const urlRe = /https?:\/\/[^\s<>"')]+/i;
+  const texto = corpo.replace(/\r\n/g, "\n").replace(/=\n/g, "").replace(/=3D/gi, "=");
+  const candidatos: string[] = [];
 
-  // 1) URL imediatamente após "Acompanhar online" (mesmo se houver tags/quebras)
+  // 1) <a href="...">...Acompanhar online...</a>
+  const aRe = /<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let m: RegExpExecArray | null;
+  const anchors: { href: string; txt: string }[] = [];
+  while ((m = aRe.exec(texto))) anchors.push({ href: m[1], txt: m[2].replace(/<[^>]+>/g, " ") });
+  for (const a of anchors) if (/acompanhar/i.test(a.txt)) candidatos.push(a.href);
+
+  // 2) Texto: "Acompanhar online" seguido de URL (inclui formato <https://...> ou [https://...])
+  const urlRe = /https?:\/\/[^\s<>"'\]]+/gi;
   const idx = texto.search(/Acompanhar\s+online/i);
   if (idx >= 0) {
-    const trecho = texto.slice(idx, idx + 2000);
-    const m = trecho.match(urlRe);
-    if (m) return m[0].replace(/[).,;]+$/, "");
+    const trecho = texto.slice(idx, idx + 1500);
+    const us = trecho.match(urlRe) || [];
+    candidatos.push(...us.filter(x => /1doc/i.test(x)), ...us);
   }
 
-  // 2) Padrão href="...">Acompanhar online</a>
-  const mHref = texto.match(/href=["']([^"']+)["'][^>]*>\s*Acompanhar\s+online/i);
-  if (mHref?.[1]) return mHref[1];
+  // 3) Qualquer href/URL de 1doc
+  for (const a of anchors) if (/1doc/i.test(a.href)) candidatos.push(a.href);
+  candidatos.push(...(texto.match(urlRe) || []).filter(x => /1doc/i.test(x)));
 
-  // 3) Fallback: qualquer URL contendo 1doc
-  const m1doc = texto.match(/https?:\/\/[^\s<>"')]*1doc[^\s<>"')]*/i);
-  if (m1doc) return m1doc[0].replace(/[).,;]+$/, "");
-
+  for (const c of candidatos) {
+    const ok = limparUrl1doc(c);
+    if (ok && !/\.(png|jpe?g|gif|svg|css)(\?|$)/i.test(ok)) return ok;
+  }
   return null;
 }
 
@@ -917,7 +945,9 @@ async function _sincronizarImapContas(): Promise<{ contas: number; novos: number
             const remetente = parsed.from?.text ?? msg.envelope?.from?.[0]?.address ?? "";
             const destinatario = parsed.to && "text" in parsed.to ? (parsed.to as any).text : (conta.email ?? "");
             const assunto = parsed.subject ?? msg.envelope?.subject ?? "";
-            const corpo = (parsed.text || (parsed.html ? stripHtml(parsed.html) : "") || "").trim();
+            const htmlRaw = typeof parsed.html === "string" ? parsed.html : "";
+            const textoBase = (parsed.text || (htmlRaw ? stripHtml(htmlRaw) : "") || "").trim();
+            const corpo = htmlRaw ? `${textoBase}\n\n<!--HTML-->\n${htmlRaw}` : textoBase;
 
             const res = await ingerirEmail({
               account: conta, remetente, destinatario, assunto, corpo, externalId,
