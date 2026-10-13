@@ -201,3 +201,58 @@ export const excluirProtocolos = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { excluidos: count ?? 0 };
   });
+
+const CAMPOS_TEXTO: Record<string, string[]> = {
+  protocolos: ["assunto", "descricao", "solicitante", "endereco", "resolucao"],
+  protocolo_historico: ["valor_anterior", "valor_novo", "autor_nome"],
+  assuntos: ["nome", "grupo"],
+  secretarias: ["nome", "endereco"],
+  locais: ["nome"],
+  email_inbox_log: ["assunto", "corpo", "remetente"],
+  protocolos_antigos_conclusoes: ["resolucao"],
+  profiles: ["nome"],
+};
+
+/** Corrige acentos quebrados ("p�blica", "pÃºblica") nos dados já salvos. */
+export const corrigirAcentosDados = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { corrigirAcentos, temAcentoQuebrado } = await import("@/lib/corrigir-acentos");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const sb = supabaseAdmin as any;
+    const extra: string[] = [];
+    for (const t of ["assuntos", "secretarias", "locais"]) {
+      const { data } = await sb.from(t).select("nome").limit(5000);
+      (data ?? []).forEach((r: any) => r.nome && !temAcentoQuebrado(r.nome) && extra.push(r.nome));
+    }
+    const resultado: Record<string, number> = {};
+    let restantes = 0;
+    for (const [tabela, campos] of Object.entries(CAMPOS_TEXTO)) {
+      const filtro = campos.flatMap((c) => [`${c}.ilike.%\uFFFD%`, `${c}.ilike.%Ã%`]).join(",");
+      let corrigidos = 0;
+      for (let pagina = 0; pagina < 20; pagina++) {
+        const { data, error } = await sb.from(tabela).select(["id", ...campos].join(",")).or(filtro).range(pagina * 500, pagina * 500 + 499);
+        if (error) throw new Error(`${tabela}: ${error.message}`);
+        if (!data?.length) break;
+        for (const r of data) {
+          const patch: Record<string, string> = {};
+          for (const c of campos) {
+            const v = r[c];
+            if (typeof v === "string" && temAcentoQuebrado(v)) {
+              const novo = corrigirAcentos(v, extra);
+              if (novo !== v) patch[c] = novo;
+              if (temAcentoQuebrado(novo)) restantes++;
+            }
+          }
+          if (Object.keys(patch).length) {
+            const { error: e } = await sb.from(tabela).update(patch).eq("id", r.id);
+            if (!e) corrigidos++;
+          }
+        }
+        if (data.length < 500) break;
+      }
+      if (corrigidos) resultado[tabela] = corrigidos;
+    }
+    return { resultado, restantes };
+  });
