@@ -33,6 +33,8 @@ Sem Docker para o app: na raiz do projeto, copie `local-docker/.env.local` para 
 - **IA da Lovable** não funciona localmente: use Gemini ou Groq na tela de IA.
 - **Login Google** usa o serviço da Lovable; localmente use e-mail e senha.
 - **Gmail / coleta automática** precisam de internet e das suas credenciais; o agendamento (cron) não roda sozinho — chame os endpoints `/api/public/email-sync` com `Authorization: Bearer $CRON_SECRET`.
+- A coleta Gmail percorre as páginas da janela inicial e, quando o gateway oferece `historyId`, passa a buscar somente alterações desde o último cursor. Se o histórico expirar, reconstrói a janela desde a última sincronização bem-sucedida, com sobreposição de 15 minutos; contas legadas sem esse marcador fazem bootstrap de 2 dias (ou 30 dias se a última tentativa registrava falhas). O IMAP usa UID/UIDVALIDITY: na primeira coleta mantém o limite histórico de 20 mensagens recentes; depois busca apenas UIDs novos.
+- Mensagens com falha mantêm o registro original no histórico e podem ser tentadas de novo na sincronização seguinte. Se alguma mensagem falhar, o cursor não avança. Se o servidor IMAP trocar UIDVALIDITY, a conta pausa e exibe o motivo em **Último erro** em vez de avançar e arriscar perda/duplicação; revise o histórico antes de reconfigurar o cursor. A migration `003_email_sync_cursors.sql` adiciona os campos de cursor/diagnóstico e é aplicada pelo atualizador seguro da VPS.
 
 ## Parar
 ```bash

@@ -223,6 +223,7 @@ export type IngestInput = {
   assunto: string;
   corpo: string;
   externalId?: string;
+  existingLogId?: string;
 };
 
 export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; protocoloId?: string; numero?: string; logId?: string; error?: string }> {
@@ -231,34 +232,107 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
   const { corrigirAcentos } = await import("./corrigir-acentos");
   const assunto = corrigirAcentos(input.assunto ?? "");
   const corpo = corrigirAcentos(input.corpo ?? "");
+  const textoCompleto = [`De: ${remetente}`, `Para: ${destinatario}`, `Assunto: ${assunto}`, "", corpo].join("\n");
+  let logId = input.existingLogId;
 
   if (externalId) {
-    const { data: existente } = await supabaseAdmin
-      .from("email_inbox_log").select("id")
+    const { data: existente, error } = await supabaseAdmin
+      .from("email_inbox_log").select("id, status, protocolo_id")
       .eq("account_id", account.id).eq("external_id", externalId).maybeSingle();
-    if (existente) return { ok: true, logId: existente.id };
+    if (error) throw error;
+    if (existente?.protocolo_id || existente?.status === "processado") {
+      return { ok: true, logId: existente.id };
+    }
+    if (existente) logId = existente.id;
   }
 
-  const textoCompleto = [`De: ${remetente}`, `Para: ${destinatario}`, `Assunto: ${assunto}`, "", corpo].join("\n");
-
-  const { data: logRow, error: logErr } = await supabaseAdmin
-    .from("email_inbox_log")
-    .insert({
-      account_id: account.id, remetente, destinatario, assunto,
-      corpo: textoCompleto.slice(0, 20000), status: "pendente",
-      external_id: externalId ?? null,
-    })
-    .select("id").single();
-  if (logErr) throw logErr;
+  if (logId) {
+    const { error: logErr } = await supabaseAdmin.from("email_inbox_log")
+      .update({
+        account_id: account.id, remetente, destinatario, assunto,
+        corpo: textoCompleto.slice(0, 20000), status: "pendente", erro: null,
+        processado_em: null,
+        ai_provider: null,
+        external_id: externalId ?? null,
+      })
+      .eq("id", logId);
+    if (logErr) throw logErr;
+  } else {
+    const { data: logRow, error: logErr } = await supabaseAdmin
+      .from("email_inbox_log")
+      .insert({
+        account_id: account.id, remetente, destinatario, assunto,
+        corpo: textoCompleto.slice(0, 20000), status: "pendente",
+        external_id: externalId ?? null,
+      })
+      .select("id").single();
+    if (logErr) throw logErr;
+    logId = logRow.id;
+  }
 
   try {
     if (textoCompleto.trim().length < 10) throw new Error("Conteúdo vazio");
+
+    // Atualização/baixa reconhecível pelo número no assunto: não gasta uma
+    // chamada de IA para reclassificar um protocolo que já existe.
+    const numeroAssuntoRapido = extrairNumeroDoAssunto(assunto, corpo);
+    if (numeroAssuntoRapido) {
+      const { data: existente, error: errExistente } = await supabaseAdmin
+        .from("protocolos")
+        .select("id, numero, status")
+        .in("numero", normalizarNumero(numeroAssuntoRapido))
+        .maybeSingle();
+      if (errExistente) throw errExistente;
+      if (existente) {
+        const acao = detectarAcao(assunto, corpo);
+        const linkAcomp = extrairLinkAcompanhar(corpo);
+        const resumoEmail = [
+          `E-mail recebido em ${new Date().toLocaleString("pt-BR")}`,
+          `De: ${remetente}`,
+          `Assunto: ${assunto}`,
+          "",
+          corpo.slice(0, 4000),
+        ].join("\n");
+        if (acao === "conclusao" && existente.status !== "concluido") {
+          const { error } = await supabaseAdmin.from("protocolos")
+            .update({
+              status: "concluido",
+              data_conclusao: new Date().toISOString().slice(0, 10),
+              ...(linkAcomp ? { url: linkAcomp } : {}),
+            })
+            .eq("id", existente.id);
+          if (error) throw error;
+        } else if (linkAcomp) {
+          const { error } = await supabaseAdmin.from("protocolos")
+            .update({ url: linkAcomp }).eq("id", existente.id).is("url", null);
+          if (error) throw error;
+        }
+        const { error: errHist } = await supabaseAdmin.from("protocolo_historico").insert({
+          protocolo_id: existente.id,
+          campo: acao === "conclusao" ? "_baixa_email" : "_atualizacao_email",
+          valor_anterior: null,
+          valor_novo: resumoEmail.slice(0, 8000),
+          acao: acao === "conclusao" ? "baixa" : "atualizacao",
+          autor_nome: `E-mail · ${remetente}`.slice(0, 200),
+        });
+        if (errHist) throw errHist;
+        const { error: errLog } = await supabaseAdmin.from("email_inbox_log").update({
+          status: "processado", protocolo_id: existente.id,
+          processado_em: new Date().toISOString(),
+          erro: acao === "conclusao" ? "baixa registrada" : "atualização registrada",
+          ai_provider: null,
+        }).eq("id", logId!);
+        if (errLog) throw errLog;
+        return { ok: true, protocoloId: existente.id, numero: existente.numero, logId };
+      }
+    }
+
     const { extr, provider: aiProvider } = await extrairComIA(textoCompleto);
     // Marca imediatamente qual IA processou este e-mail (útil quando o
     // fluxo falhar mais adiante mas a extração já aconteceu).
     {
       const { error: errAi } = await supabaseAdmin.from("email_inbox_log")
-        .update({ ai_provider: aiProvider }).eq("id", logRow!.id);
+        .update({ ai_provider: aiProvider }).eq("id", logId!);
       if (errAi) console.error("[ingest] falha ao gravar ai_provider:", errAi);
     }
 
@@ -327,9 +401,9 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
           processado_em: new Date().toISOString(),
           erro: acao === "conclusao" ? "baixa registrada" : "atualização registrada",
           ai_provider: aiProvider,
-        }).eq("id", logRow!.id);
+        }).eq("id", logId!);
 
-        return { ok: true, protocoloId: existente.id, numero: existente.numero, logId: logRow!.id };
+        return { ok: true, protocoloId: existente.id, numero: existente.numero, logId };
       }
     }
 
@@ -457,8 +531,8 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
           processado_em: new Date().toISOString(),
           erro: "duplicado (mesmo número já existia)",
           ai_provider: aiProvider,
-        }).eq("id", logRow!.id);
-        return { ok: true, protocoloId: jaExiste.id, numero: jaExiste.numero, logId: logRow!.id };
+        }).eq("id", logId!);
+        return { ok: true, protocoloId: jaExiste.id, numero: jaExiste.numero, logId };
       }
     }
     const dataAbertura = extr.data_abertura || new Date().toISOString().slice(0, 10);
@@ -514,15 +588,15 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
       processado_em: new Date().toISOString(),
       erro: numeroGerado ? "número gerado (não encontrado no e-mail)" : null,
       ai_provider: aiProvider,
-    }).eq("id", logRow!.id);
+    }).eq("id", logId!);
 
-    return { ok: true, protocoloId: novo!.id, numero: novo!.numero, logId: logRow!.id };
+    return { ok: true, protocoloId: novo!.id, numero: novo!.numero, logId };
   } catch (e: any) {
     await supabaseAdmin.from("email_inbox_log").update({
       status: "erro", erro: String(e?.message ?? e).slice(0, 1000),
       processado_em: new Date().toISOString(),
-    }).eq("id", logRow!.id);
-    return { ok: false, error: String(e?.message ?? e), logId: logRow!.id };
+    }).eq("id", logId!);
+    return { ok: false, error: String(e?.message ?? e), logId };
   }
 }
 
@@ -584,8 +658,281 @@ function header(headers: any[], name: string): string {
   return h?.value ?? "";
 }
 
+class GmailApiError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+  }
+}
+
+async function gmailGet(path: string): Promise<any> {
+  const response = await fetch(`${GMAIL_GATEWAY}${path}`, { headers: gmailHeaders() });
+  if (!response.ok) {
+    throw new GmailApiError(response.status, `Gmail ${response.status}: ${(await response.text()).slice(0, 200)}`);
+  }
+  return response.json();
+}
+
+async function gmailProfileHistoryId(): Promise<string> {
+  const profile = await gmailGet("/users/me/profile");
+  if (typeof profile.historyId !== "string" || !profile.historyId) {
+    throw new Error("Gmail profile não retornou historyId");
+  }
+  return profile.historyId;
+}
+
+function gmailQueryRecuperacao(conta: any): string {
+  const sucessoAnterior = conta.ultima_sync_sucesso_em;
+  const instante = sucessoAnterior ? Date.parse(sucessoAnterior) : Number.NaN;
+  if (Number.isFinite(instante)) {
+    // Sobreposição de 15 minutos cobre indexação atrasada e é idempotente pelo external_id.
+    const depois = Math.max(0, Math.floor(instante / 1000) - 15 * 60);
+    return `in:inbox after:${depois}`;
+  }
+  return `in:inbox newer_than:${conta.ultima_sync_erros > 0 ? 30 : 2}d`;
+}
+
+async function listarIdsGmail(query: string): Promise<string[]> {
+  const ids: string[] = [];
+  let pageToken: string | undefined;
+  let pagesRead = 0;
+  do {
+    const params = new URLSearchParams({ q: query, maxResults: "500" });
+    if (pageToken) params.set("pageToken", pageToken);
+    const page = await gmailGet(`/users/me/messages?${params.toString()}`);
+    for (const message of page.messages ?? []) {
+      if (typeof message.id === "string" && message.id) ids.push(message.id);
+    }
+    pageToken = page.nextPageToken;
+    pagesRead++;
+    if (pageToken && pagesRead >= 50) throw new Error("Gmail excedeu 25.000 mensagens na sincronização; cursor não avançado");
+  } while (pageToken);
+  return [...new Set(ids)];
+}
+
+async function listarIdsGmailPendentes(supabaseAdmin: any, accountId: string): Promise<string[]> {
+  const { data, error } = await supabaseAdmin.from("email_inbox_log")
+    .select("external_id")
+    .eq("account_id", accountId)
+    .in("status", ["erro", "pendente"])
+    .is("protocolo_id", null)
+    .not("external_id", "is", null)
+    .order("processado_em", { ascending: true, nullsFirst: true })
+    .limit(100);
+  if (error) throw error;
+  return (data ?? []).map((row: any) => row.external_id)
+    .filter((id: unknown): id is string => typeof id === "string" && !!id);
+}
+
+async function listarHistoricoGmail(startHistoryId: string): Promise<{ ids: string[]; historyId: string }> {
+  const ids = new Set<string>();
+  let pageToken: string | undefined;
+  let pagesRead = 0;
+  let historyId = startHistoryId;
+  do {
+    const params = new URLSearchParams({ startHistoryId, maxResults: "500" });
+    if (pageToken) params.set("pageToken", pageToken);
+    const page = await gmailGet(`/users/me/history?${params.toString()}`);
+    for (const event of page.history ?? []) {
+      for (const added of event.messagesAdded ?? []) {
+        if (added.message?.id) ids.add(added.message.id);
+      }
+      for (const added of event.labelsAdded ?? []) {
+        if (added.labelIds?.includes("INBOX") && added.message?.id) ids.add(added.message.id);
+      }
+    }
+    if (typeof page.historyId === "string" && page.historyId) historyId = page.historyId;
+    pageToken = page.nextPageToken;
+    pagesRead++;
+    if (pageToken && pagesRead >= 100) throw new Error("Gmail excedeu 50.000 eventos de histórico; cursor não avançado");
+  } while (pageToken);
+  return { ids: [...ids], historyId };
+}
+
+async function processarIdsGmail(
+  supabaseAdmin: any,
+  conta: any,
+  ids: string[],
+  stats: { novos: number; erros: number; processados: number; detalhes: any[] },
+): Promise<boolean> {
+  let sucesso = true;
+  for (const id of ids) {
+    const { data: logExistente, error: errLog } = await supabaseAdmin.from("email_inbox_log")
+      .select("id, protocolo_id, status")
+      .eq("account_id", conta.id).eq("external_id", id).maybeSingle();
+    if (errLog) {
+      stats.erros++;
+      sucesso = false;
+      stats.detalhes.push({ id, error: errLog.message });
+      continue;
+    }
+    if (logExistente?.protocolo_id || logExistente?.status === "processado") continue;
+
+    try {
+      const message = await gmailGet(`/users/me/messages/${encodeURIComponent(id)}?format=full`);
+      if (!message.labelIds?.includes("INBOX")) continue;
+      const hdrs = message.payload?.headers ?? [];
+      const res = await ingerirEmail({
+        account: conta,
+        remetente: header(hdrs, "From"),
+        destinatario: header(hdrs, "To"),
+        assunto: header(hdrs, "Subject"),
+        corpo: extractBody(message.payload) || message.snippet || "",
+        externalId: id,
+        existingLogId: logExistente?.id,
+      });
+      stats.processados++;
+      if (res.ok && res.protocoloId) stats.novos++;
+      else if (!res.ok) {
+        stats.erros++;
+        sucesso = false;
+      }
+      stats.detalhes.push({ id, ok: res.ok, numero: res.numero, error: res.error });
+    } catch (error) {
+      // Mensagem removida entre o histórico e o download não deve travar o cursor.
+      if (error instanceof GmailApiError && error.status === 404) {
+        if (logExistente?.id) {
+          const { error: errEncerrar } = await supabaseAdmin.from("email_inbox_log").update({
+            status: "processado",
+            erro: "Mensagem removida do Gmail antes da leitura; sincronização encerrada.",
+            processado_em: new Date().toISOString(),
+          }).eq("id", logExistente.id);
+          if (errEncerrar) {
+            stats.erros++;
+            sucesso = false;
+            stats.detalhes.push({ id, error: errEncerrar.message });
+          }
+        }
+        continue;
+      }
+      stats.erros++;
+      sucesso = false;
+      if (logExistente?.id) {
+        await supabaseAdmin.from("email_inbox_log")
+          .update({ processado_em: new Date().toISOString() }).eq("id", logExistente.id);
+      }
+      stats.detalhes.push({ id, error: String((error as Error)?.message ?? error) });
+    }
+  }
+  return sucesso;
+}
+
 export async function sincronizarGmailContas(): Promise<{ contas: number; novos: number; erros: number; detalhes: any[] }> {
-  return await sincronizarGmailContasComJanela("newer_than:2d", 20, 1);
+  return await sincronizarGmailIncremental();
+}
+
+async function sincronizarGmailIncremental(): Promise<{ contas: number; novos: number; erros: number; detalhes: any[] }> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: contas, error: contasError } = await supabaseAdmin
+    .from("email_inbox_accounts").select("*").eq("ativo", true).eq("provider", "gmail");
+  if (contasError) throw contasError;
+
+  let novos = 0, erros = 0;
+  const detalhes: any[] = [];
+  for (const conta of contas ?? []) {
+    const stats = { novos: 0, erros: 0, processados: 0, detalhes: [] as any[] };
+    let cursor: string | null = conta.gmail_history_id ?? null;
+    let cursorParaSalvar: string | null = null;
+    let limparCursor = false;
+    let processouTudo = true;
+
+    try {
+      if (cursor) {
+        try {
+          const historico = await listarHistoricoGmail(cursor);
+          const idsRetry = await listarIdsGmailPendentes(supabaseAdmin, conta.id);
+          processouTudo = await processarIdsGmail(supabaseAdmin, conta, [...new Set([...historico.ids, ...idsRetry])], stats);
+          cursorParaSalvar = historico.historyId;
+        } catch (error) {
+          if (!(error instanceof GmailApiError && error.status === 404)) throw error;
+          // historyId expirado: refaz a janela desde o último sucesso e inicia novo cursor.
+          cursor = null;
+          limparCursor = true;
+        }
+      }
+
+      if (!cursor) {
+        let baseline: string | null = null;
+        try {
+          baseline = await gmailProfileHistoryId();
+        } catch (error) {
+          // Alguns gateways podem não expor profile/history. A coleta continua
+          // pela janela de recuperação paginada, sem salvar cursor inseguro.
+          stats.detalhes.push({ aviso: `Gmail history indisponível; usando janela paginada: ${String((error as Error)?.message ?? error)}` });
+        }
+
+        const [idsRecentes, idsRetry] = await Promise.all([
+          listarIdsGmail(gmailQueryRecuperacao(conta)),
+          listarIdsGmailPendentes(supabaseAdmin, conta.id),
+        ]);
+        const idsRecuperacao = [...new Set([...idsRecentes, ...idsRetry])];
+        processouTudo = (await processarIdsGmail(supabaseAdmin, conta, idsRecuperacao, stats)) && processouTudo;
+
+        if (baseline) {
+          try {
+            const historico = await listarHistoricoGmail(baseline);
+            const idsJaProcessados = new Set(idsRecuperacao);
+            const idsDuranteBootstrap = historico.ids.filter((id) => !idsJaProcessados.has(id));
+            processouTudo = (await processarIdsGmail(supabaseAdmin, conta, idsDuranteBootstrap, stats)) && processouTudo;
+            cursorParaSalvar = historico.historyId;
+          } catch (error) {
+            if (!(error instanceof GmailApiError && error.status === 404)) throw error;
+            limparCursor = true;
+            cursorParaSalvar = null;
+            stats.detalhes.push({ aviso: "Gmail history indisponível após carga inicial; a próxima coleta repetirá a janela de recuperação." });
+          }
+        }
+      }
+
+      const atualizacao: {
+        ultima_sincronizacao: string;
+        ultima_sync_erro_detalhe: string | null;
+        ultima_sync_novos: number;
+        ultima_sync_erros: number;
+        ultima_sync_processados: number;
+        ultima_sync_sucesso_em?: string;
+        gmail_history_id?: string | null;
+      } = {
+        ultima_sincronizacao: new Date().toISOString(),
+        ultima_sync_erro_detalhe: stats.erros > 0
+          ? (stats.detalhes.find((item: any) => item.error)?.error ?? `${stats.erros} falha(s) na sincronização Gmail`)
+          : null,
+        ultima_sync_novos: stats.novos,
+        ultima_sync_erros: stats.erros,
+        ultima_sync_processados: stats.processados,
+      };
+      if (processouTudo && stats.erros === 0) atualizacao.ultima_sync_sucesso_em = new Date().toISOString();
+      if (processouTudo && cursorParaSalvar) atualizacao.gmail_history_id = cursorParaSalvar;
+      else if (limparCursor) atualizacao.gmail_history_id = null;
+      let queryAtualizacao = supabaseAdmin.from("email_inbox_accounts").update(atualizacao).eq("id", conta.id);
+      const alteraCursor = Object.prototype.hasOwnProperty.call(atualizacao, "gmail_history_id");
+      if (alteraCursor) {
+        queryAtualizacao = conta.gmail_history_id
+          ? queryAtualizacao.eq("gmail_history_id", conta.gmail_history_id)
+          : queryAtualizacao.is("gmail_history_id", null);
+      }
+      const { data: contaAtualizada, error: errAtualizacao } = await queryAtualizacao.select("id").maybeSingle();
+      if (errAtualizacao) throw errAtualizacao;
+      if (alteraCursor && !contaAtualizada) {
+        stats.detalhes.push({ aviso: "Cursor Gmail alterado por outra execução; mantive o cursor mais recente." });
+      }
+    } catch (error) {
+      stats.erros++;
+      const mensagemErro = String((error as Error)?.message ?? error).slice(0, 1000);
+      detalhes.push({ conta: conta.email, error: mensagemErro });
+      await supabaseAdmin.from("email_inbox_accounts").update({
+        ultima_sincronizacao: new Date().toISOString(),
+        ultima_sync_novos: stats.novos,
+        ultima_sync_erros: stats.erros,
+        ultima_sync_processados: stats.processados,
+        ultima_sync_erro_detalhe: mensagemErro,
+      }).eq("id", conta.id);
+    }
+
+    novos += stats.novos;
+    erros += stats.erros;
+    detalhes.push(...stats.detalhes.map((item) => ({ conta: conta.email, ...item })));
+  }
+  return { contas: contas?.length ?? 0, novos, erros, detalhes };
 }
 
 export async function ressincronizarGmailContas(dias = 30): Promise<{ contas: number; novos: number; erros: number; detalhes: any[] }> {
@@ -633,12 +980,9 @@ export async function reverificarEmailsSemProtocolo(dias = 60): Promise<{ contas
           .select("id, protocolo_id, status")
           .eq("account_id", conta.id).eq("external_id", m.id).maybeSingle();
 
-        // Se já gerou protocolo, pula. Caso contrário, apaga log antigo para
-        // permitir nova tentativa pelo ingerirEmail (que cria novo log).
-        if (logExistente?.protocolo_id) continue;
-        if (logExistente?.id) {
-          await supabaseAdmin.from("email_inbox_log").delete().eq("id", logExistente.id);
-        }
+        // Mantém o log processado; um registro com falha será reaproveitado
+        // por ingerirEmail sem perder a trilha de auditoria.
+        if (logExistente?.protocolo_id || logExistente?.status === "processado") continue;
 
         const mr = await fetch(`${GMAIL_GATEWAY}/users/me/messages/${m.id}?format=full`, { headers: gmailHeaders() });
         if (!mr.ok) { erros++; continue; }
@@ -652,6 +996,7 @@ export async function reverificarEmailsSemProtocolo(dias = 60): Promise<{ contas
         const res = await ingerirEmail({
           account: conta, remetente: from, destinatario: to,
           assunto: subject, corpo: body, externalId: m.id,
+          existingLogId: logExistente?.id,
         });
         reprocessados++;
         if (res.ok && res.protocoloId) novos++;
@@ -768,12 +1113,10 @@ export async function reprocessarEmailLog(logId: string): Promise<{ ok: boolean;
   const subject = header(hdrs, "Subject");
   const body = extractBody(mj.payload) || mj.snippet || "";
 
-  // Remove log antigo para permitir novo fluxo em ingerirEmail
-  await supabaseAdmin.from("email_inbox_log").delete().eq("id", log.id);
-
   const res = await ingerirEmail({
     account: conta, remetente: from, destinatario: to,
     assunto: subject, corpo: body, externalId,
+    existingLogId: log.id,
   });
   return res;
 }
@@ -892,6 +1235,7 @@ async function _sincronizarImapContas(): Promise<{ contas: number; novos: number
 
   for (const conta of contas ?? []) {
     let contaNovos = 0, contaErros = 0, contaProc = 0;
+    let contaErroDetalhe: string | null = null;
     let client: any = null;
     try {
       if (!conta.imap_host || !conta.imap_user || !conta.imap_password) {
@@ -907,27 +1251,86 @@ async function _sincronizarImapContas(): Promise<{ contas: number; novos: number
       await client.connect();
       const lock = await client.getMailboxLock("INBOX");
       try {
-        // Busca as últimas 20 mensagens (mais recentes primeiro)
-        const status = await client.status("INBOX", { messages: true });
+        const status = await client.status("INBOX", { messages: true, uidNext: true, uidValidity: true });
         const total = status.messages ?? 0;
-        if (total === 0) {
-          await supabaseAdmin.from("email_inbox_accounts").update({
-            ultima_sincronizacao: new Date().toISOString(),
-            ultima_sync_novos: 0, ultima_sync_erros: 0, ultima_sync_processados: 0,
-          }).eq("id", conta.id);
-          continue;
+        const uidValidity = String(status.uidValidity ?? "");
+        const uidNext = Number(status.uidNext ?? 0);
+        if (uidValidity && conta.imap_uid_validity && conta.imap_uid_validity !== uidValidity) {
+          throw new Error(`UIDVALIDITY IMAP mudou de ${conta.imap_uid_validity} para ${uidValidity}. Cursor mantido; sincronização pausada para evitar perda ou duplicação. Revisão do histórico da conta é necessária antes de reconfigurar o cursor.`);
         }
-        const from = Math.max(1, total - 19);
-        const range = `${from}:${total}`;
+        const cursorValido = !!uidValidity && conta.imap_uid_validity === uidValidity
+          && conta.imap_last_uid !== null && conta.imap_last_uid !== undefined
+          && Number.isFinite(Number(conta.imap_last_uid));
+        const ultimoUid = cursorValido ? Number(conta.imap_last_uid) : 0;
+        let uidsNovos: number[] | null = null;
+        let rangeSequencia: string | null = null;
+        if (cursorValido) {
+          if (uidNext > ultimoUid + 1) {
+            const encontrados = await client.search({ uid: `${ultimoUid + 1}:${uidNext - 1}` }, { uid: true });
+            // Processa um lote limitado por execução; UIDs restantes continuam
+            // elegíveis na próxima coleta depois que este cursor for gravado.
+            uidsNovos = Array.isArray(encontrados) ? encontrados.slice(0, 500) : [];
+          } else {
+            uidsNovos = [];
+          }
+        } else if (total > 0) {
+          // Primeira coleta ou UIDVALIDITY indisponível: mantém o limite
+          // anterior de importar apenas as 20 mensagens mais recentes.
+          rangeSequencia = `${Math.max(1, total - 19)}:${total}`;
+        }
 
-        for await (const msg of client.fetch(range, { uid: true, envelope: true, source: true })) {
-          const externalId = `uid:${msg.uid}`;
-          const { data: existe } = await supabaseAdmin.from("email_inbox_log")
-            .select("id").eq("account_id", conta.id).eq("external_id", externalId).maybeSingle();
-          if (existe) continue;
+        let uidProcessado = ultimoUid;
+        let podeAvancarCursor = true;
+        const mensagens = uidsNovos
+          ? client.fetch(uidsNovos, { uid: true, envelope: true, source: true }, { uid: true })
+          : rangeSequencia
+            ? client.fetch(rangeSequencia, { uid: true, envelope: true, source: true })
+            : null;
+        if (mensagens) for await (const msg of mensagens) {
+          const externalId = uidValidity ? `uid:${uidValidity}:${msg.uid}` : `uid:${msg.uid}`;
+          let parsedCache: any = null;
+          let { data: existe } = await supabaseAdmin.from("email_inbox_log")
+            .select("id, protocolo_id, status").eq("account_id", conta.id).eq("external_id", externalId).maybeSingle();
+          // Compatibilidade com logs criados por versões anteriores, que não
+          // incluíam UIDVALIDITY na chave da mensagem.
+          if (!existe && uidValidity && (!conta.imap_uid_validity || conta.imap_uid_validity === uidValidity)) {
+            const legacy = await supabaseAdmin.from("email_inbox_log")
+              .select("id, protocolo_id, status, remetente, destinatario, assunto, corpo").eq("account_id", conta.id)
+              .eq("external_id", `uid:${msg.uid}`).maybeSingle();
+            if (legacy.error) throw legacy.error;
+            if (legacy.data) {
+              try {
+                parsedCache = await simpleParser(msg.source as Buffer);
+                const remetenteLegado = parsedCache.from?.text ?? msg.envelope?.from?.[0]?.address ?? "";
+                const destinatarioLegado = parsedCache.to && "text" in parsedCache.to ? (parsedCache.to as any).text : (conta.email ?? "");
+                const assuntoLegado = parsedCache.subject ?? msg.envelope?.subject ?? "";
+                const htmlLegado = typeof parsedCache.html === "string" ? parsedCache.html : "";
+                const textoLegado = (parsedCache.text || (htmlLegado ? stripHtml(htmlLegado) : "") || "").trim();
+                const corpoLegado = htmlLegado ? `${textoLegado}\n\n<!--HTML-->\n${htmlLegado}` : textoLegado;
+                const { corrigirAcentos } = await import("./corrigir-acentos");
+                const corpoLogAtual = [
+                  `De: ${remetenteLegado}`,
+                  `Para: ${destinatarioLegado}`,
+                  `Assunto: ${corrigirAcentos(assuntoLegado)}`,
+                  "",
+                  corrigirAcentos(corpoLegado),
+                ].join("\n").slice(0, 20000);
+                if (legacy.data.corpo === corpoLogAtual) existe = legacy.data;
+              } catch (e: any) {
+                erros++; contaErros++; podeAvancarCursor = false;
+                contaErroDetalhe = String(e?.message ?? e);
+                detalhes.push({ uid: msg.uid, error: contaErroDetalhe });
+                continue;
+              }
+            }
+          }
+          if (existe?.protocolo_id || existe?.status === "processado") {
+            uidProcessado = Math.max(uidProcessado, Number(msg.uid));
+            continue;
+          }
 
           try {
-            const parsed = await simpleParser(msg.source as Buffer);
+            const parsed = parsedCache ?? await simpleParser(msg.source as Buffer);
             const remetente = parsed.from?.text ?? msg.envelope?.from?.[0]?.address ?? "";
             const destinatario = parsed.to && "text" in parsed.to ? (parsed.to as any).text : (conta.email ?? "");
             const assunto = parsed.subject ?? msg.envelope?.subject ?? "";
@@ -937,15 +1340,35 @@ async function _sincronizarImapContas(): Promise<{ contas: number; novos: number
 
             const res = await ingerirEmail({
               account: conta, remetente, destinatario, assunto, corpo, externalId,
+              existingLogId: existe?.id,
             });
             contaProc++;
             if (res.ok && res.protocoloId) { novos++; contaNovos++; }
-            else if (!res.ok) { erros++; contaErros++; }
+            else if (!res.ok) {
+              erros++; contaErros++; podeAvancarCursor = false;
+              contaErroDetalhe = res.error ?? "Falha ao ingerir mensagem IMAP";
+            }
+            if (res.ok) uidProcessado = Math.max(uidProcessado, Number(msg.uid));
             detalhes.push({ uid: msg.uid, subject: assunto, ok: res.ok, numero: res.numero, error: res.error });
           } catch (e: any) {
-            erros++; contaErros++;
-            detalhes.push({ uid: msg.uid, error: String(e?.message ?? e) });
+            erros++; contaErros++; podeAvancarCursor = false;
+            contaErroDetalhe = String(e?.message ?? e);
+            detalhes.push({ uid: msg.uid, error: contaErroDetalhe });
           }
+        }
+        if (uidValidity && Number.isFinite(uidProcessado) && podeAvancarCursor) {
+          let queryCursor = supabaseAdmin.from("email_inbox_accounts").update({
+            imap_uid_validity: uidValidity,
+            imap_last_uid: uidProcessado,
+          }).eq("id", conta.id);
+          queryCursor = conta.imap_uid_validity
+            ? queryCursor.eq("imap_uid_validity", conta.imap_uid_validity)
+            : queryCursor.is("imap_uid_validity", null);
+          queryCursor = conta.imap_last_uid !== null && conta.imap_last_uid !== undefined
+            ? queryCursor.eq("imap_last_uid", conta.imap_last_uid)
+            : queryCursor.is("imap_last_uid", null);
+          const { error: errCursor } = await queryCursor.select("id").maybeSingle();
+          if (errCursor) throw errCursor;
         }
       } finally {
         lock.release();
@@ -956,10 +1379,19 @@ async function _sincronizarImapContas(): Promise<{ contas: number; novos: number
         ultima_sync_novos: contaNovos,
         ultima_sync_erros: contaErros,
         ultima_sync_processados: contaProc,
+        ultima_sync_sucesso_em: contaErros === 0 ? new Date().toISOString() : undefined,
+        ultima_sync_erro_detalhe: contaErroDetalhe,
       }).eq("id", conta.id);
     } catch (e: any) {
       erros++;
-      detalhes.push({ conta: conta.email, error: String(e?.message ?? e) });
+      contaErroDetalhe = String(e?.message ?? e).slice(0, 1000);
+      detalhes.push({ conta: conta.email, error: contaErroDetalhe });
+      await supabaseAdmin.from("email_inbox_accounts").update({
+        ultima_sync_novos: contaNovos,
+        ultima_sync_erros: Math.max(contaErros, 1),
+        ultima_sync_processados: contaProc,
+        ultima_sync_erro_detalhe: contaErroDetalhe,
+      }).eq("id", conta.id);
     } finally {
       try { await client?.logout(); } catch {}
     }
