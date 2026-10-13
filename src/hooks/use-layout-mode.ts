@@ -19,7 +19,10 @@ export function useLayoutMode(): [LayoutMode, (mode: LayoutMode) => void] {
   useEffect(() => {
     setMode(getInitial());
     const onStorage = (e: StorageEvent) => {
-      if (e.key === KEY && (e.newValue === "sidebar" || e.newValue === "topbar" || e.newValue === "workspace")) {
+      if (
+        e.key === KEY &&
+        (e.newValue === "sidebar" || e.newValue === "topbar" || e.newValue === "workspace")
+      ) {
         setMode(e.newValue);
       }
     };

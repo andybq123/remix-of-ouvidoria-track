@@ -239,7 +239,13 @@ function AuthLayout() {
 
 type NavItem = { to: string; label: string; icon: LucideIcon };
 
-function LayoutSelector({ mode, onChange }: { mode: LayoutMode; onChange: (mode: LayoutMode) => void }) {
+function LayoutSelector({
+  mode,
+  onChange,
+}: {
+  mode: LayoutMode;
+  onChange: (mode: LayoutMode) => void;
+}) {
   const ModeIcon = mode === "topbar" ? PanelTop : mode === "sidebar" ? PanelLeft : LayoutDashboard;
   const options: { mode: LayoutMode; label: string; Icon: LucideIcon }[] = [
     { mode: "topbar", label: "Navegação superior", Icon: PanelTop },
@@ -260,7 +266,9 @@ function LayoutSelector({ mode, onChange }: { mode: LayoutMode; onChange: (mode:
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Interface do sistema</div>
+        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+          Interface do sistema
+        </div>
         {options.map(({ mode: optionMode, label, Icon }) => (
           <DropdownMenuItem
             key={optionMode}
@@ -297,13 +305,13 @@ function WorkspaceLayout({
   layoutSelector: ReactNode;
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const currentPage = [...nav, ...configItems].find(item => pathname.startsWith(item.to));
+  const currentPage = [...nav, ...configItems].find((item) => pathname.startsWith(item.to));
   const title = currentPage?.label ?? "Painel de gestão";
   const initials = displayName
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map(part => part[0]?.toUpperCase())
+    .map((part) => part[0]?.toUpperCase())
     .join("");
 
   return (
@@ -323,14 +331,18 @@ function WorkspaceLayout({
               <img src={brusqueLogo} alt="Brasão de Brusque" className="h-10 w-10 object-contain" />
               <div className="min-w-0">
                 <div className="truncate text-sm font-bold">Ouvidoria de Brusque</div>
-                <div className="truncate text-xs text-muted-foreground">Controladoria do Município</div>
+                <div className="truncate text-xs text-muted-foreground">
+                  Controladoria do Município
+                </div>
               </div>
-              <span className="workspace-brand-mark" aria-hidden="true">S</span>
+              <span className="workspace-brand-mark" aria-hidden="true">
+                S
+              </span>
             </div>
 
             <nav aria-label="Navegação principal" className="workspace-nav">
               <div className="workspace-nav-heading">GESTÃO</div>
-              {nav.map(item => (
+              {nav.map((item) => (
                 <WorkspaceNavLink
                   key={item.to}
                   item={item}
@@ -340,8 +352,10 @@ function WorkspaceLayout({
               ))}
               {configItems.length > 0 && (
                 <>
-                  <div className="workspace-nav-heading workspace-nav-heading-spaced">ADMINISTRAÇÃO</div>
-                  {configItems.map(item => (
+                  <div className="workspace-nav-heading workspace-nav-heading-spaced">
+                    ADMINISTRAÇÃO
+                  </div>
+                  {configItems.map((item) => (
                     <WorkspaceNavLink
                       key={item.to}
                       item={item}
@@ -354,7 +368,9 @@ function WorkspaceLayout({
             </nav>
 
             <div className="workspace-account">
-              <div className="workspace-avatar" aria-hidden="true">{initials || "U"}</div>
+              <div className="workspace-avatar" aria-hidden="true">
+                {initials || "U"}
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{displayName}</div>
                 <div className="text-xs text-muted-foreground">Sessão ativa</div>
@@ -394,7 +410,12 @@ function WorkspaceLayout({
                 <NotificationBell />
                 <ThemeToggle />
                 {layoutSelector}
-                <Button variant="ghost" size="sm" onClick={() => void handleLogout()} className="lg:hidden">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void handleLogout()}
+                  className="lg:hidden"
+                >
                   <LogOut className="h-4 w-4" />
                 </Button>
               </div>
@@ -403,7 +424,9 @@ function WorkspaceLayout({
             <main className="workspace-main">
               <div className="workspace-page-intro">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Controle SETA</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                    Controle SETA
+                  </div>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Acompanhe e gerencie as manifestações com clareza e agilidade.
                   </p>
