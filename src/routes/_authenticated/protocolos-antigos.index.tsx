@@ -123,7 +123,7 @@ function ImportacaoControls() {
       <div className="flex gap-2">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button size="sm" disabled={loading !== null}>
+            <Button size="sm" disabled={loading !== null || ALL.length === 0}>
               {loading === "import" ? "Importando..." : "Importar para protocolos"}
             </Button>
           </AlertDialogTrigger>
@@ -347,6 +347,7 @@ function Dashboard() {
           </div>
           <ImportacaoControls />
         </div>
+        {ALL.length === 0 && <p className="mt-3 rounded-md border bg-muted/40 p-3 text-sm">Não há planilhas antigas embutidas nesta versão. Para carregar seus dados, use Configurações → Backup e importe seu arquivo. Os registros importados aparecerão em Protocolos e Relatórios.</p>}
       </div>
 
       <section className="grid grid-cols-3 gap-3">

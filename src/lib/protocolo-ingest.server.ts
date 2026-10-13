@@ -2,6 +2,7 @@ import { urlValida1doc } from "./url-1doc";
 import { PROTOCOLO_EXTRACT_SYSTEM, normalizarExtracao, sanitizarTextoProtocolo } from "@/lib/protocolo-extract.shared";
 import { gerarNumeroProtocolo } from "@/lib/prazo";
 import { extrairPedidoEsic, acaoNotificacaoEsic } from "./esic";
+import { exigirIngestaoAtiva } from "./import-maintenance.server";
 
 function norm(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -228,6 +229,7 @@ export type IngestInput = {
 };
 
 export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; protocoloId?: string; numero?: string; logId?: string; error?: string }> {
+  exigirIngestaoAtiva();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { account, remetente, destinatario, externalId } = input;
   const { corrigirAcentos } = await import("./corrigir-acentos");
@@ -836,6 +838,7 @@ async function processarIdsGmail(
 }
 
 export async function sincronizarGmailContas(): Promise<{ contas: number; novos: number; erros: number; detalhes: any[] }> {
+  exigirIngestaoAtiva();
   return await sincronizarGmailIncremental();
 }
 
@@ -955,6 +958,7 @@ async function sincronizarGmailIncremental(): Promise<{ contas: number; novos: n
 }
 
 export async function ressincronizarGmailContas(dias = 30): Promise<{ contas: number; novos: number; erros: number; detalhes: any[] }> {
+  exigirIngestaoAtiva();
   return await sincronizarGmailContasComJanela(`newer_than:${dias}d`, 100, 20);
 }
 
@@ -965,6 +969,7 @@ export async function ressincronizarGmailContas(dias = 30): Promise<{ contas: nu
  * recuperar ouvidorias que ficaram presas por falha temporária na IA, etc.
  */
 export async function reverificarEmailsSemProtocolo(dias = 60): Promise<{ contas: number; reprocessados: number; novos: number; erros: number; detalhes: any[] }> {
+  exigirIngestaoAtiva();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const q = `newer_than:${Math.min(Math.max(dias, 1), 180)}d`;
 
@@ -1106,6 +1111,7 @@ async function sincronizarGmailContasComJanela(q: string, pageSize: number, maxP
 // ============ IMAP (senha de app) ============
 
 export async function reprocessarEmailLog(logId: string): Promise<{ ok: boolean; protocoloId?: string; numero?: string; error?: string }> {
+  exigirIngestaoAtiva();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: log, error: logErr } = await supabaseAdmin
     .from("email_inbox_log")
@@ -1141,6 +1147,7 @@ export async function reprocessarEmailLog(logId: string): Promise<{ ok: boolean;
 }
 
 export async function sincronizarImapContas(): Promise<{ contas: number; novos: number; erros: number; detalhes: any[] }> {
+  exigirIngestaoAtiva();
   return _sincronizarImapContas();
 }
 
@@ -1161,6 +1168,7 @@ export async function backfillUrl1DocViaGmail(dias = 180): Promise<{
   sem_protocolo: number;
   erros: number;
 }> {
+  exigirIngestaoAtiva();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const q = `newer_than:${Math.min(Math.max(dias, 1), 365)}d`;
 

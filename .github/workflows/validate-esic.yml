@@ -33,6 +33,12 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-16
       - name: Testar migration, triagem, prorrogação e concorrência
         run: bash tests/esic/run.sh
+      - name: Testar limpeza restrita, rollback e importação
+        run: bash tests/limpeza/run.sh
+      - name: Validar sintaxe dos comandos de manutenção
+        run: bash -n limpar_para_importacao.sh && bash -n retomar_ingestao.sh && node --check local-docker/manutencao/conferir-banco.mjs && node --check local-docker/manutencao/conferir-retomada.mjs
+      - name: Conferir migrations VPS e Supabase equivalentes
+        run: cmp local-docker/atualizacoes-banco/006_esic_importacao_backup.sql local-docker/supabase/migrations/20261013160000_esic_importacao_backup.sql
       - name: Build no mesmo preset da VPS
         env:
           NITRO_PRESET: node-server

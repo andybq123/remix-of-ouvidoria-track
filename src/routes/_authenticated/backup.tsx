@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { invalidateProtocoloCaches } from "@/hooks/use-protocolos-realtime";
 import { zipSync, unzipSync, strToU8, strFromU8 } from "fflate";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +18,7 @@ import {
 } from "@/lib/backup-config";
 import {
   backupExportarTabela, backupExportarUsuarios, backupImportarTabela, backupImportarUsuarios,
+  backupEstadoImportacao,
 } from "@/lib/backup.functions";
 
 export const Route = createFileRoute("/_authenticated/backup")({
@@ -76,6 +79,13 @@ function BackupPage() {
   const exportarUsuarios = useServerFn(backupExportarUsuarios);
   const importarTabela = useServerFn(backupImportarTabela);
   const importarUsuarios = useServerFn(backupImportarUsuarios);
+  const estadoImportacao = useServerFn(backupEstadoImportacao);
+  const qc = useQueryClient();
+  const { data: manutencao } = useQuery({
+    queryKey: ["backup-estado-importacao"],
+    queryFn: () => estadoImportacao(),
+    enabled: !!isAdmin,
+  });
 
   const [selExp, setSelExp] = useState<Record<string, boolean>>(todosGrupos);
   const [selImp, setSelImp] = useState<Record<string, boolean>>(todosGrupos);
@@ -130,7 +140,9 @@ function BackupPage() {
       const a = lerZip(new Uint8Array(await f.arrayBuffer()));
       if (!Object.keys(a.tabelas).length) throw new Error("Nenhum dado reconhecido no arquivo.");
       setArquivo(a); setNomeArquivo(f.name);
-      setSelImp(Object.fromEntries(BACKUP_GRUPOS.map((g) => [g.id, g.tabelas.some((t) => a.tabelas[t]?.length)])));
+      setSelImp(Object.fromEntries(BACKUP_GRUPOS.map((g) => [g.id,
+        (!manutencao?.ingestaoPausada || g.id === "protocolos") && g.tabelas.some((t) => a.tabelas[t]?.length),
+      ])));
     } catch (e: any) {
       toast.error(`Arquivo inválido: ${e.message}`);
       setArquivo(null);
@@ -143,6 +155,9 @@ function BackupPage() {
     if (!arquivo) return;
     const grupos = BACKUP_GRUPOS.filter((g) => selImp[g.id]);
     if (!grupos.length) return toast.error("Selecione pelo menos um item.");
+    if (manutencao?.ingestaoPausada && grupos.some(g => ["emails", "coletas", "ia"].includes(g.id))) {
+      return toast.error("Durante esta importação, logs/coletas/IA devem permanecer limpos. Configure IA manualmente depois.");
+    }
     if (!confirm("Os registros do arquivo serão gravados no sistema (os que já existem serão atualizados). Continuar?")) return;
     const tabelas = BACKUP_TABELAS.filter((t) => grupos.some((g) => g.tabelas.includes(t)) && arquivo.tabelas[t]?.length);
     const total = tabelas.reduce((s, t) => s + (arquivo.tabelas[t]?.length ?? 0), 0) || 1;
@@ -170,6 +185,7 @@ function BackupPage() {
         }
         resumo.push(`${t}: ${gravados}`);
       }
+      invalidateProtocoloCaches(qc);
       toast.success("Importação concluída", { description: resumo.join(" • "), duration: 15000 });
       if (arquivo.origem === "csv" && grupos.some((g) => g.usuarios)) {
         toast.info("Esse backup não tinha senhas: defina uma nova senha para cada usuário na tela Usuários.", { duration: 15000 });
@@ -192,7 +208,8 @@ function BackupPage() {
     <div className="grid gap-3 sm:grid-cols-2">
       {BACKUP_GRUPOS.map((g) => {
         const n = contar?.(g.tabelas, g.usuarios);
-        const desabilitado = contar ? !n : false;
+        const bloqueado = !!contar && !!manutencao?.ingestaoPausada && ["emails", "coletas", "ia"].includes(g.id);
+        const desabilitado = bloqueado || (contar ? !n : false);
         return (
           <label key={g.id} className={`flex gap-3 rounded-lg border p-3 ${desabilitado ? "opacity-50" : "cursor-pointer hover:bg-accent/40"}`}>
             <Checkbox
@@ -206,6 +223,7 @@ function BackupPage() {
                 {contar && <Badge variant="secondary">{n ?? 0}</Badge>}
               </div>
               <div className="text-xs text-muted-foreground">{g.descricao}</div>
+              {bloqueado && <div className="text-xs text-amber-700 dark:text-amber-300">Não importar durante a preparação da base limpa.</div>}
             </div>
           </label>
         );
@@ -219,6 +237,13 @@ function BackupPage() {
         <DatabaseBackup className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold">Backup</h1>
       </div>
+
+      {manutencao?.ingestaoPausada && (
+        <div role="status" className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+          <strong>Ingestão pausada para importação.</strong> As contas de e-mail foram preservadas, mas novas coletas estão bloqueadas. Importe e confira o backup; depois execute <code>./retomar_ingestao.sh</code> na VPS.
+          {manutencao.iaBloqueada && <p className="mt-2">A configuração de IA foi limpa. As chaves antigas do arquivo não serão restauradas automaticamente; configure a IA novamente quando necessário.</p>}
+        </div>
+      )}
 
       {progresso && (
         <Card>

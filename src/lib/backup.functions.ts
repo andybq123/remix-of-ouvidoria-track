@@ -16,6 +16,14 @@ function validaTabela(t: string): BackupTabela {
   return t as BackupTabela;
 }
 
+export const backupEstadoImportacao = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { ingestaoPausada, restauracaoAutomaticaIaBloqueada } = await import("./import-maintenance.server");
+    return { ingestaoPausada: ingestaoPausada(), iaBloqueada: restauracaoAutomaticaIaBloqueada() };
+  });
+
 export const backupExportarTabela = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { tabela: string; from: number; to: number }) => d)
@@ -48,13 +56,8 @@ export const backupImportarTabela = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const tabela = validaTabela(data.tabela);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: n, error } = await (supabaseAdmin as any).rpc("backup_importar", {
-      p_tabela: tabela,
-      p_rows: data.rows,
-    });
-    if (error) throw new Error(`${tabela}: ${error.message}`);
-    return { gravados: Number(n ?? 0) };
+    const { importarTabelaValidada } = await import("./backup-import.server");
+    return importarTabelaValidada(tabela, data.rows);
   });
 
 export const backupImportarUsuarios = createServerFn({ method: "POST" })

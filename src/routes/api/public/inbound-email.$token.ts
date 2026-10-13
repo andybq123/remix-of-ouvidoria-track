@@ -43,6 +43,8 @@ async function processInbound(token: string, request: Request) {
     return Response.json({ ok: false, error: "conta inativa" }, { status: 200 });
   }
 
+  const { ingestaoPausada } = await import("@/lib/import-maintenance.server");
+  if (ingestaoPausada()) return Response.json({ ok: false, error: "Ingestão pausada para importação de backup" }, { status: 503, headers: { "Retry-After": "300" } });
   const res = await ingerirEmail({ account, remetente, destinatario, assunto, corpo });
   return Response.json(res, { status: res.ok ? 200 : 500 });
 }

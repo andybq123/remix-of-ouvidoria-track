@@ -80,6 +80,8 @@ export const Route = createFileRoute("/api/public/ingest-protocolos")({
           return Response.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders() });
         }
 
+        const { ingestaoPausada } = await import("@/lib/import-maintenance.server");
+        if (ingestaoPausada()) return Response.json({ sucesso: false, erro: "Ingestão pausada para importação de backup" }, { status: 503, headers: { ...corsHeaders(), "Retry-After": "300" } });
         let body: unknown;
         try { body = await request.json(); } catch {
           return Response.json({ error: "JSON inválido" }, { status: 400, headers: corsHeaders() });
