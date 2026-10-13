@@ -176,3 +176,23 @@ export const debugZerar = createServerFn({ method: "POST" })
     }
     return resumo;
   });
+
+// Exclui protocolos (com histórico) — usado na Triagem.
+export const excluirProtocolos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { ids: string[] }) => {
+    if (!Array.isArray(d?.ids) || d.ids.length === 0 || d.ids.length > 500) throw new Error("Selecione de 1 a 500 protocolos.");
+    if (!d.ids.every((id) => /^[0-9a-f-]{36}$/i.test(id))) throw new Error("ID inválido.");
+    return d;
+  })
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const sb = supabaseAdmin as any;
+    await sb.from("email_inbox_log").update({ protocolo_id: null }).in("protocolo_id", data.ids);
+    const { error: e1 } = await sb.from("protocolo_historico").delete().in("protocolo_id", data.ids);
+    if (e1) throw new Error(e1.message);
+    const { error, count } = await sb.from("protocolos").delete({ count: "exact" }).in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { excluidos: count ?? 0 };
+  });

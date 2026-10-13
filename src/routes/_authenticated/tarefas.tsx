@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Inbox, Eye, CheckCheck, Lock } from "lucide-react";
+import { Inbox, Eye, CheckCheck, Lock, Trash2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { excluirProtocolos } from "@/lib/debug.functions";
 import { toast } from "sonner";
 import { fetchAllPaginated } from "@/lib/fetch-all";
 import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
@@ -150,6 +152,23 @@ function TarefasPage() {
     onError: (e: any) => toast.error(e.message ?? "Erro ao triar em lote"),
   });
 
+  const excluirFn = useServerFn(excluirProtocolos);
+  const delMut = useMutation({
+    mutationFn: async (ids: string[]) => excluirFn({ data: { ids } }),
+    onSuccess: (r, ids) => {
+      toast.success(`${r.excluidos} protocolo(s) excluído(s).`);
+      setSelected((prev) => { const n = new Set(prev); ids.forEach((i) => n.delete(i)); return n; });
+      qc.invalidateQueries({ queryKey: ["protocolos-triagem"] });
+      qc.invalidateQueries({ queryKey: ["protocolos"] });
+      qc.invalidateQueries({ queryKey: ["triagem-stats"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erro ao excluir"),
+  });
+  function excluir(ids: string[], descricao: string) {
+    if (!confirm(`Excluir definitivamente ${descricao}? O histórico também será apagado.`)) return;
+    delMut.mutate(ids);
+  }
+
   function toggle(id: string) {
     setSelected((prev) => {
       const n = new Set(prev);
@@ -195,6 +214,10 @@ function TarefasPage() {
             </Select>
             <Button size="sm" onClick={() => batchMut.mutate()} disabled={!batchSec || batchMut.isPending}>
               <CheckCheck className="h-4 w-4 mr-1" /> Concluir triagem em lote
+            </Button>
+            <Button size="sm" variant="destructive" disabled={delMut.isPending}
+              onClick={() => excluir(Array.from(selected), `${selected.size} protocolo(s) selecionado(s)`)}>
+              <Trash2 className="h-4 w-4 mr-1" /> Excluir selecionados
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Limpar seleção</Button>
           </CardContent>
@@ -251,6 +274,12 @@ function TarefasPage() {
                 <Button size="sm" onClick={() => setDetail(p)} variant={isLockAtivo(p) && p.triagem_lock_por !== meId ? "outline" : "default"}>
                   <Eye className="h-4 w-4 mr-1" />
                   {isLockAtivo(p) && p.triagem_lock_por !== meId ? "Visualizar" : "Triar"}
+                </Button>
+                <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive"
+                  aria-label={`Excluir protocolo ${p.numero}`} title="Excluir protocolo"
+                  disabled={delMut.isPending}
+                  onClick={() => excluir([p.id], `o protocolo ${p.numero}`)}>
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </CardContent>
             </Card>
