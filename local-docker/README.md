@@ -38,3 +38,19 @@ Sem Docker para o app: na raiz do projeto, copie `local-docker/.env.local` para 
 ```bash
 docker compose down && npx supabase stop
 ```
+
+## Atualizar uma instalação existente na VPS
+
+Depois que a alteração for integrada em `main` e a ação **Compilar versão da VPS** terminar com sucesso, execute na raiz do clone na VPS:
+
+```bash
+./atualizar_front.sh
+```
+
+Na primeira execução, se o script ainda não existir no clone antigo, execute a partir da raiz do projeto:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/andybq123/remix-of-ouvidoria-track/main/atualizar_front.sh | bash
+```
+
+O comando exige que a branch local seja `main`, interrompe se houver outras alterações locais, salva e restaura o `.env` rastreado, gera um backup verificado do banco em `local-docker/backups/` e chama o atualizador de produção existente. O atualizador valida o hash do build publicado e espera a aplicação responder em `127.0.0.1:8080`. Mantenha os backups protegidos e copie-os para fora da VPS. A aplicação é reiniciada durante a atualização.

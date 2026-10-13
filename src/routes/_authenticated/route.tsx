@@ -1,7 +1,8 @@
 import { createFileRoute, Outlet, redirect, Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, FileText, Building2, LogOut, AlertTriangle, BarChart3, Mail, Users, HeartPulse, Map as MapIcon, Settings, ChevronDown, PanelLeft, PanelTop, Tag, Inbox, Download, Sparkles, DatabaseBackup, Bug } from "lucide-react";
+import { LayoutDashboard, FileText, Building2, LogOut, AlertTriangle, BarChart3, Mail, Users, HeartPulse, Map as MapIcon, Settings, ChevronDown, PanelLeft, PanelTop, Tag, Inbox, Download, Sparkles, DatabaseBackup, Bug, Check, type LucideIcon } from "lucide-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -16,6 +17,7 @@ import brusqueLogo from "@/assets/brusque-brasao.png";
 import { RealtimeSyncProvider } from "@/hooks/realtime-sync-context";
 import { OnlineUsersProvider, useOnlineUsers } from "@/hooks/use-online-users";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import type { LayoutMode } from "@/hooks/use-layout-mode";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -38,7 +40,7 @@ function AuthLayout() {
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: s => s.location.pathname });
   const { user } = Route.useRouteContext();
-  const [layoutMode, toggleLayout] = useLayoutMode();
+  const [layoutMode, setLayoutMode] = useLayoutMode();
 
   const { data: isAdmin = false } = useQuery({
     queryKey: ["is-admin", user.id],
@@ -83,19 +85,24 @@ function AuthLayout() {
   ] : []) as { to: string; label: string; icon: any }[];
   const configActive = configItems.some(c => pathname.startsWith(c.to));
 
-  const LayoutSwitch = (
-    <button
-      type="button"
-      onClick={toggleLayout}
-      title={layoutMode === "sidebar" ? "Alternar para layout superior" : "Alternar para layout lateral"}
-      aria-label="Alternar layout"
-      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background/80 text-foreground shadow-sm backdrop-blur transition-all hover:bg-accent hover:scale-105"
-    >
-      {layoutMode === "sidebar" ? <PanelTop className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
-    </button>
-  );
+  const LayoutSwitch = <LayoutSelector mode={layoutMode} onChange={setLayoutMode} />;
 
   const OnlineIndicatorEl = <OnlineIndicator />;
+
+  if (layoutMode === "workspace") {
+    return (
+      <WorkspaceLayout
+        user={user}
+        displayName={displayName}
+        pathname={pathname}
+        nav={nav}
+        configItems={configItems}
+        handleLogout={handleLogout}
+        onlineIndicator={OnlineIndicatorEl}
+        layoutSelector={LayoutSwitch}
+      />
+    );
+  }
 
   if (layoutMode === "sidebar") {
     const allNav = [...nav, ...configItems];
@@ -227,6 +234,237 @@ function AuthLayout() {
     </div>
     </OnlineUsersProvider>
     </RealtimeSyncProvider>
+  );
+}
+
+type NavItem = { to: string; label: string; icon: LucideIcon };
+
+function LayoutSelector({
+  mode,
+  onChange,
+}: {
+  mode: LayoutMode;
+  onChange: (mode: LayoutMode) => void;
+}) {
+  const ModeIcon = mode === "topbar" ? PanelTop : mode === "sidebar" ? PanelLeft : LayoutDashboard;
+  const options: { mode: LayoutMode; label: string; Icon: LucideIcon }[] = [
+    { mode: "topbar", label: "Navegação superior", Icon: PanelTop },
+    { mode: "sidebar", label: "Menu lateral clássico", Icon: PanelLeft },
+    { mode: "workspace", label: "Workspace · nova interface", Icon: LayoutDashboard },
+  ];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          title="Selecionar interface"
+          aria-label="Selecionar interface do sistema"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background/80 text-foreground shadow-sm backdrop-blur transition-all hover:bg-accent hover:scale-105"
+        >
+          <ModeIcon className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+          Interface do sistema
+        </div>
+        {options.map(({ mode: optionMode, label, Icon }) => (
+          <DropdownMenuItem
+            key={optionMode}
+            onSelect={() => onChange(optionMode)}
+            className="flex cursor-pointer items-center gap-2"
+          >
+            <Icon className="h-4 w-4" />
+            <span className="flex-1">{label}</span>
+            {mode === optionMode && <Check className="h-4 w-4 text-primary" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function WorkspaceLayout({
+  user,
+  displayName,
+  pathname,
+  nav,
+  configItems,
+  handleLogout,
+  onlineIndicator,
+  layoutSelector,
+}: {
+  user: { id: string };
+  displayName: string;
+  pathname: string;
+  nav: NavItem[];
+  configItems: NavItem[];
+  handleLogout: () => Promise<void>;
+  onlineIndicator: ReactNode;
+  layoutSelector: ReactNode;
+}) {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const currentPage = [...nav, ...configItems].find((item) => pathname.startsWith(item.to));
+  const title = currentPage?.label ?? "Painel de gestão";
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
+  return (
+    <RealtimeSyncProvider>
+      <OnlineUsersProvider userId={user.id} nome={displayName}>
+        <div className="workspace-shell">
+          {mobileNavOpen && (
+            <button
+              type="button"
+              aria-label="Fechar menu"
+              className="workspace-overlay lg:hidden"
+              onClick={() => setMobileNavOpen(false)}
+            />
+          )}
+          <aside className={`workspace-sidebar${mobileNavOpen ? " is-open" : ""}`}>
+            <div className="workspace-brand">
+              <img src={brusqueLogo} alt="Brasão de Brusque" className="h-10 w-10 object-contain" />
+              <div className="min-w-0">
+                <div className="truncate text-sm font-bold">Ouvidoria de Brusque</div>
+                <div className="truncate text-xs text-muted-foreground">
+                  Controladoria do Município
+                </div>
+              </div>
+              <span className="workspace-brand-mark" aria-hidden="true">
+                S
+              </span>
+            </div>
+
+            <nav aria-label="Navegação principal" className="workspace-nav">
+              <div className="workspace-nav-heading">GESTÃO</div>
+              {nav.map((item) => (
+                <WorkspaceNavLink
+                  key={item.to}
+                  item={item}
+                  active={pathname.startsWith(item.to)}
+                  onNavigate={() => setMobileNavOpen(false)}
+                />
+              ))}
+              {configItems.length > 0 && (
+                <>
+                  <div className="workspace-nav-heading workspace-nav-heading-spaced">
+                    ADMINISTRAÇÃO
+                  </div>
+                  {configItems.map((item) => (
+                    <WorkspaceNavLink
+                      key={item.to}
+                      item={item}
+                      active={pathname.startsWith(item.to)}
+                      onNavigate={() => setMobileNavOpen(false)}
+                    />
+                  ))}
+                </>
+              )}
+            </nav>
+
+            <div className="workspace-account">
+              <div className="workspace-avatar" aria-hidden="true">
+                {initials || "U"}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold">{displayName}</div>
+                <div className="text-xs text-muted-foreground">Sessão ativa</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                aria-label="Sair do sistema"
+                title="Sair"
+                className="workspace-logout"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          </aside>
+
+          <div className="workspace-content">
+            <header className="workspace-header">
+              <div className="flex min-w-0 items-center gap-3">
+                <button
+                  type="button"
+                  aria-label="Abrir menu"
+                  onClick={() => setMobileNavOpen(true)}
+                  className="workspace-mobile-menu lg:hidden"
+                >
+                  <PanelLeft className="h-5 w-5" />
+                </button>
+                <div className="min-w-0">
+                  <div className="truncate text-base font-bold tracking-tight">{title}</div>
+                  <div className="hidden text-xs text-muted-foreground sm:block">
+                    Sistema de gestão da Ouvidoria Municipal
+                  </div>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                {onlineIndicator}
+                <NotificationBell />
+                <ThemeToggle />
+                {layoutSelector}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void handleLogout()}
+                  className="lg:hidden"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
+            </header>
+
+            <main className="workspace-main">
+              <div className="workspace-page-intro">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                    Controle SETA
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Acompanhe e gerencie as manifestações com clareza e agilidade.
+                  </p>
+                </div>
+                <div className="workspace-date hidden md:flex">
+                  <span className="workspace-status-dot" /> Ambiente operacional
+                </div>
+              </div>
+              <Outlet />
+            </main>
+          </div>
+        </div>
+      </OnlineUsersProvider>
+    </RealtimeSyncProvider>
+  );
+}
+
+function WorkspaceNavLink({
+  item,
+  active,
+  onNavigate,
+}: {
+  item: NavItem;
+  active: boolean;
+  onNavigate: () => void;
+}) {
+  const Icon = item.icon;
+  return (
+    <Link
+      to={item.to}
+      onClick={onNavigate}
+      className={`workspace-nav-link${active ? " is-active" : ""}`}
+      aria-current={active ? "page" : undefined}
+    >
+      <Icon className="h-[18px] w-[18px] shrink-0" />
+      <span className="truncate">{item.label}</span>
+      {active && <span className="workspace-active-marker" aria-hidden="true" />}
+    </Link>
   );
 }
 
