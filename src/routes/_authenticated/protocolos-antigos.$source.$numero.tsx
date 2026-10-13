@@ -143,7 +143,7 @@ function Detail() {
             <h1 className="mt-3 text-2xl font-semibold text-slate-900">Ouvidoria nº {r.numero}</h1>
             <p className="mt-1 text-sm capitalize text-slate-500">{dataFmt}</p>
             {urlValida1doc(conclusao?.url) && (
-              <a href={urlValida1doc(conclusao.url)!} target="_blank" rel="noreferrer"
+              <a href={urlValida1doc(conclusao?.url)!} target="_blank" rel="noreferrer"
                  className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:underline">
                 Abrir no 1doc ↗
               </a>
