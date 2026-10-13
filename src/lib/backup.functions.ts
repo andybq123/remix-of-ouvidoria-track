@@ -29,7 +29,7 @@ export const backupExportarTabela = createServerFn({ method: "POST" })
       .order("id", { ascending: true })
       .range(data.from, data.to);
     if (error) throw new Error(`${tabela}: ${error.message}`);
-    return { rows: (rows ?? []) as Record<string, unknown>[] };
+    return { rows: (rows ?? []) as Record<string, any>[] };
   });
 
 export const backupExportarUsuarios = createServerFn({ method: "POST" })
@@ -39,12 +39,12 @@ export const backupExportarUsuarios = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await (supabaseAdmin as any).rpc("backup_exportar_usuarios");
     if (error) throw new Error(`usuários: ${error.message}`);
-    return { rows: (data ?? []) as Record<string, unknown>[] };
+    return { rows: (data ?? []) as Record<string, any>[] };
   });
 
 export const backupImportarTabela = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { tabela: string; rows: Record<string, unknown>[] }) => d)
+  .inputValidator((d: { tabela: string; rows: Record<string, any>[] }) => d)
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const tabela = validaTabela(data.tabela);
@@ -59,7 +59,7 @@ export const backupImportarTabela = createServerFn({ method: "POST" })
 
 export const backupImportarUsuarios = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { rows: Record<string, unknown>[] }) => d)
+  .inputValidator((d: { rows: Record<string, any>[] }) => d)
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
