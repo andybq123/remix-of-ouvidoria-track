@@ -182,19 +182,24 @@ export type Database = {
           created_by: string | null
           descricao: string | null
           email: string
+          gmail_history_id: string | null
           id: string
           imap_host: string | null
+          imap_last_uid: number | null
           imap_password: string | null
           imap_port: number | null
           imap_tls: boolean | null
+          imap_uid_validity: string | null
           imap_user: string | null
           provider: string
           secretaria_id: string | null
           token: string
           ultima_sincronizacao: string | null
+          ultima_sync_erro_detalhe: string | null
           ultima_sync_erros: number
           ultima_sync_novos: number
           ultima_sync_processados: number
+          ultima_sync_sucesso_em: string | null
           updated_at: string
         }
         Insert: {
@@ -203,19 +208,24 @@ export type Database = {
           created_by?: string | null
           descricao?: string | null
           email: string
+          gmail_history_id?: string | null
           id?: string
           imap_host?: string | null
+          imap_last_uid?: number | null
           imap_password?: string | null
           imap_port?: number | null
           imap_tls?: boolean | null
+          imap_uid_validity?: string | null
           imap_user?: string | null
           provider?: string
           secretaria_id?: string | null
           token?: string
           ultima_sincronizacao?: string | null
+          ultima_sync_erro_detalhe?: string | null
           ultima_sync_erros?: number
           ultima_sync_novos?: number
           ultima_sync_processados?: number
+          ultima_sync_sucesso_em?: string | null
           updated_at?: string
         }
         Update: {
@@ -224,19 +234,24 @@ export type Database = {
           created_by?: string | null
           descricao?: string | null
           email?: string
+          gmail_history_id?: string | null
           id?: string
           imap_host?: string | null
+          imap_last_uid?: number | null
           imap_password?: string | null
           imap_port?: number | null
           imap_tls?: boolean | null
+          imap_uid_validity?: string | null
           imap_user?: string | null
           provider?: string
           secretaria_id?: string | null
           token?: string
           ultima_sincronizacao?: string | null
+          ultima_sync_erro_detalhe?: string | null
           ultima_sync_erros?: number
           ultima_sync_novos?: number
           ultima_sync_processados?: number
+          ultima_sync_sucesso_em?: string | null
           updated_at?: string
         }
         Relationships: [

@@ -332,6 +332,9 @@ function EmailInboxPage() {
                           {" · "}erros: {(a as any).ultima_sync_erros ?? 0}
                         </p>
                       )}
+                      {(a as any).ultima_sync_erro_detalhe && (
+                        <p className="text-xs text-destructive mt-1">Último erro: {(a as any).ultima_sync_erro_detalhe}</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1.5 text-xs">
