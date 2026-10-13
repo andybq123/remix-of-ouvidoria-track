@@ -1,3 +1,4 @@
+import { urlValida1doc } from "@/lib/url-1doc";
 import { useEffect, useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -400,10 +401,10 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
                 "Finaliza a triagem encaminhando o protocolo à secretaria/local definidos (Ctrl + Enter)"
               )
             )}
-            {protocolo?.url && (
+            {urlValida1doc(protocolo?.url) && (
               wrapTooltip(
                 "abrir-1doc",
-                <a href={protocolo.url} target="_blank" rel="noopener noreferrer">
+                <a href={urlValida1doc(protocolo.url)!} target="_blank" rel="noopener noreferrer">
                   <Button
                     size="sm"
                     className="bg-sky-600 text-white hover:bg-sky-700"
@@ -484,9 +485,9 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
             )}
           </div>
         </div>}
-        {!isAdmin && protocolo?.url && (
+        {!isAdmin && urlValida1doc(protocolo?.url) && (
           <div className="border-y py-3">
-            <a href={protocolo.url} target="_blank" rel="noopener noreferrer">
+            <a href={urlValida1doc(protocolo.url)!} target="_blank" rel="noopener noreferrer">
               <Button size="sm" className="bg-sky-600 text-white hover:bg-sky-700">
                 <ExternalLink className="h-4 w-4 mr-1" /> Abrir no 1Doc
               </Button>
@@ -656,7 +657,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
             protocolo?.__antigo === true ||
             protocolo?.detalhes?.legacy === true ||
             (typeof protocolo?.origem === "string" && protocolo.origem.startsWith("antigo:"));
-          if (!protocolo?.url && isLegacyFooter) {
+          if (!urlValida1doc(protocolo?.url) && isLegacyFooter) {
             return (
               <DialogFooter className="border-t pt-3">
                 <div className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">

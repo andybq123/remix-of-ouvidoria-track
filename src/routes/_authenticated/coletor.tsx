@@ -1,3 +1,4 @@
+import { urlValida1doc } from "@/lib/url-1doc";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -351,8 +352,8 @@ function ProtocolosColetados() {
                   </div>
                 </div>
               )}
-              {ver.url && (
-                <a href={ver.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-sm">
+              {urlValida1doc(ver.url) && (
+                <a href={urlValida1doc(ver.url)!} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-sm">
                   Abrir no 1doc <ExternalLink className="h-3 w-3" />
                 </a>
               )}
