@@ -31,8 +31,16 @@ BRANCH="$(git branch --show-current)"
 [[ "$BRANCH" == "main" ]] || fail "A branch atual é '$BRANCH', não 'main'. Mude para main antes de atualizar."
 
 # Não permitir que o reset --hard do atualizador descarte alterações locais.
-# .env é exceção porque pode conter configuração específica da VPS e será salvo/restaurado.
-PENDING="$(git status --porcelain --untracked-files=normal -- . ':(exclude).env' ':(exclude)local-docker/backups')"
+# .env será salvo/restaurado. Para atualizar.sh, permitir só mudança de modo
+# executável; comparar os blobs também impede esconder alterações de conteúdo.
+UPDATER_PATH="local-docker/atualizar.sh"
+UPDATER_HEAD="$(git rev-parse "HEAD:$UPDATER_PATH" 2>/dev/null || true)"
+UPDATER_INDEX="$(git rev-parse ":$UPDATER_PATH" 2>/dev/null || true)"
+UPDATER_WORK="$(git hash-object "$UPDATER_PATH" 2>/dev/null || true)"
+if [[ -z "$UPDATER_HEAD" || "$UPDATER_HEAD" != "$UPDATER_INDEX" || "$UPDATER_HEAD" != "$UPDATER_WORK" ]]; then
+  fail "O conteúdo local de $UPDATER_PATH difere do Git. Revise-o antes de atualizar."
+fi
+PENDING="$(git status --porcelain --untracked-files=normal -- . ':(exclude).env' ':(exclude)local-docker/backups' ':(exclude)local-docker/atualizar.sh')"
 if [[ -n "$PENDING" ]]; then
   printf 'ERRO: há alterações locais além de .env; nada foi atualizado:\n%s\n' "$PENDING" >&2
   fail "Salve ou remova essas alterações antes de continuar."
