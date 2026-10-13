@@ -14,7 +14,7 @@ import { Bug, Pencil, Trash2, Search, AlertTriangle, RefreshCw } from "lucide-re
 import { toast } from "sonner";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { BACKUP_GRUPOS, BACKUP_TABELAS } from "@/lib/backup-config";
-import { debugContagens, debugExcluir, debugListar, debugSalvar, debugZerar } from "@/lib/debug.functions";
+import { debugContagens, debugExcluir, debugListar, debugSalvar, debugZerar, corrigirAcentosDados } from "@/lib/debug.functions";
 
 export const Route = createFileRoute("/_authenticated/debug")({
   head: () => ({
@@ -59,6 +59,19 @@ function DebugPage() {
   const salvar = useServerFn(debugSalvar);
   const excluir = useServerFn(debugExcluir);
   const zerar = useServerFn(debugZerar);
+  const corrigirAcentosFn = useServerFn(corrigirAcentosDados);
+  const [corrigindo, setCorrigindo] = useState(false);
+  const corrigirAcentosClick = async () => {
+    setCorrigindo(true);
+    try {
+      const r = await corrigirAcentosFn();
+      const total = Object.values(r.resultado).reduce((a, b) => a + b, 0);
+      toast.success(total ? `${total} registro(s) corrigido(s).` : "Nenhum acento quebrado encontrado.");
+      if (r.restantes) toast.warning(`${r.restantes} texto(s) ainda têm palavras que não consegui adivinhar; edite-os manualmente.`);
+      qc.invalidateQueries();
+    } catch (e: any) { toast.error(e?.message ?? "Falha ao corrigir"); }
+    finally { setCorrigindo(false); }
+  };
 
   const [tabela, setTabela] = useState<string>("protocolos");
   const [pagina, setPagina] = useState(0);
@@ -186,6 +199,21 @@ function DebugPage() {
               <Button size="sm" variant="outline" disabled={pagina + 1 >= totalPaginas} onClick={() => setPagina(pagina + 1)}>Próxima</Button>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Corrigir acentos</CardTitle>
+          <CardDescription>
+            Procura textos com acentos quebrados (ex.: "via p�blica") em protocolos, histórico, assuntos, secretarias, locais e e-mails, e corrige.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={corrigirAcentosClick} disabled={corrigindo}>
+            <RefreshCw className={corrigindo ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"} />
+            {corrigindo ? "Corrigindo..." : "Corrigir acentos agora"}
+          </Button>
         </CardContent>
       </Card>
 
