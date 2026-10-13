@@ -32,3 +32,5 @@ dist-ssr
 *.sw?
 local-docker/.ia-chaves.json
 local-docker/backups/
+local-docker/.ingestao-pausada
+local-docker/.ia-restauracao-bloqueada

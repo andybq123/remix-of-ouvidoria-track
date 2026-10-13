@@ -60,3 +60,7 @@ O comando exige que a branch local seja `main`, interrompe se houver outras alte
 ## Pedidos e-SIC
 
 Notificações de pedido e-SIC/LAI recebidas por e-mail passam a ter número oficial próprio, triagem obrigatória, categoria/cor distintas e prazo 20 + 10 dias mediante justificativa. A migration `005_esic_campos_triagem.sql` é aplicada pelo mesmo atualizador acima, sem remover dados. Consulte [o guia completo de e-SIC](../docs/esic.md) para comportamento, compatibilidade dos legados e testes. O coletor Python 1Doc não é utilizado por esse novo fluxo.
+
+## Limpeza para importar outro backup
+
+O procedimento separado `./limpar_para_importacao.sh` zera protocolos/relatórios, logs/coletas e IA do banco, preservando usuários, secretarias, locais, responsáveis, assuntos e contas de e-mail. Exige backup validado e confirmação digitada; não é executado pelo atualizador. Consulte [o guia de limpeza e importação](../docs/limpeza-importacao.md) para simular primeiro, importar com ingestão pausada e retomar depois.

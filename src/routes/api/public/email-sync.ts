@@ -13,6 +13,8 @@ export const Route = createFileRoute("/api/public/email-sync")({
         if (!token || !expected.includes(token)) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
+        const { ingestaoPausada } = await import("@/lib/import-maintenance.server");
+        if (ingestaoPausada()) return Response.json({ ok: false, error: "Ingestão pausada para importação de backup" }, { status: 503, headers: { "Retry-After": "300" } });
         const { sincronizarGmailContas, sincronizarImapContas } = await import(
           "@/lib/protocolo-ingest.server"
         );

@@ -47,6 +47,11 @@ export async function salvarChavesArquivo(patch: ChavesIA): Promise<void> {
 export async function restaurarChavesSeNecessario(
   db: { grok_api_key?: string | null; gemini_api_key?: string | null } | null,
 ): Promise<ChavesIA> {
+  const { restauracaoAutomaticaIaBloqueada } = await import("./import-maintenance.server");
+  if (restauracaoAutomaticaIaBloqueada()) {
+    // Limpeza intencional: não repovoar o banco a partir da cópia em arquivo.
+    return { grok: db?.grok_api_key ?? null, gemini: db?.gemini_api_key ?? null };
+  }
   const arq = await lerChavesArquivo();
   const faltando: Record<string, string> = {};
   if (!db?.grok_api_key && arq.grok) faltando.grok_api_key = arq.grok;
