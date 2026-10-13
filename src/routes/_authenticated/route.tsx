@@ -305,8 +305,12 @@ function WorkspaceLayout({
   layoutSelector: ReactNode;
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [configMenuOpen, setConfigMenuOpen] = useState(() =>
+    configItems.some((item) => pathname.startsWith(item.to)),
+  );
   const currentPage = [...nav, ...configItems].find((item) => pathname.startsWith(item.to));
   const title = currentPage?.label ?? "Painel de gestão";
+  const configActive = configItems.some((item) => pathname.startsWith(item.to));
   const initials = displayName
     .split(/\s+/)
     .filter(Boolean)
@@ -352,17 +356,27 @@ function WorkspaceLayout({
               ))}
               {configItems.length > 0 && (
                 <>
-                  <div className="workspace-nav-heading workspace-nav-heading-spaced">
-                    ADMINISTRAÇÃO
+                  <button
+                    type="button"
+                    className={`workspace-nav-heading workspace-nav-heading-spaced workspace-nav-toggle${configActive ? " is-current" : ""}`}
+                    aria-label="Configurações"
+                    aria-expanded={configMenuOpen}
+                    aria-controls="workspace-config-menu"
+                    onClick={() => setConfigMenuOpen((open) => !open)}
+                  >
+                    <span>CONFIGURAÇÕES</span>
+                    <ChevronDown className={`h-3.5 w-3.5 transition-transform${configMenuOpen ? " rotate-180" : ""}`} aria-hidden="true" />
+                  </button>
+                  <div id="workspace-config-menu" hidden={!configMenuOpen}>
+                    {configItems.map((item) => (
+                      <WorkspaceNavLink
+                        key={item.to}
+                        item={item}
+                        active={pathname.startsWith(item.to)}
+                        onNavigate={() => setMobileNavOpen(false)}
+                      />
+                    ))}
                   </div>
-                  {configItems.map((item) => (
-                    <WorkspaceNavLink
-                      key={item.to}
-                      item={item}
-                      active={pathname.startsWith(item.to)}
-                      onNavigate={() => setMobileNavOpen(false)}
-                    />
-                  ))}
                 </>
               )}
             </nav>
