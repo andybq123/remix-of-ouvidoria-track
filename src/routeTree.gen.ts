@@ -26,6 +26,7 @@ import { Route as AuthenticatedProtocolosRouteImport } from './routes/_authentic
 import { Route as AuthenticatedMapaRouteImport } from './routes/_authenticated/mapa'
 import { Route as AuthenticatedIaConfigRouteImport } from './routes/_authenticated/ia-config'
 import { Route as AuthenticatedEmailInboxRouteImport } from './routes/_authenticated/email-inbox'
+import { Route as AuthenticatedDebugRouteImport } from './routes/_authenticated/debug'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedColetorRouteImport } from './routes/_authenticated/coletor'
 import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated/backup'
@@ -126,6 +127,11 @@ const AuthenticatedEmailInboxRoute = AuthenticatedEmailInboxRouteImport.update({
   path: '/email-inbox',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDebugRoute = AuthenticatedDebugRouteImport.update({
+  id: '/debug',
+  path: '/debug',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -217,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/backup': typeof AuthenticatedBackupRoute
   '/coletor': typeof AuthenticatedColetorRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/debug': typeof AuthenticatedDebugRoute
   '/email-inbox': typeof AuthenticatedEmailInboxRoute
   '/ia-config': typeof AuthenticatedIaConfigRoute
   '/mapa': typeof AuthenticatedMapaRoute
@@ -249,6 +256,7 @@ export interface FileRoutesByTo {
   '/backup': typeof AuthenticatedBackupRoute
   '/coletor': typeof AuthenticatedColetorRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/debug': typeof AuthenticatedDebugRoute
   '/email-inbox': typeof AuthenticatedEmailInboxRoute
   '/ia-config': typeof AuthenticatedIaConfigRoute
   '/mapa': typeof AuthenticatedMapaRoute
@@ -282,6 +290,7 @@ export interface FileRoutesById {
   '/_authenticated/backup': typeof AuthenticatedBackupRoute
   '/_authenticated/coletor': typeof AuthenticatedColetorRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/debug': typeof AuthenticatedDebugRoute
   '/_authenticated/email-inbox': typeof AuthenticatedEmailInboxRoute
   '/_authenticated/ia-config': typeof AuthenticatedIaConfigRoute
   '/_authenticated/mapa': typeof AuthenticatedMapaRoute
@@ -316,6 +325,7 @@ export interface FileRouteTypes {
     | '/backup'
     | '/coletor'
     | '/dashboard'
+    | '/debug'
     | '/email-inbox'
     | '/ia-config'
     | '/mapa'
@@ -348,6 +358,7 @@ export interface FileRouteTypes {
     | '/backup'
     | '/coletor'
     | '/dashboard'
+    | '/debug'
     | '/email-inbox'
     | '/ia-config'
     | '/mapa'
@@ -380,6 +391,7 @@ export interface FileRouteTypes {
     | '/_authenticated/backup'
     | '/_authenticated/coletor'
     | '/_authenticated/dashboard'
+    | '/_authenticated/debug'
     | '/_authenticated/email-inbox'
     | '/_authenticated/ia-config'
     | '/_authenticated/mapa'
@@ -537,6 +549,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEmailInboxRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/debug': {
+      id: '/_authenticated/debug'
+      path: '/debug'
+      fullPath: '/debug'
+      preLoaderRoute: typeof AuthenticatedDebugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -661,6 +680,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
   AuthenticatedColetorRoute: typeof AuthenticatedColetorRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDebugRoute: typeof AuthenticatedDebugRoute
   AuthenticatedEmailInboxRoute: typeof AuthenticatedEmailInboxRoute
   AuthenticatedIaConfigRoute: typeof AuthenticatedIaConfigRoute
   AuthenticatedMapaRoute: typeof AuthenticatedMapaRoute
@@ -680,6 +700,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBackupRoute: AuthenticatedBackupRoute,
   AuthenticatedColetorRoute: AuthenticatedColetorRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDebugRoute: AuthenticatedDebugRoute,
   AuthenticatedEmailInboxRoute: AuthenticatedEmailInboxRoute,
   AuthenticatedIaConfigRoute: AuthenticatedIaConfigRoute,
   AuthenticatedMapaRoute: AuthenticatedMapaRoute,
