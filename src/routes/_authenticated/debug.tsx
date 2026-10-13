@@ -206,7 +206,7 @@ function DebugPage() {
         <CardHeader>
           <CardTitle>Corrigir acentos</CardTitle>
           <CardDescription>
-            Procura textos com acentos quebrados (ex.: "via p\uFFFDblica") em protocolos, histórico, assuntos, secretarias, locais e e-mails, e corrige.
+            Procura textos com acentos quebrados (ex.: "via p�blica") em protocolos, histórico, assuntos, secretarias, locais e e-mails, e corrige.
           </CardDescription>
         </CardHeader>
         <CardContent>
