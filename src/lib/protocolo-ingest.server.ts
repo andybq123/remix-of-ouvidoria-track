@@ -227,7 +227,10 @@ export type IngestInput = {
 
 export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; protocoloId?: string; numero?: string; logId?: string; error?: string }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { account, remetente, destinatario, assunto, corpo, externalId } = input;
+  const { account, remetente, destinatario, externalId } = input;
+  const { corrigirAcentos } = await import("./corrigir-acentos");
+  const assunto = corrigirAcentos(input.assunto ?? "");
+  const corpo = corrigirAcentos(input.corpo ?? "");
 
   if (externalId) {
     const { data: existente } = await supabaseAdmin
