@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { exigirAdmin } from "./admin-guard.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { aiChat } from "./ai-chat.server";
 
@@ -82,6 +83,7 @@ export const geocodarProtocolosPendentes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data, context }) => {
+    await exigirAdmin(context);
     const { supabase } = context;
 
     const { data: pendentes, error } = await supabase

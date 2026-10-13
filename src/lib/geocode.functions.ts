@@ -80,7 +80,7 @@ async function findBestMatch(q: string): Promise<{ result: NominatimResult; exac
 }
 
 export const geocodeAddress = createServerFn({ method: "POST" })
-  .inputValidator((d: { endereco: string }) => d)
+  .inputValidator((d: { endereco: string }) => ({ endereco: String(d?.endereco ?? "").slice(0, 300) }))
   .handler(async ({ data }) => {
     const q = data.endereco?.trim();
     if (!q) {
@@ -112,7 +112,7 @@ export type AddressSuggestion = {
 };
 
 export const searchAddresses = createServerFn({ method: "POST" })
-  .inputValidator((d: { q: string }) => d)
+  .inputValidator((d: { q: string }) => ({ q: String(d?.q ?? "").slice(0, 200) }))
   .handler(async ({ data }): Promise<AddressSuggestion[]> => {
     const q = data.q?.trim();
     if (!q || q.length < 3) return [];

@@ -1,9 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
+import { exigirAdmin } from "./admin-guard.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const sincronizarGmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await exigirAdmin(context);
     const { sincronizarGmailContas, sincronizarImapContas } = await import("@/lib/protocolo-ingest.server");
     const tot = { contas: 0, novos: 0, erros: 0, detalhes: [] as any[] };
     for (const fn of [sincronizarImapContas, sincronizarGmailContas]) {
@@ -18,7 +20,8 @@ export const sincronizarGmail = createServerFn({ method: "POST" })
 export const ressincronizarGmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { dias?: number }) => ({ dias: Math.min(Math.max(d?.dias ?? 30, 1), 90) }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await exigirAdmin(context);
     const { ressincronizarGmailContas } = await import("@/lib/protocolo-ingest.server");
     return await ressincronizarGmailContas(data.dias);
   });
@@ -26,14 +29,16 @@ export const ressincronizarGmail = createServerFn({ method: "POST" })
 export const reverificarEmails = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { dias?: number }) => ({ dias: Math.min(Math.max(d?.dias ?? 60, 1), 180) }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await exigirAdmin(context);
     const { reverificarEmailsSemProtocolo } = await import("@/lib/protocolo-ingest.server");
     return await reverificarEmailsSemProtocolo(data.dias);
   });
 
 export const sincronizarImap = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await exigirAdmin(context);
     const { sincronizarImapContas } = await import("@/lib/protocolo-ingest.server");
     return await sincronizarImapContas();
   });
@@ -41,7 +46,8 @@ export const sincronizarImap = createServerFn({ method: "POST" })
 export const backfillUrls1Doc = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { dias?: number }) => ({ dias: Math.min(Math.max(d?.dias ?? 180, 1), 365) }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await exigirAdmin(context);
     const { backfillUrl1DocViaGmail } = await import("@/lib/protocolo-ingest.server");
     return await backfillUrl1DocViaGmail(data.dias);
   });
@@ -49,7 +55,8 @@ export const backfillUrls1Doc = createServerFn({ method: "POST" })
 export const reprocessarEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { logId: string }) => ({ logId: String(d.logId) }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await exigirAdmin(context);
     const { reprocessarEmailLog } = await import("@/lib/protocolo-ingest.server");
     return await reprocessarEmailLog(data.logId);
   });

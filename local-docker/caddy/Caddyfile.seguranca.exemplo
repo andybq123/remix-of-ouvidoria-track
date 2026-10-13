@@ -1,0 +1,27 @@
+# ------------------------------------------------------------------
+#  EXEMPLO — NÃO substitui o /etc/caddy/Caddyfile automaticamente.
+#  Copie apenas o bloco "header" para dentro do bloco do seu domínio
+#  (o arquivo atual foi criado pelo deploy-vps.sh). Caddy v2.
+#
+#  Fase 1: CSP em modo Report-Only (só avisa no console do navegador).
+#  Fase 2: depois de validar todas as telas, troque
+#          "Content-Security-Policy-Report-Only" por "Content-Security-Policy".
+# ------------------------------------------------------------------
+ouvidoria.chatizy.com.br {
+	encode gzip
+
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), payment=(), usb=(), geolocation=(self)"
+		# HTTPS confirmado (Caddy). Sem includeSubDomains/preload de propósito.
+		Strict-Transport-Security "max-age=31536000"
+		Content-Security-Policy-Report-Only "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://api.mapbox.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; worker-src 'self' blob:; connect-src 'self' wss://ouvidoria.chatizy.com.br https://api.mapbox.com https://events.mapbox.com https://nominatim.openstreetmap.org https://api.ipify.org"
+		-Server
+	}
+
+	@supabase path /auth/v1/* /rest/v1/* /realtime/v1/* /storage/v1/* /functions/v1/*
+	reverse_proxy @supabase 127.0.0.1:54321
+	reverse_proxy 127.0.0.1:8080
+}
