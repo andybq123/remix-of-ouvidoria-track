@@ -722,6 +722,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      backup_exportar_usuarios: { Args: never; Returns: Json }
+      backup_importar: {
+        Args: { p_rows: Json; p_tabela: string }
+        Returns: number
+      }
+      backup_importar_usuarios: { Args: { p: Json }; Returns: Json }
       concluir_triagem: {
         Args: { p_id: string; p_local: string; p_secretaria: string }
         Returns: Json

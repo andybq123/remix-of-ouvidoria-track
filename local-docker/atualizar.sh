@@ -85,6 +85,16 @@ if [ "$MODO" = "prod" ]; then
   fi
 fi
 
+# Aplica atualizações do banco local (scripts idempotentes)
+DBC="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | head -1 || true)"
+if [ -n "$DBC" ] && ls ./atualizacoes-banco/*.sql >/dev/null 2>&1; then
+  echo "==> Atualizando estrutura do banco local..."
+  for f in ./atualizacoes-banco/*.sql; do
+    docker exec -i "$DBC" psql -v ON_ERROR_STOP=1 -q -U postgres -d postgres < "$f" >/dev/null \
+      || { echo "ERRO ao aplicar $f no banco local."; exit 1; }
+  done
+fi
+
 echo "==> Reiniciando o sistema (modo: $MODO)..."
 docker compose -f docker-compose.yml -f docker-compose.prod.yml rm -sf app >/dev/null 2>&1 || true
 if [ "$MODO" = "prod" ]; then
