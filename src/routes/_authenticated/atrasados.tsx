@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { situacaoProtocolo, estavaAtrasadoNaData, endOfMonthOrNow, formatDate, PRAZOS, categoriaLabel, categoriaSigla, categoriaBadgeClass, type CategoriaProtocolo, type TipoProtocolo } from "@/lib/prazo";
+import { situacaoProtocolo, estavaAtrasadoNaData, endOfMonthOrNow, formatDate, PRAZOS, categoriaLabel, categoriaSigla, categoriaBadgeClass, categoriaDoProtocolo, type TipoProtocolo } from "@/lib/prazo";
 import { currentMonthValue, monthOptionsFromDates, formatMonthLabel } from "@/lib/month-filter";
 import { AlertTriangle, Download } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -114,8 +114,9 @@ function AtrasadosPage() {
   function exportar() {
     const rows = atrasados.map(p => ({
       "Número": p.numero,
+      "Número e-SIC": p.numero_esic ?? "",
       "Tipo": PRAZOS[p.tipo as TipoProtocolo].label,
-      "Categoria": categoriaLabel(p.categoria as CategoriaProtocolo),
+      "Categoria": categoriaLabel(categoriaDoProtocolo(p.tipo, p.categoria)),
       "Data Abertura": formatDate(p.data_abertura),
       "Prazo Final": formatDate(p._atraso.prazoFinal),
       "Dias em atraso": p._atraso.diasAtraso,
@@ -241,12 +242,13 @@ function AtrasadosPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-xs text-muted-foreground">{p.numero}</span>
-                    <Badge variant="outline" className="text-[10px] uppercase">{p.tipo}</Badge>
+                    {p.tipo === "esic" && p.numero_esic && <Badge variant="outline" className="border-teal-600 text-teal-800 dark:text-teal-300 text-[10px]">Nº e-SIC {p.numero_esic}</Badge>}
+                    <Badge variant="outline" className="text-[10px] uppercase">{PRAZOS[p.tipo as TipoProtocolo]?.label ?? p.tipo}</Badge>
                     <Badge
-                      className={`text-[10px] ${categoriaBadgeClass(p.categoria as CategoriaProtocolo)}`}
-                      title={categoriaLabel(p.categoria as CategoriaProtocolo)}
+                      className={`text-[10px] ${categoriaBadgeClass(categoriaDoProtocolo(p.tipo, p.categoria))}`}
+                      title={categoriaLabel(categoriaDoProtocolo(p.tipo, p.categoria))}
                     >
-                      {categoriaLabel(p.categoria as CategoriaProtocolo)}
+                      {categoriaLabel(categoriaDoProtocolo(p.tipo, p.categoria))}
                     </Badge>
                     {p.prorrogado && <Badge variant="outline" className="text-[10px]">prorrogado</Badge>}
                   </div>

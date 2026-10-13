@@ -12,6 +12,7 @@ import { Plus, HeartPulse } from "lucide-react";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { toast } from "sonner";
 import { MapPointPicker } from "@/components/map-point-picker";
+import { categoriaDoProtocolo } from "@/lib/prazo";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,7 +69,7 @@ function MapaPage() {
       fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
-          .select("id, numero, assunto, endereco, latitude, longitude, status, secretaria_id, local_id, categoria, tipo, data_abertura, data_conclusao, locais(nome), secretarias(nome)")
+          .select("id, numero, numero_esic, assunto, endereco, latitude, longitude, status, secretaria_id, local_id, categoria, tipo, data_abertura, data_conclusao, locais(nome), secretarias(nome)")
           .eq("triagem_pendente", false)
           .eq("secretaria_id", saudeId!)
           .not("latitude", "is", null)
@@ -106,7 +107,7 @@ function MapaPage() {
       fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
-          .select("id, numero, assunto, status, local_id, secretaria_id")
+          .select("id, numero, numero_esic, assunto, status, local_id, secretaria_id")
           .eq("triagem_pendente", false)
           .eq("secretaria_id", saudeId!)
           .not("local_id", "is", null)
@@ -123,13 +124,14 @@ function MapaPage() {
         lat: p.latitude as number,
         lng: p.longitude as number,
         numero: p.numero,
+        numero_esic: p.numero_esic,
         assunto: p.assunto,
         endereco: p.endereco,
         status: p.status,
         secretaria: p.secretarias?.nome,
         data_abertura: p.data_abertura,
         data_conclusao: p.data_conclusao,
-        categoria: p.categoria,
+        categoria: categoriaDoProtocolo(p.tipo, p.categoria),
         tipo: p.tipo,
         local: p.locais?.nome,
         local_id: p.local_id,
@@ -146,6 +148,7 @@ function MapaPage() {
         lat: NaN,
         lng: NaN,
         numero: p.numero,
+        numero_esic: p.numero_esic,
         assunto: p.assunto,
         status: p.status,
         local_id: p.local_id,

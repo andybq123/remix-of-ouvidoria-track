@@ -14,7 +14,7 @@ import { excluirProtocolos } from "@/lib/debug.functions";
 import { toast } from "sonner";
 import { fetchAllPaginated } from "@/lib/fetch-all";
 import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
-import { formatDate, PRAZOS, categoriaLabel, categoriaBadgeClass, type TipoProtocolo, type CategoriaProtocolo } from "@/lib/prazo";
+import { formatDate, PRAZOS, categoriaLabel, categoriaBadgeClass, categoriaDoProtocolo, type TipoProtocolo } from "@/lib/prazo";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 
 export const Route = createFileRoute("/_authenticated/tarefas")({
@@ -112,7 +112,7 @@ function TarefasPage() {
   const filtrados = protocolos.filter((p: any) => {
     if (!busca) return true;
     const s = busca.toLowerCase();
-    return `${p.numero} ${p.assunto} ${p.solicitante ?? ""}`.toLowerCase().includes(s);
+    return `${p.numero} ${p.numero_esic ?? ""} ${p.tipo === "esic" ? "e-SIC acesso à informação" : ""} ${p.assunto} ${p.solicitante ?? ""}`.toLowerCase().includes(s);
   });
 
   // Items that are locked by someone else are not selectable in batch
@@ -251,9 +251,12 @@ function TarefasPage() {
                 <div className="flex-1 min-w-[260px]">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className="font-mono text-xs text-muted-foreground">{p.numero}</span>
+                    {p.tipo === "esic" && p.numero_esic && (
+                      <Badge variant="outline" className="border-teal-600 text-teal-800 dark:text-teal-300 text-[10px]">Nº e-SIC {p.numero_esic}</Badge>
+                    )}
                     <Badge variant="outline" className="text-[10px] uppercase">{PRAZOS[p.tipo as TipoProtocolo].label}</Badge>
-                    <Badge className={`text-[10px] ${categoriaBadgeClass(p.categoria as CategoriaProtocolo)}`}>
-                      {categoriaLabel(p.categoria as CategoriaProtocolo)}
+                    <Badge className={`text-[10px] ${categoriaBadgeClass(categoriaDoProtocolo(p.tipo, p.categoria))}`}>
+                      {categoriaLabel(categoriaDoProtocolo(p.tipo, p.categoria))}
                     </Badge>
                     <Badge variant="outline" className="text-[10px] border-amber-500/50 text-amber-700 dark:text-amber-300 bg-amber-500/10">
                       triagem pendente

@@ -20,6 +20,7 @@ export function textoProtocolo(p: any): string {
   return normalizeTexto(
     [
       p?.numero,
+      p?.numero_esic,
       p?.assunto,
       p?.descricao,
       p?.resolucao,
@@ -29,6 +30,7 @@ export function textoProtocolo(p: any): string {
       p?.origem,
       p?.categoria,
       p?.tipo,
+      p?.tipo === "esic" ? "e-SIC acesso à informação" : "",
       p?.status,
       p?.locais?.nome,
       p?.secretarias?.nome,
@@ -51,5 +53,5 @@ export function matchProtocolo(p: any, termos: string[]): boolean {
 export function matchNumero(p: any, busca: string): boolean {
   const s = normalizeTexto(busca.trim());
   if (!s) return false;
-  return normalizeTexto(String(p?.numero ?? "")).includes(s);
+  return normalizeTexto(`${p?.numero ?? ""} ${p?.numero_esic ?? ""}`).includes(s);
 }

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Download, FileText } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { ChartTooltipContent } from "@/components/chart-tooltip";
-import { CATEGORIAS, type CategoriaProtocolo, situacaoProtocolo, formatDate, categoriaLabel, PRAZOS, type TipoProtocolo } from "@/lib/prazo";
+import { CATEGORIAS, situacaoProtocolo, formatDate, categoriaLabel, categoriaDoProtocolo, PRAZOS, type TipoProtocolo } from "@/lib/prazo";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { fetchAllPaginated } from "@/lib/fetch-all";
@@ -133,7 +133,7 @@ function SecretariaRelatorio() {
   const categoriaData = useMemo(() =>
     CATEGORIAS.map(c => ({
       name: c.label,
-      value: protocolos.filter(p => p.categoria === c.value).length,
+      value: protocolos.filter(p => categoriaDoProtocolo(p.tipo, p.categoria) === c.value).length,
     })).filter(d => d.value > 0)
   , [protocolos]);
 
@@ -180,7 +180,7 @@ function SecretariaRelatorio() {
   const crossTab = useMemo(() => {
     const map = new Map(locais.map((l: any) => [l.id, l.nome]));
     const rows = CATEGORIAS.map(c => {
-      const filtered = protocolos.filter(p => p.categoria === c.value);
+      const filtered = protocolos.filter(p => categoriaDoProtocolo(p.tipo, p.categoria) === c.value);
       const porLocal: Record<string, number> = {};
       let concluidos = 0, abertos = 0, vencidos = 0;
       filtered.forEach(p => {
@@ -256,12 +256,13 @@ function SecretariaRelatorio() {
 
     // Protocolos
     autoTable(doc, {
-      head: [["Nº", "Data", "Tipo", "Categoria", "Assunto", "Status", "Situação"]],
+      head: [["Nº", "Nº e-SIC", "Data", "Tipo", "Categoria", "Assunto", "Status", "Situação"]],
       body: stats.enriched.map(p => [
         p.numero,
+        p.numero_esic ?? "",
         formatDate(p.data_abertura),
         PRAZOS[p.tipo as TipoProtocolo]?.label ?? p.tipo,
-        categoriaLabel(p.categoria as CategoriaProtocolo),
+        categoriaLabel(categoriaDoProtocolo(p.tipo, p.categoria)),
         (p.assunto ?? "").slice(0, 50),
         p.status,
         p.status === "concluido" ? "Concluído" : (p._s.situacao === "vencido" ? `Atrasado ${Math.abs(p._s.dias)}d` : `${p._s.dias}d restantes`),
@@ -441,8 +442,8 @@ function SecretariaRelatorio() {
                       labelLine={false}
                       label={({ percent }: any) => percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ""}
                     >
-                      {categoriaData.map((_, i) => (
-                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      {categoriaData.map((d, i) => (
+                        <Cell key={i} fill={d.name === "Pedido e-SIC" ? "#0f766e" : COLORS[i % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip content={<ChartTooltipContent unit="protocolos" total={categoriaTotal} />} />
@@ -626,10 +627,11 @@ function SecretariaRelatorio() {
                   <tr key={p.id} className="border-b hover:bg-secondary/30">
                     <td className="py-2 px-3">
                       <div className="font-mono text-[10px] text-muted-foreground">{p.numero}</div>
+                      {p.tipo === "esic" && p.numero_esic && <div className="font-mono text-[10px] text-teal-700 dark:text-teal-300">e-SIC {p.numero_esic}</div>}
                       <div>{p.assunto}</div>
                     </td>
                     <td className="py-2 px-2 text-xs">{PRAZOS[p.tipo as TipoProtocolo]?.label ?? p.tipo}</td>
-                    <td className="py-2 px-2 text-xs">{categoriaLabel(p.categoria as CategoriaProtocolo)}</td>
+                    <td className="py-2 px-2 text-xs">{categoriaLabel(categoriaDoProtocolo(p.tipo, p.categoria))}</td>
                     <td className="py-2 px-2 text-xs">{formatDate(p.data_abertura)}</td>
                     <td className="py-2 px-2 text-xs"><Badge variant="outline">{p.status}</Badge></td>
                     <td className="py-2 px-2 text-xs text-right">

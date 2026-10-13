@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { aiChat } from "./ai-chat.server";
+import { categoriaDoProtocolo } from "./prazo";
 
 const Input = z.object({
   secretariaId: z.string().uuid().nullable().optional(),
@@ -19,7 +20,7 @@ export const gerarRelatorioIA = createServerFn({ method: "POST" })
 
     let q = supabase
       .from("protocolos")
-      .select("numero, tipo, categoria, status, assunto, descricao, solicitante, data_abertura, data_conclusao, data_prorrogacao, prorrogado, secretarias(nome), locais(nome)")
+      .select("numero, numero_esic, tipo, categoria, status, assunto, descricao, solicitante, data_abertura, data_conclusao, data_prorrogacao, prorrogado, esic_prorrogacao_justificativa, secretarias(nome), locais(nome)")
       .gte("data_abertura", `${data.ano}-01-01`)
       .lte("data_abertura", `${data.ano}-12-31`)
       .order("data_abertura", { ascending: false })
@@ -52,7 +53,8 @@ export const gerarRelatorioIA = createServerFn({ method: "POST" })
     const porLocal: Record<string, number> = {};
     const porMes: Record<string, number> = {};
     (rows ?? []).forEach((p: any) => {
-      porCategoria[p.categoria] = (porCategoria[p.categoria] ?? 0) + 1;
+      const categoria = categoriaDoProtocolo(p.tipo, p.categoria);
+      porCategoria[categoria] = (porCategoria[categoria] ?? 0) + 1;
       porStatus[p.status] = (porStatus[p.status] ?? 0) + 1;
       const lname = p.locais?.nome ?? "—";
       porLocal[lname] = (porLocal[lname] ?? 0) + 1;
@@ -63,14 +65,16 @@ export const gerarRelatorioIA = createServerFn({ method: "POST" })
     // Amostra detalhada (até 80 protocolos) para a IA citar exemplos
     const amostra = (rows ?? []).slice(0, 80).map((p: any) => ({
       numero: p.numero,
+      numero_esic: p.numero_esic,
       data: p.data_abertura,
       tipo: p.tipo,
-      categoria: p.categoria,
+      categoria: categoriaDoProtocolo(p.tipo, p.categoria),
       status: p.status,
       assunto: p.assunto,
       local: p.locais?.nome ?? null,
       solicitante: p.solicitante,
       prorrogado: p.prorrogado,
+      justificativa_prorrogacao_esic: p.esic_prorrogacao_justificativa,
       concluido_em: p.data_conclusao,
     }));
 

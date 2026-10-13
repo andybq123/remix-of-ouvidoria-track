@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
-import { situacaoProtocolo, estavaAtrasadoNaData, endOfMonthOrNow, CATEGORIAS, calcularSla, resumoOperacional, type CategoriaProtocolo } from "@/lib/prazo";
+import { situacaoProtocolo, estavaAtrasadoNaData, endOfMonthOrNow, CATEGORIAS, calcularSla, resumoOperacional, categoriaDoProtocolo, type CategoriaProtocolo } from "@/lib/prazo";
 import {
   AlertTriangle, CheckCircle2, Clock, FileText, Smile,
   Timer, Download, MapPin, TrendingUp, Lightbulb, Building, ShieldCheck, Activity,
@@ -52,6 +52,7 @@ const CAT_COLORS: Record<CategoriaProtocolo, string> = {
   elogio: "hsl(142 71% 45%)",
   denuncia: "hsl(0 84% 60%)",
   pedido_informacao: "hsl(262 83% 58%)",
+  esic: "hsl(174 72% 35%)",
   sugestao: "hsl(199 89% 48%)",
   outros: "hsl(215 16% 60%)",
 };
@@ -80,7 +81,8 @@ function Dashboard() {
         supabase
           .from("protocolos")
           .select("*, secretarias(nome, sigla), locais(nome)")
-          .eq("triagem_pendente", false)
+          // O prazo e a contabilização e-SIC começam no recebimento, não na triagem.
+          .or("triagem_pendente.eq.false,tipo.eq.esic")
           .order("data_abertura", { ascending: false })
           .range(from, to),
       ),
@@ -224,7 +226,7 @@ function Dashboard() {
   const categoriaData = useMemo(() => {
     const counts: Record<string, number> = {};
     filtrados.forEach(p => {
-      const c = (p.categoria as CategoriaProtocolo) ?? "outros";
+      const c = categoriaDoProtocolo(p.tipo, p.categoria);
       counts[c] = (counts[c] ?? 0) + 1;
     });
     return CATEGORIAS.map(c => ({
@@ -263,7 +265,7 @@ function Dashboard() {
   const reclamacoesSaude = useMemo(() => {
     const saudeIds = secretarias.filter(s => /sa[uú]de/i.test(s.nome)).map(s => s.id);
     const recs = filtrados.filter(
-      p => p.secretaria_id != null && saudeIds.includes(p.secretaria_id) && p.categoria === "reclamacao",
+      p => p.secretaria_id != null && saudeIds.includes(p.secretaria_id) && categoriaDoProtocolo(p.tipo, p.categoria) === "reclamacao",
     );
     const counts: Record<string, number> = {};
     recs.forEach(p => {
@@ -394,8 +396,8 @@ function Dashboard() {
       });
     }
     // Reclamações vs elogios
-    const reclamacoes = filtrados.filter(p => p.categoria === "reclamacao").length;
-    const elogios = filtrados.filter(p => p.categoria === "elogio").length;
+    const reclamacoes = filtrados.filter(p => categoriaDoProtocolo(p.tipo, p.categoria) === "reclamacao").length;
+    const elogios = filtrados.filter(p => categoriaDoProtocolo(p.tipo, p.categoria) === "elogio").length;
     if (reclamacoes + elogios > 0) {
       const ratio = elogios > 0 ? Math.round((elogios / (reclamacoes + elogios)) * 100) : 0;
       list.push({
@@ -431,10 +433,10 @@ function Dashboard() {
 
   const exportarRelatorio = () => {
     const linhas = [
-      ["Numero", "Tipo", "Categoria", "Assunto", "Secretaria", "Status", "Aberto", "Concluído"].join(";"),
+      ["Numero", "Numero e-SIC", "Tipo", "Categoria", "Assunto", "Secretaria", "Status", "Aberto", "Concluído"].join(";"),
       ...filtrados.map(p =>
         [
-          p.numero, p.tipo, p.categoria, (p.assunto ?? "").replace(/;/g, ","),
+          p.numero, p.numero_esic ?? "", p.tipo, categoriaDoProtocolo(p.tipo, p.categoria), (p.assunto ?? "").replace(/;/g, ","),
           (p as any).secretarias?.nome ?? "", p.status, p.data_abertura, p.data_conclusao ?? "",
         ].join(";"),
       ),
@@ -617,7 +619,7 @@ function Dashboard() {
                   <button
                     key={d.name}
                     type="button"
-                    onClick={() => openDrill(`Categoria: ${d.name}`, p => (p.categoria ?? "outros") === (cat?.value ?? "outros"))}
+                    onClick={() => openDrill(`Categoria: ${d.name}`, p => categoriaDoProtocolo(p.tipo, p.categoria) === (cat?.value ?? "outros"))}
                     className="w-full flex items-center gap-2 text-xs rounded px-1 py-0.5 hover:bg-muted/60 transition"
                   >
                     <span className="h-2 w-2 rounded-full shrink-0" style={{ background: d.color }} />
@@ -721,7 +723,7 @@ function Dashboard() {
                         type="button"
                         onClick={() => openDrill(`Saúde — Reclamação: ${r.nome}`, p =>
                           p.secretaria_id != null && saudeIds.includes(p.secretaria_id) &&
-                          p.categoria === "reclamacao" &&
+                          categoriaDoProtocolo(p.tipo, p.categoria) === "reclamacao" &&
                           (p.assunto ?? "Outros").slice(0, 30) === r.nome,
                         )}
                         className="w-full flex items-center gap-2 rounded px-1 py-0.5 hover:bg-muted/60 transition"
@@ -900,13 +902,14 @@ function Dashboard() {
                 lat: p.latitude ?? NaN,
                 lng: p.longitude ?? NaN,
                 numero: p.numero,
+                numero_esic: p.numero_esic,
                 assunto: p.assunto,
                 endereco: p.endereco,
                 status: p.status,
                 secretaria: p.secretarias?.nome,
                 data_abertura: p.data_abertura,
                 data_conclusao: p.data_conclusao,
-                categoria: p.categoria,
+                categoria: categoriaDoProtocolo(p.tipo, p.categoria),
                 tipo: p.tipo,
                 local: p.locais?.nome,
                 local_id: p.local_id,

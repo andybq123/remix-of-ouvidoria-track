@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CATEGORIAS, type CategoriaProtocolo, situacaoProtocolo, formatDate, categoriaLabel, PRAZOS, type TipoProtocolo } from "@/lib/prazo";
+import { CATEGORIAS, type CategoriaProtocolo, situacaoProtocolo, formatDate, categoriaLabel, categoriaDoProtocolo, PRAZOS, type TipoProtocolo } from "@/lib/prazo";
 import { Download, BarChart3, ChevronRight, FileText, Search, X } from "lucide-react";
 import * as XLSX from "xlsx";
 import {
@@ -100,13 +100,13 @@ function RelatoriosPage() {
   }, [protocolosComAntigos, currentYear]);
 
   const matchesFilter = (p: any) => {
-    if (fCategoria !== "all" && p.categoria !== fCategoria) return false;
+    if (fCategoria !== "all" && categoriaDoProtocolo(p.tipo, p.categoria) !== fCategoria) return false;
     if (fTipo !== "all" && p.tipo !== fTipo) return false;
     if (fStatus !== "all" && p.status !== fStatus) return false;
     if (fSecretaria !== "all" && p.secretaria_id !== fSecretaria) return false;
     if (q.trim()) {
       const needle = q.toLowerCase();
-      const hay = [p.numero, p.assunto, p.descricao, p.solicitante, (p as any).secretarias?.nome]
+      const hay = [p.numero, p.numero_esic, p.tipo === "esic" ? "e-SIC acesso à informação" : "", categoriaLabel(categoriaDoProtocolo(p.tipo, p.categoria)), p.assunto, p.descricao, p.solicitante, (p as any).secretarias?.nome]
         .filter(Boolean).join(" ").toLowerCase();
       if (!hay.includes(needle)) return false;
     }
@@ -128,7 +128,7 @@ function RelatoriosPage() {
     CATEGORIAS.forEach(c => { matrix[c.value] = Array(12).fill(0); });
     doAno.forEach(p => {
       const mes = parseInt(p.data_abertura.slice(5, 7), 10) - 1;
-      const cat = p.categoria as string;
+      const cat = categoriaDoProtocolo(p.tipo, p.categoria);
       if (matrix[cat]) matrix[cat][mes]++;
     });
     return matrix;
@@ -141,7 +141,7 @@ function RelatoriosPage() {
       const meses = Array(12).fill(0);
       ps.forEach(p => meses[parseInt(p.data_abertura.slice(5, 7), 10) - 1]++);
       const porCat: Record<string, number> = {};
-      CATEGORIAS.forEach(c => { porCat[c.value] = ps.filter(p => p.categoria === c.value).length; });
+      CATEGORIAS.forEach(c => { porCat[c.value] = ps.filter(p => categoriaDoProtocolo(p.tipo, p.categoria) === c.value).length; });
       const total = ps.length;
       const abertos = ps.filter(p => p.status !== "concluido").length;
       const concluidos = ps.filter(p => p.status === "concluido").length;
@@ -197,10 +197,11 @@ function RelatoriosPage() {
   }, [filtrados, ano]);
 
   // Cores semânticas por categoria (alinhadas aos badges em prazo.ts)
-  const CAT_COLORS: Record<string, { base: string; light: string }> = {
+  const CAT_COLORS: Record<CategoriaProtocolo, { base: string; light: string }> = {
     elogio:            { base: "#16a34a", light: "#4ade80" }, // green-600 → green-400
     reclamacao:        { base: "#dc2626", light: "#f87171" }, // red-600 → red-400
     pedido_informacao: { base: "#9333ea", light: "#c084fc" }, // purple-600 → purple-400
+    esic:              { base: "#0f766e", light: "#2dd4bf" }, // teal-700 → teal-400
     denuncia:          { base: "#0a0a0a", light: "#404040" }, // black → neutral-700
     solicitacao:       { base: "#facc15", light: "#fde047" }, // yellow-400 → yellow-300
     sugestao:          { base: "#2563eb", light: "#60a5fa" }, // blue-600 → blue-400
@@ -228,7 +229,7 @@ function RelatoriosPage() {
           {barItems.map((item: any) => {
             const cat = CATEGORIAS.find(c => c.value === item.dataKey);
             const pct = totalAtual > 0 ? ((item.value / totalAtual) * 100).toFixed(0) : "0";
-            const color = CAT_COLORS[item.dataKey]?.base ?? "#64748b";
+            const color = cat ? CAT_COLORS[cat.value].base : "#64748b";
             return (
               <div key={item.dataKey} className="flex items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2 min-w-0">
@@ -298,8 +299,9 @@ function RelatoriosPage() {
   function exportAtrasadas() {
     const rows = atrasadas.map(p => ({
       "Número": p.numero,
+      "Número e-SIC": p.numero_esic ?? "",
       "Tipo": PRAZOS[p.tipo as TipoProtocolo].label,
-      "Categoria": categoriaLabel(p.categoria as CategoriaProtocolo),
+      "Categoria": categoriaLabel(categoriaDoProtocolo(p.tipo, p.categoria)),
       "Assunto": p.assunto,
       "Secretaria": (p as any).secretarias?.nome ?? "",
       "Solicitante": p.solicitante ?? "",
@@ -403,11 +405,12 @@ function RelatoriosPage() {
     pdfHeader(doc, `Protocolos atrasados (${atrasadas.length})`);
     autoTable(doc, {
       startY: filtrosAtivos ? 84 : 70,
-      head: [["Nº", "Tipo", "Categoria", "Secretaria", "Assunto", "Aberto", "Prazo", "Atraso"]],
+      head: [["Nº", "Nº e-SIC", "Tipo", "Categoria", "Secretaria", "Assunto", "Aberto", "Prazo", "Atraso"]],
       body: atrasadas.map(p => [
         p.numero,
+        p.numero_esic ?? "",
         PRAZOS[p.tipo as TipoProtocolo].label,
-        categoriaLabel(p.categoria as CategoriaProtocolo),
+        categoriaLabel(categoriaDoProtocolo(p.tipo, p.categoria)),
         (p as any).secretarias?.nome ?? "—",
         (p.assunto ?? "").slice(0, 50),
         formatDate(p.data_abertura),

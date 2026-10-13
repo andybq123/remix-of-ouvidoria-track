@@ -9,6 +9,7 @@ const CATEGORIA_COLORS: Record<string, { fill: string; label: string }> = {
   elogio:            { fill: "#16a34a", label: "Elogio" },              // green-600
   reclamacao:        { fill: "#dc2626", label: "Reclamação" },          // red-600
   pedido_informacao: { fill: "#9333ea", label: "Pedido de informação"}, // purple-600
+  esic:              { fill: "#0f766e", label: "Pedido e-SIC" },
   denuncia:          { fill: "#000000", label: "Denúncia" },
   solicitacao:       { fill: "#facc15", label: "Solicitação" },         // yellow-400
   outros:            { fill: "#94a3b8", label: "Outros" },              // slate-400
@@ -78,6 +79,7 @@ export type MapPoint = {
   lat: number;
   lng: number;
   numero: string;
+  numero_esic?: string | null;
   assunto?: string | null;
   endereco?: string | null;
   status?: string | null;
@@ -274,6 +276,7 @@ function UnitProtocolList({
                   </span>
                 )}
               </div>
+              {p.numero_esic && <p className="font-mono text-[10px] text-teal-700 dark:text-teal-300">e-SIC {p.numero_esic}</p>}
               {p.assunto && <p className="mt-0.5 line-clamp-2 text-foreground">{p.assunto}</p>}
             </button>
           ))}

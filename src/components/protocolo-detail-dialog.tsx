@@ -1,5 +1,5 @@
 import { urlValida1doc } from "@/lib/url-1doc";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { SlaBadge } from "@/components/sla-badge";
@@ -23,7 +23,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { invalidateProtocoloCaches } from "@/hooks/use-protocolos-realtime";
 import {
   situacaoProtocolo, situacaoClasses, situacaoLabel, formatDate, calcularSla,
-  PRAZOS, CATEGORIAS, categoriaLabel, categoriaSigla, categoriaBadgeClass,
+  PRAZOS, CATEGORIAS, categoriaLabel, categoriaSigla, categoriaBadgeClass, categoriaDoProtocolo, categoriaPersistida,
   type TipoProtocolo, type CategoriaProtocolo,
 } from "@/lib/prazo";
 
@@ -38,6 +38,9 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
   const [form, setForm] = useState<any>({});
   const [concluirOpen, setConcluirOpen] = useState(false);
   const [concluirData, setConcluirData] = useState<string>("");
+  const [prorrogarOpen, setProrrogarOpen] = useState(false);
+  const [esicJustificativa, setEsicJustificativa] = useState("");
+  const triagemActionRef = useRef<(() => Promise<void>) | null>(null);
   const [lockState, setLockState] = useState<
     | { kind: "idle" }
     | { kind: "mine" }
@@ -112,7 +115,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
       if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
         if (protocolo?.triagem_pendente && editing && !lockBloqueia) {
           e.preventDefault();
-          void handleConcluirTriagem();
+          void triagemActionRef.current?.();
         }
       }
     };
@@ -147,8 +150,9 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
     if (protocolo) {
       setForm({
         numero: protocolo.numero ?? "",
+        numero_esic: protocolo.numero_esic ?? (protocolo.tipo === "esic" ? protocolo.numero : ""),
         tipo: protocolo.tipo,
-        categoria: protocolo.categoria,
+        categoria: categoriaDoProtocolo(protocolo.tipo, protocolo.categoria),
         status: protocolo.status,
         assunto: protocolo.assunto ?? "",
         // Em triagem, o relato deve ser preenchido por quem está triando
@@ -160,6 +164,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
         data_conclusao: protocolo.data_conclusao ?? "",
         data_prorrogacao: protocolo.data_prorrogacao ?? "",
         prorrogado: !!protocolo.prorrogado,
+        esic_prorrogacao_justificativa: protocolo.esic_prorrogacao_justificativa ?? "",
         endereco: protocolo.endereco ?? "",
       });
       // Força modo edição em triagem para que o triador preencha a descrição obrigatória
@@ -210,10 +215,21 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
   const locaisFiltrados = locais.filter((l: any) => !form.secretaria_id || l.secretaria_id === form.secretaria_id);
 
   function handleSave() {
+    if (form.tipo === "esic" && !String(form.numero_esic ?? "").trim()) {
+      toast.error("Informe o número do pedido e-SIC.");
+      return;
+    }
+    if (form.tipo === "esic" && protocolo.tipo !== "esic" && form.prorrogado
+        && String(form.esic_prorrogacao_justificativa ?? "").trim().length < 20) {
+      toast.error("Registre a justificativa da prorrogação antes de converter este protocolo para e-SIC.");
+      return;
+    }
     const patch: any = {
       numero: form.numero,
+      numero_esic: form.tipo === "esic" ? String(form.numero_esic).trim() : null,
+      ...(form.tipo === "esic" ? { esic_prorrogacao_justificativa: String(form.esic_prorrogacao_justificativa ?? "").trim() || null } : {}),
       tipo: form.tipo,
-      categoria: form.categoria,
+      categoria: categoriaPersistida(form.tipo as TipoProtocolo, form.categoria as CategoriaProtocolo),
       status: form.status,
       assunto: form.assunto,
       descricao: form.descricao || null,
@@ -261,7 +277,28 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
     update.mutate({ status: "em_andamento", data_conclusao: null });
   }
   function handleProrrogar() {
+    if (protocolo.tipo === "esic") {
+      setEsicJustificativa("");
+      setProrrogarOpen(true);
+      return;
+    }
     update.mutate({ prorrogado: true, data_prorrogacao: new Date().toISOString().slice(0, 10) });
+  }
+
+  function confirmarProrrogacaoEsic() {
+    const justificativa = esicJustificativa.trim();
+    if (justificativa.length < 20) {
+      toast.error("A justificativa expressa deve ter ao menos 20 caracteres.");
+      return;
+    }
+    update.mutate(
+      {
+        prorrogado: true,
+        data_prorrogacao: new Date().toISOString().slice(0, 10),
+        esic_prorrogacao_justificativa: justificativa,
+      },
+      { onSuccess: () => setProrrogarOpen(false) },
+    );
   }
 
   async function handleConcluirTriagem() {
@@ -274,12 +311,23 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
       toast.error("Informe uma descrição (breve relato) antes de concluir a triagem.");
       return;
     }
+    if (form.tipo === "esic" && !String(form.numero_esic ?? "").trim()) {
+      toast.error("Informe o número do pedido e-SIC antes de concluir a triagem.");
+      return;
+    }
+    if (form.tipo === "esic" && protocolo.tipo !== "esic" && form.prorrogado
+        && String(form.esic_prorrogacao_justificativa ?? "").trim().length < 20) {
+      toast.error("Registre a justificativa da prorrogação antes de converter este protocolo para e-SIC.");
+      return;
+    }
     const { error: upErr } = await supabase
       .from("protocolos")
       .update({
         descricao: relato,
         tipo: form.tipo,
-        categoria: form.categoria,
+        categoria: categoriaPersistida(form.tipo as TipoProtocolo, form.categoria as CategoriaProtocolo),
+        numero_esic: form.tipo === "esic" ? String(form.numero_esic).trim() : null,
+        ...(form.tipo === "esic" ? { esic_prorrogacao_justificativa: String(form.esic_prorrogacao_justificativa ?? "").trim() || null } : {}),
         assunto: form.assunto,
         secretaria_id: form.secretaria_id || null,
         local_id: form.local_id || null,
@@ -307,6 +355,8 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
       toast.error("Não foi possível concluir a triagem.");
     }
   }
+  // O listener de teclado lê a ação do render atual (inclui número/relato editados).
+  triagemActionRef.current = handleConcluirTriagem;
 
   const wrapTooltip = (id: string, children: React.ReactNode, text: string) => (
     <Tooltip open={tooltipAberto === id}>
@@ -337,12 +387,17 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 flex-wrap">
             <span className="font-mono text-sm text-muted-foreground">{protocolo.numero}</span>
+            {protocolo.tipo === "esic" && protocolo.numero_esic && (
+              <Badge variant="outline" className="border-teal-600 text-teal-800 dark:text-teal-300 text-[10px]">
+                Nº e-SIC {protocolo.numero_esic}
+              </Badge>
+            )}
             <Badge variant="outline" className="text-[10px] uppercase">{PRAZOS[protocolo.tipo as TipoProtocolo].label}</Badge>
             <Badge
-              className={`text-[10px] ${categoriaBadgeClass(protocolo.categoria as CategoriaProtocolo)}`}
-              title={categoriaLabel(protocolo.categoria as CategoriaProtocolo)}
+              className={`text-[10px] ${categoriaBadgeClass(categoriaDoProtocolo(protocolo.tipo, protocolo.categoria))}`}
+              title={categoriaLabel(categoriaDoProtocolo(protocolo.tipo, protocolo.categoria))}
             >
-              {categoriaLabel(protocolo.categoria as CategoriaProtocolo)}
+              {categoriaLabel(categoriaDoProtocolo(protocolo.tipo, protocolo.categoria))}
             </Badge>
             <SlaBadge protocolo={protocolo as any} />
             {protocolo.prorrogado && <Badge variant="outline" className="text-[10px]">prorrogado</Badge>}
@@ -513,8 +568,15 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
               <Field label="Status" value={protocolo.status?.replace("_", " ")} />
               <Field label="Prorrogado" value={protocolo.prorrogado ? "Sim" : "Não"} />
               <Field label="Data de abertura" value={formatDate(protocolo.data_abertura)} />
+              {protocolo.tipo === "esic" && <Field label="Número do pedido e-SIC" value={protocolo.numero_esic ?? "Não informado"} />}
               <Field label="Prazo final" value={formatDate(s.prazoFinal)} />
               {protocolo.data_prorrogacao && <Field label="Data prorrogação" value={formatDate(protocolo.data_prorrogacao)} />}
+              {protocolo.tipo === "esic" && protocolo.esic_prorrogacao_justificativa && (
+                <div className="col-span-2 rounded-md border border-teal-700/30 bg-teal-700/5 px-3 py-2">
+                  <p className="text-xs text-muted-foreground">Justificativa da prorrogação e-SIC</p>
+                  <p className="text-sm whitespace-pre-wrap">{protocolo.esic_prorrogacao_justificativa}</p>
+                </div>
+              )}
               {protocolo.data_conclusao && <Field label="Data conclusão" value={formatDate(protocolo.data_conclusao)} />}
               <Field label="Secretaria" value={protocolo.secretarias?.nome ?? "—"} />
               {protocolo.locais && <Field label="Local" value={protocolo.locais.nome} />}
@@ -532,11 +594,25 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
         ) : (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <Field2 label="Número">
+              <Field2 label="Número interno">
                 <Input value={form.numero} onChange={e => setForm({ ...form, numero: e.target.value })} />
               </Field2>
+              {form.tipo === "esic" && (
+                <Field2 label="Número do pedido e-SIC *">
+                  <Input value={form.numero_esic ?? ""} onChange={e => setForm({ ...form, numero_esic: e.target.value })} placeholder="Ex.: 026/2026" />
+                </Field2>
+              )}
+              {form.tipo === "esic" && form.prorrogado && (
+                <Field2 label="Justificativa da prorrogação e-SIC">
+                  <Textarea value={form.esic_prorrogacao_justificativa ?? ""} onChange={e => setForm({ ...form, esic_prorrogacao_justificativa: e.target.value })} rows={3} />
+                </Field2>
+              )}
               <Field2 label="Tipo">
-                <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v })}>
+                <Select value={form.tipo} onValueChange={(v) => setForm({
+                  ...form,
+                  tipo: v,
+                  categoria: v === "esic" ? "esic" : form.categoria === "esic" ? "pedido_informacao" : form.categoria,
+                })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ouvidoria">Ouvidoria</SelectItem>
@@ -545,10 +621,10 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
                 </Select>
               </Field2>
               <Field2 label="Categoria">
-                <Select value={form.categoria} onValueChange={(v) => setForm({ ...form, categoria: v })}>
+                <Select value={form.categoria} onValueChange={(v) => setForm({ ...form, categoria: v })} disabled={form.tipo === "esic"}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {CATEGORIAS.map(c => (
+                    {CATEGORIAS.filter(c => form.tipo === "esic" ? c.value === "esic" : c.value !== "esic").map(c => (
                       <SelectItem key={c.value} value={c.value}>
                         <span className="font-mono mr-2">{c.sigla}</span>{c.label}
                       </SelectItem>
@@ -701,6 +777,36 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
           <AlertDialogCancel disabled={update.isPending}>Cancelar</AlertDialogCancel>
           <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmarConclusao(); }} disabled={update.isPending}>
             Confirmar conclusão
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    <AlertDialog open={prorrogarOpen} onOpenChange={setProrrogarOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Prorrogar prazo do e-SIC</AlertDialogTitle>
+          <AlertDialogDescription>
+            O prazo passa de 20 para 30 dias. Registre a justificativa expressa da prorrogação; ela ficará vinculada ao pedido.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="esic-prorrogacao-justificativa">Justificativa *</Label>
+          <Textarea
+            id="esic-prorrogacao-justificativa"
+            rows={4}
+            value={esicJustificativa}
+            onChange={e => setEsicJustificativa(e.target.value)}
+            placeholder="Explique o motivo concreto que impede a resposta dentro do prazo inicial."
+          />
+          <p className="text-[11px] text-muted-foreground">Mínimo de 20 caracteres. A aplicação registra a data e a justificativa.</p>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={update.isPending}>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={e => { e.preventDefault(); confirmarProrrogacaoEsic(); }}
+            disabled={update.isPending}
+          >
+            Confirmar prorrogação
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
