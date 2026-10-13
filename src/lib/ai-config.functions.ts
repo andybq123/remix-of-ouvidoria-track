@@ -28,7 +28,13 @@ export const getAiConfig = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw error;
     const d: any = data ?? {};
-    const geminiKey: string | null = d.gemini_api_key ?? (d.provider === "gemini" ? d.api_key : null) ?? null;
+    const { restaurarChavesSeNecessario } = await import("./ai-keys-store.server");
+    const chaves = await restaurarChavesSeNecessario({
+      grok_api_key: d.grok_api_key ?? null,
+      gemini_api_key: d.gemini_api_key ?? (d.provider === "gemini" ? d.api_key : null) ?? null,
+    });
+    d.grok_api_key = chaves.grok ?? null;
+    const geminiKey: string | null = chaves.gemini ?? null;
     const raw: string[] = Array.isArray(d.priority) ? d.priority : [];
     const priority = [
       ...raw.filter((p): p is Prov => (KNOWN as string[]).includes(p)),
@@ -70,6 +76,10 @@ export const saveAiProvider = createServerFn({ method: "POST" })
     else if (data.apiKey) patch[`${col}_api_key`] = data.apiKey;
     const { error } = await context.supabase.from("ai_config").upsert({ id: true, ...patch } as any, { onConflict: "id" });
     if (error) throw error;
+    if (data.clearKey || data.apiKey) {
+      const { salvarChavesArquivo } = await import("./ai-keys-store.server");
+      await salvarChavesArquivo({ [col]: data.clearKey ? null : data.apiKey });
+    }
     await invalidate();
     return { ok: true, reply };
   });

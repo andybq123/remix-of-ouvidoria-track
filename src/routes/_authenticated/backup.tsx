@@ -156,7 +156,11 @@ function BackupPage() {
         if (r.pulados) resumo.push(`${r.pulados} contas puladas (e-mail já existe com outro cadastro)`);
       }
       for (const t of tabelas) {
-        const rows = arquivo.tabelas[t]!;
+        let rows = arquivo.tabelas[t]!;
+        // Nunca apaga chaves de IA já salvas com um backup que não tem chave.
+        if (t === "ai_config") {
+          rows = rows.map((r) => Object.fromEntries(Object.entries(r).filter(([k, v]) => !(k.endsWith("api_key") && !v))));
+        }
         let gravados = 0;
         for (const lote of emLotes(rows)) {
           setProgresso({ pct: (feitos / total) * 100, texto: `Restaurando ${t} (${gravados}/${rows.length})...` });
