@@ -41,7 +41,7 @@ type Arquivo = {
 const todosGrupos = () => Object.fromEntries(BACKUP_GRUPOS.map((g) => [g.id, true]));
 
 function baixar(bytes: Uint8Array, nome: string) {
-  const url = URL.createObjectURL(new Blob([bytes], { type: "application/zip" }));
+  const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: "application/zip" }));
   const a = document.createElement("a");
   a.href = url; a.download = nome; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
