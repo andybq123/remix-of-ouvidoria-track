@@ -64,3 +64,17 @@ Notificações de pedido e-SIC/LAI recebidas por e-mail passam a ter número ofi
 ## Limpeza para importar outro backup
 
 O procedimento separado `./limpar_para_importacao.sh` zera protocolos/relatórios, logs/coletas e IA do banco, preservando usuários, secretarias, locais, responsáveis, assuntos e contas de e-mail. Exige backup validado e confirmação digitada; não é executado pelo atualizador. Consulte [o guia de limpeza e importação](../docs/limpeza-importacao.md) para simular primeiro, importar com ingestão pausada e retomar depois.
+
+## Alterar o domínio (cinza ou laranja)
+
+Na raiz do clone, após receber esta versão via `./atualizar_front.sh`:
+
+```bash
+cd ~/controle-seta
+sudo ./alterar_dominio.sh --simular
+sudo ./alterar_dominio.sh
+```
+
+O comando pergunta o novo domínio e se o proxy Cloudflare final será **laranja** ou **cinza**. Para emitir o HTTPS com segurança, deixe o novo DNS cinza inicialmente; se escolher laranja, o script pedirá para ativá-lo depois de validar o certificado, com **Full (strict)**. Não usa Flexible, não altera o painel Cloudflare sozinho e não reinstala/limpa o banco.
+
+Inclui backup das configurações/artefato, verificação de login/API e tentativa de rollback em falha. Leia o [procedimento completo de domínio e Cloudflare](../docs/alterar-dominio.md) antes de executar, incluindo DNS, portas 80/443, renovação do certificado, callbacks Gmail e restauração.
