@@ -1,6 +1,7 @@
 import { urlValida1doc } from "./url-1doc";
 import { PROTOCOLO_EXTRACT_SYSTEM, normalizarExtracao, sanitizarTextoProtocolo } from "@/lib/protocolo-extract.shared";
 import { gerarNumeroProtocolo } from "@/lib/prazo";
+import { extrairPedidoEsic, acaoNotificacaoEsic } from "./esic";
 
 function norm(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -212,7 +213,7 @@ async function extrairComIA(texto: string) {
     responseFormat: "json_object",
   });
   let parsed: any = {};
-  try { parsed = JSON.parse(content); } catch {}
+  try { parsed = JSON.parse(content); } catch { /* A validação usa campos vazios quando a IA não retorna JSON. */ }
   return { extr: normalizarExtracao(parsed), provider };
 }
 
@@ -232,6 +233,8 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
   const { corrigirAcentos } = await import("./corrigir-acentos");
   const assunto = corrigirAcentos(input.assunto ?? "");
   const corpo = corrigirAcentos(input.corpo ?? "");
+  const pedidoEsic = extrairPedidoEsic(`${assunto}\n${corpo}`);
+  const emailEhEsic = !!pedidoEsic;
   const textoCompleto = [`De: ${remetente}`, `Para: ${destinatario}`, `Assunto: ${assunto}`, "", corpo].join("\n");
   let logId = input.existingLogId;
 
@@ -275,16 +278,17 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
 
     // Atualização/baixa reconhecível pelo número no assunto: não gasta uma
     // chamada de IA para reclassificar um protocolo que já existe.
-    const numeroAssuntoRapido = extrairNumeroDoAssunto(assunto, corpo);
+    if (emailEhEsic && !pedidoEsic.numero) throw new Error("Número do pedido e-SIC não identificado; revise o e-mail antes de reprocessar.");
+    const numeroAssuntoRapido = pedidoEsic?.numero || extrairNumeroDoAssunto(assunto, corpo);
     if (numeroAssuntoRapido) {
-      const { data: existente, error: errExistente } = await supabaseAdmin
-        .from("protocolos")
-        .select("id, numero, status")
-        .in("numero", normalizarNumero(numeroAssuntoRapido))
-        .maybeSingle();
+      const consultaRapida = emailEhEsic
+        ? supabaseAdmin.rpc("protocolo_esic_por_numero", { p_numero: numeroAssuntoRapido })
+        : supabaseAdmin.from("protocolos").select("id, numero, status")
+          .neq("tipo", "esic").in("numero", normalizarNumero(numeroAssuntoRapido));
+      const { data: existente, error: errExistente } = await consultaRapida.maybeSingle();
       if (errExistente) throw errExistente;
       if (existente) {
-        const acao = detectarAcao(assunto, corpo);
+        const acao = emailEhEsic ? acaoNotificacaoEsic(assunto) : detectarAcao(assunto, corpo);
         const linkAcomp = extrairLinkAcompanhar(corpo);
         const resumoEmail = [
           `E-mail recebido em ${new Date().toLocaleString("pt-BR")}`,
@@ -327,7 +331,9 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
       }
     }
 
-    const { extr, provider: aiProvider } = await extrairComIA(textoCompleto);
+    const { extr, provider: aiProvider } = pedidoEsic
+      ? { extr: pedidoEsic, provider: null }
+      : await extrairComIA(textoCompleto);
     // Marca imediatamente qual IA processou este e-mail (útil quando o
     // fluxo falhar mais adiante mas a extração já aconteceu).
     {
@@ -336,32 +342,27 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
       if (errAi) console.error("[ingest] falha ao gravar ai_provider:", errAi);
     }
 
-    // Número real da Ouvidoria vindo no assunto do e-mail tem prioridade
-    // absoluta sobre o que a IA inferiu (evita gerar números sintéticos).
-    // Se for encontrado, ele é autoritativo: nunca será sobrescrito nem
-    // substituído por um número gerado.
-    const numeroDoAssunto = extrairNumeroDoAssunto(assunto, corpo);
+    const numeroDoAssunto = pedidoEsic?.numero || extrairNumeroDoAssunto(assunto, corpo);
     if (numeroDoAssunto) extr.numero = numeroDoAssunto;
 
-    // Detecta e-SIC pelo assunto/corpo do e-mail (ex: "Pedido de e-SIC")
-    {
-      const t = norm(`${assunto}\n${corpo}`);
-      if (/\be[\s\-]?sic\b/.test(t) || t.includes("pedido de e sic") || t.includes("pedido de esic")) {
-        extr.tipo = "esic" as any;
-      }
+    if (emailEhEsic) {
+      extr.tipo = "esic";
+      extr.categoria = "pedido_informacao";
     }
+    const numeroEsic = emailEhEsic ? (numeroDoAssunto || extr.numero || null) : null;
 
     // ===== Detectar se é atualização/baixa de protocolo já existente =====
     if (extr.numero) {
       const variantes = normalizarNumero(extr.numero);
-      const { data: existente } = await supabaseAdmin
-        .from("protocolos")
-        .select("id, numero, status")
-        .in("numero", variantes)
-        .maybeSingle();
+      const consultaExistente = emailEhEsic && numeroEsic
+        ? supabaseAdmin.rpc("protocolo_esic_por_numero", { p_numero: numeroEsic })
+        : supabaseAdmin.from("protocolos").select("id, numero, status")
+          .neq("tipo", "esic").in("numero", variantes);
+      const { data: existente, error: erroBusca } = await consultaExistente.maybeSingle();
+      if (erroBusca) throw erroBusca;
 
       if (existente) {
-        const acao = detectarAcao(assunto, corpo);
+        const acao = emailEhEsic ? acaoNotificacaoEsic(assunto) : detectarAcao(assunto, corpo);
         const linkAcomp = extrairLinkAcompanhar(corpo);
         const resumoEmail = [
           `E-mail recebido em ${new Date().toLocaleString("pt-BR")}`,
@@ -407,9 +408,9 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
       }
     }
 
-    let secretariaId: string | null = account.secretaria_id;
+    let secretariaId: string | null = emailEhEsic ? null : account.secretaria_id;
     let forcarTriagemAssunto = false;
-    if (!secretariaId) {
+    if (!emailEhEsic && !secretariaId) {
       const { data: secs } = await supabaseAdmin.from("secretarias").select("id, nome, sigla");
 
       // 1) Tenta pelo destinatário do e-mail (header "Para:")
@@ -451,7 +452,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
 
     // Mesmo quando a conta de e-mail já amarra a secretaria, ainda assim
     // respeita a flag forcar_triagem do catálogo de assuntos.
-    if (!forcarTriagemAssunto && extr.assunto_categoria) {
+    if (!emailEhEsic && !forcarTriagemAssunto && extr.assunto_categoria) {
       const alvoAssunto = norm(extr.assunto_categoria);
       const { data: matchFlag } = await supabaseAdmin
         .from("assuntos")
@@ -467,7 +468,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
     }
 
     let localId: string | null = null;
-    if (secretariaId && extr.local_sugerido) {
+    if (!emailEhEsic && secretariaId && extr.local_sugerido) {
       const { data: locs } = await supabaseAdmin
         .from("locais").select("id, nome").eq("secretaria_id", secretariaId);
       const alvo = norm(extr.local_sugerido);
@@ -478,7 +479,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
     // Fallback: para secretarias sem subgrupos (todas exceto Saúde), o local
     // padrão deve ser a unidade com o mesmo nome/sigla da própria secretaria.
     // Ex.: SEPLAN → local "SEPLAN". A Saúde tem várias UBS, então não se aplica.
-    if (secretariaId && !localId) {
+    if (!emailEhEsic && secretariaId && !localId) {
       const { data: secRow } = await supabaseAdmin
         .from("secretarias")
         .select("nome, sigla")
@@ -500,11 +501,23 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
       }
     }
 
-    // Validação final: se o assunto trouxe um número, ele é a fonte da
-    // verdade — jamais cair no gerador automático nesse caso.
+    // e-SIC mantém o número externo em campo próprio; numero continua sendo
+    // o identificador interno, único e compatível com o restante do sistema.
     let numero: string;
     let numeroGerado = false;
-    if (numeroDoAssunto) {
+    if (emailEhEsic) {
+      numero = "";
+      for (let tentativa = 0; tentativa < 20 && !numero; tentativa++) {
+        const candidato = gerarNumeroProtocolo("esic");
+        const { data: existeNumero, error } = await supabaseAdmin
+          .from("protocolos").select("id")
+          .in("numero", normalizarNumero(candidato)).maybeSingle();
+        if (error) throw error;
+        if (!existeNumero) numero = candidato;
+      }
+      if (!numero) throw new Error("Não foi possível gerar um número interno único para o pedido e-SIC.");
+      numeroGerado = true;
+    } else if (numeroDoAssunto) {
       numero = numeroDoAssunto;
     } else if (extr.numero) {
       numero = extr.numero;
@@ -521,10 +534,11 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
       const variantes = normalizarNumero(numero);
       const { data: jaExiste } = await supabaseAdmin
         .from("protocolos")
-        .select("id, numero")
+        .select("id, numero, tipo")
         .in("numero", variantes)
         .maybeSingle();
       if (jaExiste) {
+        if (emailEhEsic || jaExiste.tipo === "esic") throw new Error("Número interno em uso; reprocessar para gerar outro identificador.");
         await supabaseAdmin.from("email_inbox_log").update({
           status: "processado",
           protocolo_id: jaExiste.id,
@@ -538,15 +552,17 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
     const dataAbertura = extr.data_abertura || new Date().toISOString().slice(0, 10);
 
     const resumo = [
-      "Nova Ouvidoria recebida.",
+      emailEhEsic ? "Novo Pedido e-SIC recebido." : "Nova Ouvidoria recebida.",
       "",
-      `Nº: ${extr.numero || numero}`,
+      ...(emailEhEsic
+        ? [`Nº e-SIC: ${numeroEsic || "não identificado"}`, `Nº interno: ${numero}`]
+        : [`Nº: ${extr.numero || numero}`]),
       `Assunto: ${extr.assunto || assunto || ""}`,
       `De: ${extr.solicitante || "-"}`,
       `Para: ${extr.destinatario || ""}`,
     ].join("\n");
 
-    // Triagem só é necessária para ouvidorias quando:
+    // e-SIC sempre entra na triagem. Ouvidorias seguem as regras existentes:
     //  (a) não conseguimos identificar a secretaria responsável, OU
     //  (b) o assunto é da Saúde e exige decidir qual UBS/CAPS atende.
     // Demais assuntos com secretaria já identificada seguem direto, sem triagem.
@@ -563,14 +579,17 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
     // 2.240/2026: Postos de Saúde") ou com pequenas variações de grafia.
     const assuntoNorm = norm(extr.assunto_categoria || extr.assunto || "");
     const casaSaude = ASSUNTOS_SAUDE_TRIAGEM.some((a) => assuntoNorm.includes(a));
-    const precisaTriagem =
-      extr.tipo === "ouvidoria" &&
-      (forcarTriagemAssunto || !secretariaId || casaSaude);
+    const precisaTriagem = emailEhEsic || (
+      extr.tipo === "ouvidoria" && (forcarTriagemAssunto || !secretariaId || casaSaude)
+    );
 
     const { data: novo, error: errIns } = await supabaseAdmin
       .from("protocolos")
       .insert({
-        numero, tipo: extr.tipo, categoria: extr.categoria,
+        numero,
+        numero_esic: numeroEsic,
+        tipo: extr.tipo,
+        categoria: emailEhEsic ? "pedido_informacao" : extr.categoria,
         assunto: stripAssuntoPrefixo(extr.assunto || assunto || "Sem assunto"),
         descricao: resumo,
         solicitante: extr.solicitante || remetente || null,
@@ -586,7 +605,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
       status: "processado",
       protocolo_id: novo!.id,
       processado_em: new Date().toISOString(),
-      erro: numeroGerado ? "número gerado (não encontrado no e-mail)" : null,
+      erro: numeroGerado && !emailEhEsic ? "número gerado (não encontrado no e-mail)" : null,
       ai_provider: aiProvider,
     }).eq("id", logId!);
 
@@ -1393,7 +1412,7 @@ async function _sincronizarImapContas(): Promise<{ contas: number; novos: number
         ultima_sync_erro_detalhe: contaErroDetalhe,
       }).eq("id", conta.id);
     } finally {
-      try { await client?.logout(); } catch {}
+      try { await client?.logout(); } catch { /* O erro de conexão já foi registrado acima. */ }
     }
   }
 

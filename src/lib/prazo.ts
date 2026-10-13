@@ -6,6 +6,7 @@ export type CategoriaProtocolo =
   | "elogio"
   | "reclamacao"
   | "pedido_informacao"
+  | "esic"
   | "denuncia"
   | "solicitacao"
   | "sugestao"
@@ -20,6 +21,7 @@ export const CATEGORIAS: {
   { value: "elogio",            label: "Elogio",               sigla: "E",   badgeClass: "bg-green-600 text-white border-transparent" },
   { value: "reclamacao",        label: "Reclamação",           sigla: "R",   badgeClass: "bg-red-600 text-white border-transparent" },
   { value: "pedido_informacao", label: "Pedido de informação", sigla: "LAI", badgeClass: "bg-purple-600 text-white border-transparent" },
+  { value: "esic",              label: "Pedido e-SIC",          sigla: "e-SIC", badgeClass: "bg-teal-700 text-white border-transparent" },
   { value: "denuncia",          label: "Denúncia",             sigla: "D",   badgeClass: "bg-black text-white border-transparent" },
   { value: "solicitacao",       label: "Solicitação",          sigla: "S",   badgeClass: "bg-yellow-400 text-black border-transparent" },
   { value: "sugestao",          label: "Sugestão",             sigla: "SG",  badgeClass: "bg-blue-600 text-white border-transparent" },
@@ -34,6 +36,21 @@ export const categoriaSigla = (c: CategoriaProtocolo) =>
 
 export const categoriaBadgeClass = (c: CategoriaProtocolo) =>
   CATEGORIAS.find(x => x.value === c)?.badgeClass ?? "bg-muted text-muted-foreground border-border";
+
+/** Categoria estatística: e-SIC é derivado do tipo e permanece um valor próprio nos relatórios. */
+export function categoriaDoProtocolo(tipo?: string | null, categoria?: string | null): CategoriaProtocolo {
+  if (tipo === "esic") return "esic";
+  return CATEGORIAS.some((item) => item.value === categoria)
+    ? (categoria as CategoriaProtocolo)
+    : "outros";
+}
+
+/** Categoria compatível com o enum persistido do banco. */
+export type CategoriaPersistidaProtocolo = Exclude<CategoriaProtocolo, "esic">;
+
+export function categoriaPersistida(tipo: TipoProtocolo, categoria: CategoriaProtocolo): CategoriaPersistidaProtocolo {
+  return tipo === "esic" || categoria === "esic" ? "pedido_informacao" : categoria;
+}
 
 export const PRAZOS = {
   ouvidoria: { inicial: 30, prorrogacao: 30, label: "Ouvidoria" },

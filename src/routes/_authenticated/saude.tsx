@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { situacaoProtocolo, formatDate, PRAZOS, categoriaLabel, categoriaSigla, categoriaBadgeClass, CATEGORIAS, type CategoriaProtocolo, type TipoProtocolo } from "@/lib/prazo";
+import { situacaoProtocolo, formatDate, PRAZOS, categoriaLabel, categoriaSigla, categoriaBadgeClass, categoriaDoProtocolo, CATEGORIAS, type TipoProtocolo } from "@/lib/prazo";
 import { HeartPulse } from "lucide-react";
 import { fetchAllPaginated } from "@/lib/fetch-all";
 import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
@@ -102,7 +102,7 @@ function SaudePage() {
 
   const porCategoria = useMemo(() =>
     CATEGORIAS
-      .map(c => ({ name: c.label, value: saude.filter(p => p.categoria === c.value).length }))
+      .map(c => ({ name: c.label, value: saude.filter(p => categoriaDoProtocolo(p.tipo, p.categoria) === c.value).length }))
       .filter(d => d.value > 0),
   [saude]);
 
@@ -112,7 +112,7 @@ function SaudePage() {
     CATEGORIAS.forEach(c => {
       const counts = new Map<string, number>();
       saude
-        .filter(p => p.categoria === c.value)
+        .filter(p => categoriaDoProtocolo(p.tipo, p.categoria) === c.value)
         .forEach(p => {
           const nome = (p as any).locais?.nome ?? "Sem unidade";
           counts.set(nome, (counts.get(nome) ?? 0) + 1);
@@ -252,8 +252,8 @@ function SaudePage() {
                       labelLine={false}
                       label={({ value, percent }: any) => `${value} (${(percent * 100).toFixed(0)}%)`}
                     >
-                      {porCategoria.map((_, i) => (
-                        <Cell key={i} fill={COLORS[(i + 3) % COLORS.length]} />
+                      {porCategoria.map((d, i) => (
+                        <Cell key={i} fill={d.name === "Pedido e-SIC" ? "#0f766e" : COLORS[(i + 3) % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip content={<ChartTooltipContent unit="protocolo(s)" />} />
@@ -336,12 +336,13 @@ function SaudePage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-mono text-xs text-muted-foreground">{p.numero}</span>
+                      {p.tipo === "esic" && p.numero_esic && <Badge variant="outline" className="border-teal-600 text-teal-800 dark:text-teal-300 text-[10px]">Nº e-SIC {p.numero_esic}</Badge>}
                       <Badge variant="outline" className="text-[10px] uppercase">{PRAZOS[p.tipo as TipoProtocolo].label}</Badge>
                       <Badge
-                        className={`text-[10px] ${categoriaBadgeClass(p.categoria as CategoriaProtocolo)}`}
-                        title={categoriaLabel(p.categoria as CategoriaProtocolo)}
+                        className={`text-[10px] ${categoriaBadgeClass(categoriaDoProtocolo(p.tipo, p.categoria))}`}
+                        title={categoriaLabel(categoriaDoProtocolo(p.tipo, p.categoria))}
                       >
-                        {categoriaLabel(p.categoria as CategoriaProtocolo)}
+                        {categoriaLabel(categoriaDoProtocolo(p.tipo, p.categoria))}
                       </Badge>
                       <Badge variant="secondary" className="text-[10px]">{p.status.replace("_", " ")}</Badge>
                       {(p as any).locais?.nome && (

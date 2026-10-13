@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { calcularPrazo, situacaoProtocolo, situacaoClasses, situacaoLabel, formatDate, gerarNumeroProtocolo, PRAZOS, CATEGORIAS, categoriaLabel, categoriaSigla, categoriaBadgeClass, type TipoProtocolo, type CategoriaProtocolo } from "@/lib/prazo";
+import { calcularPrazo, situacaoProtocolo, situacaoClasses, situacaoLabel, formatDate, gerarNumeroProtocolo, PRAZOS, CATEGORIAS, categoriaLabel, categoriaSigla, categoriaBadgeClass, categoriaDoProtocolo, categoriaPersistida, type TipoProtocolo, type CategoriaProtocolo } from "@/lib/prazo";
 import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
 import { termosBusca, matchProtocolo, matchNumero } from "@/lib/search-protocolos";
 import { SlaBadge } from "@/components/sla-badge";
@@ -29,6 +29,7 @@ import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { MapPointPicker } from "@/components/map-point-picker";
 import { currentMonthValue, monthOptionsFromDates, isInMonth } from "@/lib/month-filter";
 import { importarProtocolosAntigos } from "@/lib/protocolos-antigos-import.functions";
+import { invalidateProtocoloCaches } from "@/hooks/use-protocolos-realtime";
 
 export const Route = createFileRoute("/_authenticated/protocolos")({
   component: ProtocolosPage,
@@ -157,7 +158,7 @@ function ProtocolosPage() {
     }
     if (filtroStatus !== "todos" && p.status !== filtroStatus) return false;
     if (filtroTipo !== "todos" && p.tipo !== filtroTipo) return false;
-    if (filtroCategoria !== "todos" && p.categoria !== filtroCategoria) return false;
+    if (filtroCategoria !== "todos" && categoriaDoProtocolo(p.tipo, p.categoria) !== filtroCategoria) return false;
     if (filtroSec !== "todos" && p.secretaria_id !== filtroSec) return false;
     if (dataIni || dataFim) {
       if (dataIni && (p.data_abertura ?? "") < dataIni) return false;
@@ -257,6 +258,7 @@ function ProtocolosPage() {
         )}
         {filtrados.map(p => {
           const s = situacaoProtocolo(p as any);
+          const categoriaVisivel = categoriaDoProtocolo(p.tipo, p.categoria);
           return (
             <Card key={p.id}>
               <CardContent className="p-4">
@@ -264,12 +266,17 @@ function ProtocolosPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-mono text-xs text-muted-foreground">{p.numero}</span>
+                      {p.tipo === "esic" && p.numero_esic && (
+                        <Badge variant="outline" className="border-teal-600 text-teal-800 dark:text-teal-300 text-[10px]">
+                          Nº e-SIC {p.numero_esic}
+                        </Badge>
+                      )}
                       <Badge variant="outline" className="text-[10px] uppercase">{PRAZOS[p.tipo as TipoProtocolo].label}</Badge>
                       <Badge
-                        className={`text-[10px] ${categoriaBadgeClass(p.categoria as CategoriaProtocolo)}`}
-                        title={categoriaLabel(p.categoria as CategoriaProtocolo)}
+                        className={`text-[10px] ${categoriaBadgeClass(categoriaVisivel)}`}
+                        title={categoriaLabel(categoriaVisivel)}
                       >
-                        {categoriaLabel(p.categoria as CategoriaProtocolo)}
+                        {categoriaLabel(categoriaVisivel)}
                       </Badge>
                       <Badge variant="secondary" className="text-[10px]">{p.status.replace("_", " ")}</Badge>
                       {p.prorrogado && <Badge variant="outline" className="text-[10px]">prorrogado</Badge>}
@@ -300,8 +307,10 @@ function ProtocolosPage() {
                     </Button>
                     {p.status !== "concluido" && !p.prorrogado && (
                       <Button size="sm" variant="outline"
-                        onClick={() => updateMutation.mutate({ id: p.id, patch: { prorrogado: true, data_prorrogacao: new Date().toISOString().slice(0, 10) } })}>
-                        <RotateCw className="h-3 w-3 mr-1" /> Prorrogar
+                        onClick={() => p.tipo === "esic"
+                          ? setDetail(p)
+                          : updateMutation.mutate({ id: p.id, patch: { prorrogado: true, data_prorrogacao: new Date().toISOString().slice(0, 10) } })}>
+                        <RotateCw className="h-3 w-3 mr-1" /> {p.tipo === "esic" ? "Prorrogar e-SIC" : "Prorrogar"}
                       </Button>
                     )}
                     {p.status !== "concluido" && (
@@ -338,6 +347,7 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
   const [tipo, setTipo] = useState<TipoProtocolo>("ouvidoria");
   const [categoria, setCategoria] = useState<CategoriaProtocolo>("reclamacao");
   const [numero, setNumero] = useState("");
+  const [numeroEsic, setNumeroEsic] = useState("");
   const [assunto, setAssunto] = useState("");
   const [descricao, setDescricao] = useState("");
   const [secretariaId, setSecretariaId] = useState<string>("");
@@ -364,9 +374,19 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
     setExtraindo(true);
     try {
       const r = await extrair({ data: { texto: textoColar } });
-      if (r.numero) setNumero(r.numero);
-      setTipo(r.tipo as TipoProtocolo);
-      setCategoria(r.categoria as CategoriaProtocolo);
+      const tipoExtraido = r.tipo as TipoProtocolo;
+      if (r.numero && tipoExtraido === "esic") {
+        setNumero("");
+        setNumeroEsic(r.numero);
+      } else if (r.numero) {
+        setNumero(r.numero);
+      }
+      setTipo(tipoExtraido);
+      setCategoria(tipoExtraido === "esic" ? "esic" : r.categoria as CategoriaProtocolo);
+      if (tipoExtraido === "esic") {
+        setSecretariaId("");
+        setLocalId("");
+      }
       if (r.assunto) setAssunto(r.assunto);
       if (r.descricao) setDescricao(r.descricao);
       if (r.solicitante) setSolicitante(r.solicitante);
@@ -374,19 +394,19 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
 
       // tenta casar secretaria sugerida
       let secMatched = "";
-      if (r.secretaria_sugerida) {
+      if (tipoExtraido !== "esic" && r.secretaria_sugerida) {
         const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const alvo = norm(r.secretaria_sugerida);
         const hit = secretarias.find(s => norm(s.nome).includes(alvo) || alvo.includes(norm(s.nome)) || (s.sigla && norm(s.sigla) === alvo));
         if (hit) { setSecretariaId(hit.id); secMatched = hit.id; }
       }
-      if (r.local_sugerido && secMatched) {
+      if (tipoExtraido !== "esic" && r.local_sugerido && secMatched) {
         const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const alvo = norm(r.local_sugerido);
         const hit = locais.find(l => l.secretaria_id === secMatched && (norm(l.nome).includes(alvo) || alvo.includes(norm(l.nome))));
         if (hit) setLocalId(hit.id);
       }
-      setSugestao({ secretaria: r.secretaria_sugerida, local: r.local_sugerido });
+      setSugestao(tipoExtraido === "esic" ? null : { secretaria: r.secretaria_sugerida, local: r.local_sugerido });
       toast.success("Dados extraídos. Revise antes de salvar.");
     } catch (e: any) {
       toast.error(e.message ?? "Falha na extração");
@@ -397,6 +417,8 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
 
   const create = useMutation({
     mutationFn: async () => {
+      if (!assunto.trim()) throw new Error("Informe o assunto do pedido.");
+      if (tipo === "esic" && !numeroEsic.trim()) throw new Error("Informe o número do pedido e-SIC.");
       const { data: { user } } = await supabase.auth.getUser();
       let lat: number | null = null;
       let lng: number | null = null;
@@ -418,7 +440,8 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
       }
       const { error } = await supabase.from("protocolos").insert({
         numero: numero || gerarNumeroProtocolo(tipo),
-        tipo, categoria, assunto, descricao: descricao || null,
+        numero_esic: tipo === "esic" ? (numeroEsic.trim() || null) : null,
+        tipo, categoria: categoriaPersistida(tipo, categoria), assunto, descricao: descricao || null,
         secretaria_id: secretariaId || null,
         local_id: localId || null,
         solicitante: solicitante || null,
@@ -427,14 +450,16 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
         latitude: lat,
         longitude: lng,
         created_by: user?.id,
+        triagem_pendente: tipo === "esic",
       });
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["protocolos"] });
-      toast.success("Protocolo cadastrado");
+      invalidateProtocoloCaches(qc);
+      toast.success(tipo === "esic" ? "Pedido e-SIC cadastrado para triagem" : "Protocolo cadastrado");
       setOpen(false);
-      setNumero(""); setAssunto(""); setDescricao(""); setSecretariaId(""); setLocalId(""); setSolicitante(""); setEndereco("");
+      setTipo("ouvidoria"); setCategoria("reclamacao"); setNumero(""); setNumeroEsic("");
+      setAssunto(""); setDescricao(""); setSecretariaId(""); setLocalId(""); setSolicitante(""); setEndereco("");
       setEnderecoCoords(null);
       setEnderecoExact(false);
       setEnderecoTemNumero(false);
@@ -444,6 +469,10 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
   });
 
   async function handleSubmit() {
+    if (tipo === "esic" && !numeroEsic.trim()) {
+      toast.error("Informe o número do pedido e-SIC.");
+      return;
+    }
     // Address provided but no precise coords yet → require explicit confirmation.
     if (endereco.trim() && !(enderecoCoords && enderecoExact)) {
       // Try a server lookup first to see if Nominatim has an exact match anyway.
@@ -511,10 +540,15 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Tipo *</Label>
-              <Select value={tipo} onValueChange={v => setTipo(v as TipoProtocolo)}>
+              <Select value={tipo} onValueChange={v => {
+                const novoTipo = v as TipoProtocolo;
+                setTipo(novoTipo);
+                setCategoria(novoTipo === "esic" ? "esic" : categoria === "esic" ? "reclamacao" : categoria);
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ouvidoria">Ouvidoria</SelectItem>
+                  <SelectItem value="esic">e-SIC (Acesso à Informação)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -523,12 +557,12 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
               <Input type="date" value={dataAbertura} onChange={e => setDataAbertura(e.target.value)} />
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Label>Categoria *</Label>
-            <Select value={categoria} onValueChange={v => setCategoria(v as CategoriaProtocolo)}>
+            <div className="space-y-1.5">
+              <Label>Categoria *</Label>
+            <Select value={categoria} onValueChange={v => setCategoria(v as CategoriaProtocolo)} disabled={tipo === "esic"}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {CATEGORIAS.map(c => (
+                {CATEGORIAS.filter(c => tipo === "esic" ? c.value === "esic" : c.value !== "esic").map(c => (
                   <SelectItem key={c.value} value={c.value}>
                     <span className="font-mono mr-2">{c.sigla}</span>{c.label}
                   </SelectItem>
@@ -537,9 +571,16 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Número (auto se vazio)</Label>
+            <Label>Número interno (auto se vazio)</Label>
             <Input value={numero} onChange={e => setNumero(e.target.value)} placeholder={gerarNumeroProtocolo(tipo)} />
           </div>
+          {tipo === "esic" && (
+            <div className="space-y-1.5">
+              <Label>Número do pedido e-SIC *</Label>
+              <Input value={numeroEsic} onChange={e => setNumeroEsic(e.target.value)} placeholder="Ex.: 026/2026" required />
+              <p className="text-[11px] text-muted-foreground">O pedido será marcado para triagem e terá prazo inicial de 20 dias.</p>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>Assunto *</Label>
             <Input value={assunto} onChange={e => setAssunto(e.target.value)} required />

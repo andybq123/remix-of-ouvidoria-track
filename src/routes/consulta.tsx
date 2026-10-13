@@ -70,6 +70,8 @@ const CATEGORIA_LABELS: Record<string, string> = {
   sugestao: "Sugestão",
   solicitacao: "Solicitação",
   informacao: "Pedido de informação",
+  pedido_informacao: "Pedido de informação",
+  esic: "Pedido e-SIC",
 };
 
 function fmtDate(d?: string | null) {
@@ -121,7 +123,7 @@ function ConsultaPage() {
   const pdfData = (r: ProtocoloPublico): ProtocoloPdfData => ({
     numero: r.numero,
     hash: hash.trim().toUpperCase(),
-    categoria: CATEGORIA_LABELS[r.categoria] ?? r.categoria,
+    categoria: r.tipo === "esic" ? "Pedido e-SIC" : CATEGORIA_LABELS[r.categoria] ?? r.categoria,
     assunto: r.assunto,
     descricao: r.descricao,
     solicitante: r.solicitante,
@@ -239,7 +241,7 @@ function ConsultaPage() {
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="grid gap-3 sm:grid-cols-2 text-sm">
-                <Info label="Tipo de solicitação" value={CATEGORIA_LABELS[resultado.categoria] ?? resultado.categoria} />
+                <Info label="Tipo de solicitação" value={resultado.tipo === "esic" ? "Pedido e-SIC" : CATEGORIA_LABELS[resultado.categoria] ?? resultado.categoria} />
                 <Info label="Data de abertura" value={fmtDate(resultado.data_abertura)} />
                 <Info label="Sigilo" value={resultado.sigilo ?? "—"} />
                 <Info label="Origem" value={resultado.origem ?? "—"} />

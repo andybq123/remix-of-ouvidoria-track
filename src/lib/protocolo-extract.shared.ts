@@ -89,6 +89,22 @@ ${ASSUNTOS_CATEGORIAS.map(a => `- ${a}`).join("\n")}
 
 Use string vazia "" quando não houver informação. Não invente dados. Não inclua outros campos.`;
 
+/** Identifica notificações de pedidos de acesso à informação recebidas pelo e-SIC. */
+export function detectarPedidoEsic(texto: string): boolean {
+  const normalizado = (texto || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  // Uma notificação explícita de Ouvidoria não vira e-SIC por citar o canal
+  // no relato ou rodapé. Os cabeçalhos são avaliados antes do texto livre.
+  const cabecalho = normalizado.split(/novo protocolo|nova ouvidoria|<!--html-->/)[0];
+  if (/^(?:assunto:\s*)?(?:re:\s*)?ouvidoria\s+(?:n[ºo°]\s*)?\d/m.test(cabecalho)) return false;
+  return /\be[\s-]?sic\b/.test(normalizado)
+    || /\bpedido de lai\b/.test(normalizado)
+    || /\blai\s+(?:n[ºo°]\s*)?\d[\d.]*\/20\d{2}\b/.test(cabecalho)
+    || /\bpedido de acesso a informacao\b/.test(normalizado);
+}
+
 export type ExtracaoProtocolo = {
   numero: string;
   assunto: string;
@@ -143,7 +159,7 @@ export function sanitizarTextoProtocolo(input: string): string {
   const text = input.replace(/\r\n/g, "\n");
 
   // 1) Tenta isolar o bloco "Nova {Ouvidoria|LAI|E-SIC|Manifestação} ... recebida"
-  const startRe = /Nova\s+(?:Ouvidoria|LAI|E-?SIC|Manifesta(?:ç|c)(?:ã|a)o)[^\n]*recebid[ao][^\n]*/i;
+  const startRe = /Nov[oa]\s+(?:Protocolo|Pedido(?:\s+(?:de\s+)?E[\s-]?SIC)?|Ouvidoria|LAI|E[\s-]?SIC|Manifesta(?:ç|c)(?:ã|a)o)[^\n]*recebid[ao][^\n]*/i;
   const startMatch = text.match(startRe);
   if (startMatch && typeof startMatch.index === "number") {
     const rest = text.slice(startMatch.index);

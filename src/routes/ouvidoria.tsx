@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { MapPointPicker } from "@/components/map-point-picker";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
-import { CATEGORIAS, gerarNumeroProtocolo, type CategoriaProtocolo } from "@/lib/prazo";
+import { CATEGORIAS, gerarNumeroProtocolo, type CategoriaPersistidaProtocolo } from "@/lib/prazo";
 import { ASSUNTOS_OUVIDORIA } from "@/lib/assuntos-ouvidoria";
 import { MapPin, CheckCircle2, ShieldAlert, Eye, EyeOff, UserX, Send, Copy, Download, Printer, Search, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -36,7 +36,7 @@ type Sigilo = "publico" | "sigiloso" | "anonimo";
 
 function OuvidoriaPublicaPage() {
   const [sigilo, setSigilo] = useState<Sigilo>("publico");
-  const [categoria, setCategoria] = useState<CategoriaProtocolo>("reclamacao");
+  const [categoria, setCategoria] = useState<CategoriaPersistidaProtocolo>("reclamacao");
   const [secretariaId, setSecretariaId] = useState<string>("");
   const [localId, setLocalId] = useState<string>("");
   const [grupoAssunto, setGrupoAssunto] = useState("");
@@ -431,10 +431,10 @@ function OuvidoriaPublicaPage() {
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <Label>Tipo de solicitação *</Label>
-              <Select value={categoria} onValueChange={(v) => setCategoria(v as CategoriaProtocolo)}>
+              <Select value={categoria} onValueChange={(v) => setCategoria(v as CategoriaPersistidaProtocolo)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {CATEGORIAS.map(c => (
+                  {CATEGORIAS.filter(c => c.value !== "esic").map(c => (
                     <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                   ))}
                 </SelectContent>

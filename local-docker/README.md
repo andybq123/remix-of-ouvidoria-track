@@ -56,3 +56,7 @@ curl -fsSL https://raw.githubusercontent.com/andybq123/remix-of-ouvidoria-track/
 ```
 
 O comando exige que a branch local seja `main`, interrompe se houver outras alterações locais, salva e restaura o `.env` rastreado, gera um backup verificado do banco em `local-docker/backups/` e chama o atualizador de produção existente. O atualizador valida o hash do build publicado e espera a aplicação responder em `127.0.0.1:8080`. Mantenha os backups protegidos e copie-os para fora da VPS. A aplicação é reiniciada durante a atualização.
+
+## Pedidos e-SIC
+
+Notificações de pedido e-SIC/LAI recebidas por e-mail passam a ter número oficial próprio, triagem obrigatória, categoria/cor distintas e prazo 20 + 10 dias mediante justificativa. A migration `005_esic_campos_triagem.sql` é aplicada pelo mesmo atualizador acima, sem remover dados. Consulte [o guia completo de e-SIC](../docs/esic.md) para comportamento, compatibilidade dos legados e testes. O coletor Python 1Doc não é utilizado por esse novo fluxo.

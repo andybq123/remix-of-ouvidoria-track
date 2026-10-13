@@ -444,6 +444,7 @@ export type Database = {
           data_abertura: string
           data_conclusao: string | null
           data_prorrogacao: string | null
+          esic_prorrogacao_justificativa: string | null
           descricao: string | null
           detalhes: Json | null
           endereco: string | null
@@ -456,6 +457,7 @@ export type Database = {
           local_id: string | null
           longitude: number | null
           numero: string
+          numero_esic: string | null
           origem: string | null
           prorrogado: boolean
           resolucao: string | null
@@ -483,6 +485,7 @@ export type Database = {
           data_abertura?: string
           data_conclusao?: string | null
           data_prorrogacao?: string | null
+          esic_prorrogacao_justificativa?: string | null
           descricao?: string | null
           detalhes?: Json | null
           endereco?: string | null
@@ -495,6 +498,7 @@ export type Database = {
           local_id?: string | null
           longitude?: number | null
           numero: string
+          numero_esic?: string | null
           origem?: string | null
           prorrogado?: boolean
           resolucao?: string | null
@@ -522,6 +526,7 @@ export type Database = {
           data_abertura?: string
           data_conclusao?: string | null
           data_prorrogacao?: string | null
+          esic_prorrogacao_justificativa?: string | null
           descricao?: string | null
           detalhes?: Json | null
           endereco?: string | null
@@ -534,6 +539,7 @@ export type Database = {
           local_id?: string | null
           longitude?: number | null
           numero?: string
+          numero_esic?: string | null
           origem?: string | null
           prorrogado?: boolean
           resolucao?: string | null
@@ -787,6 +793,14 @@ export type Database = {
       }
       liberar_triagem: { Args: { p_id: string }; Returns: undefined }
       liberar_triagem_admin: { Args: { p_id: string }; Returns: undefined }
+      protocolo_esic_por_numero: {
+        Args: { p_numero: string }
+        Returns: {
+          id: string
+          numero: string
+          status: Database["public"]["Enums"]["protocolo_status"]
+        }[]
+      }
       reservar_triagem: { Args: { p_id: string }; Returns: Json }
       reservar_triagem_admin: { Args: { p_id: string }; Returns: Json }
       show_limit: { Args: never; Returns: number }
