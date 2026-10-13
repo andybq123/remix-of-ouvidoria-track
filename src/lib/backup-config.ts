@@ -92,3 +92,48 @@ export function normalizarLinhaCsv(row: Record<string, string>) {
   }
   return out;
 }
+
+// Leitor de CSV simples (aspas, vírgulas e quebras de linha dentro de campos).
+export function parseCsv(texto: string): Record<string, string>[] {
+  const linhas: string[][] = [];
+  let campo = "";
+  let linha: string[] = [];
+  let aspas = false;
+  const s = texto.replace(/^\uFEFF/, "");
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (aspas) {
+      if (c === '"') {
+        if (s[i + 1] === '"') { campo += '"'; i++; } else aspas = false;
+      } else campo += c;
+    } else if (c === '"') aspas = true;
+    else if (c === ",") { linha.push(campo); campo = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && s[i + 1] === "\n") i++;
+      linha.push(campo); campo = "";
+      linhas.push(linha); linha = [];
+    } else campo += c;
+  }
+  if (campo !== "" || linha.length) { linha.push(campo); linhas.push(linha); }
+  const [cab, ...resto] = linhas;
+  if (!cab) return [];
+  return resto
+    .filter((l) => l.length > 1 || (l[0] ?? "") !== "")
+    .map((l) => Object.fromEntries(cab.map((h, i) => [h, l[i] ?? ""])));
+}
+
+// Divide linhas em lotes de até ~maxBytes para envio ao servidor.
+export function emLotes<T>(rows: T[], maxBytes = 1_500_000, maxRows = 500): T[][] {
+  const lotes: T[][] = [];
+  let atual: T[] = [];
+  let tam = 0;
+  for (const r of rows) {
+    const t = JSON.stringify(r).length;
+    if (atual.length && (tam + t > maxBytes || atual.length >= maxRows)) {
+      lotes.push(atual); atual = []; tam = 0;
+    }
+    atual.push(r); tam += t;
+  }
+  if (atual.length) lotes.push(atual);
+  return lotes;
+}
