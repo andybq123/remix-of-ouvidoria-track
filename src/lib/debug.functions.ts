@@ -160,6 +160,11 @@ export const debugZerar = createServerFn({ method: "POST" })
       resumo[t] = error ? `erro: ${error.message}` : String(count ?? 0);
     }
 
+    if (tabelas.has("ai_config")) {
+      const { salvarChavesArquivo } = await import("./ai-keys-store.server");
+      await salvarChavesArquivo({ grok: null, gemini: null });
+    }
+
     if (grupos.some((g) => g.usuarios)) {
       let apagados = 0;
       for (let page = 1; page <= 20; page++) {

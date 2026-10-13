@@ -37,11 +37,13 @@ async function loadConfig(): Promise<LoadedConfig> {
     const geminiApiKey = d.gemini_api_key ?? (d.provider === "gemini" ? d.api_key : null) ?? null;
     const geminiModel = d.gemini_model ?? (d.provider === "gemini" ? d.model : null) ?? null;
     const lovableModel = d.lovable_model ?? (d.provider === "lovable" ? d.model : null) ?? null;
+    const { restaurarChavesSeNecessario } = await import("./ai-keys-store.server");
+    const chaves = await restaurarChavesSeNecessario({ grok_api_key: d.grok_api_key ?? null, gemini_api_key: geminiApiKey });
     cached = {
       at: Date.now(),
       priority: normalizePriority(d.priority),
-      grokApiKey: d.grok_api_key ?? null,
-      geminiApiKey,
+      grokApiKey: chaves.grok ?? null,
+      geminiApiKey: chaves.gemini ?? null,
       grokModel: d.grok_model ?? null,
       geminiModel,
       lovableModel,
