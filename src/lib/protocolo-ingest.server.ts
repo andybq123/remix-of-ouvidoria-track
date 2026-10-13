@@ -1,3 +1,4 @@
+import { urlValida1doc } from "./url-1doc";
 import { PROTOCOLO_EXTRACT_SYSTEM, normalizarExtracao, sanitizarTextoProtocolo } from "@/lib/protocolo-extract.shared";
 import { gerarNumeroProtocolo } from "@/lib/prazo";
 
@@ -167,25 +168,7 @@ function detectarAcao(assunto: string, corpo: string): "conclusao" | "atualizaca
 // Extrai o link "Acompanhar online" do corpo do e-mail do 1Doc.
 // Considera HTML (href) e texto, decodifica entidades/quoted-printable,
 // desembrulha redirecionadores e valida a URL antes de aceitar.
-export function limparUrl1doc(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  let u = String(raw).trim()
-    .replace(/=\r?\n/g, "")            // soft line break quoted-printable
-    .replace(/=3D/gi, "=")
-    .replace(/&amp;/gi, "&").replace(/&#x3D;|&#61;/gi, "=").replace(/&#x2F;|&#47;/gi, "/")
-    .replace(/^[<\["'(]+/, "").replace(/[>\]"').,;:!?]+$/, "")
-    .replace(/\s+/g, "");
-  for (let i = 0; i < 3; i++) {
-    let parsed: URL;
-    try { parsed = new URL(u); } catch { return null; }
-    // Desembrulha redirecionadores (Google, Outlook SafeLinks, etc.)
-    const inner = parsed.searchParams.get("q") || parsed.searchParams.get("url") || parsed.searchParams.get("u") || parsed.searchParams.get("target");
-    if (inner && /^https?:\/\//i.test(inner) && !/1doc/i.test(parsed.hostname)) { u = inner; continue; }
-    if (!/^https?:$/.test(parsed.protocol)) return null;
-    return parsed.toString();
-  }
-  return null;
-}
+const limparUrl1doc = urlValida1doc;
 
 function extrairLinkAcompanhar(corpo: string): string | null {
   if (!corpo) return null;

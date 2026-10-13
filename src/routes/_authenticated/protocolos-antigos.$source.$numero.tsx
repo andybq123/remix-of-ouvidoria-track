@@ -1,3 +1,4 @@
+import { urlValida1doc } from "@/lib/url-1doc";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import ouvidorias from "@/data/ouvidorias.json";
@@ -141,8 +142,8 @@ function Detail() {
             </div>
             <h1 className="mt-3 text-2xl font-semibold text-slate-900">Ouvidoria nº {r.numero}</h1>
             <p className="mt-1 text-sm capitalize text-slate-500">{dataFmt}</p>
-            {conclusao?.url && (
-              <a href={conclusao.url} target="_blank" rel="noreferrer"
+            {urlValida1doc(conclusao?.url) && (
+              <a href={urlValida1doc(conclusao.url)!} target="_blank" rel="noreferrer"
                  className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:underline">
                 Abrir no 1doc ↗
               </a>
