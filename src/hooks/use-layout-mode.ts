@@ -4,20 +4,19 @@ export type LayoutMode = "topbar" | "sidebar" | "workspace";
 const KEY = "layout-mode";
 
 function getInitial(): LayoutMode {
-  if (typeof window === "undefined") return "topbar";
+  if (typeof window === "undefined") return "workspace";
   try {
     const v = localStorage.getItem(KEY);
     if (v === "sidebar" || v === "topbar" || v === "workspace") return v;
   } catch {
     // A preferência é opcional quando o navegador bloqueia o armazenamento local.
   }
-  return "topbar";
+  return "workspace";
 }
 
 export function useLayoutMode(): [LayoutMode, (mode: LayoutMode) => void] {
-  const [mode, setMode] = useState<LayoutMode>("topbar");
+  const [mode, setMode] = useState<LayoutMode>(getInitial);
   useEffect(() => {
-    setMode(getInitial());
     const onStorage = (e: StorageEvent) => {
       if (
         e.key === KEY &&
