@@ -363,6 +363,7 @@ function UnitProtocolList({
               </div>
               {p.numero_esic && <p className="font-mono text-[10px] text-teal-700 dark:text-teal-300">e-SIC {p.numero_esic}</p>}
               {p.assunto && <p className="mt-0.5 line-clamp-2 text-foreground">{p.assunto}</p>}
+              <PrazoLinha point={p} />
             </button>
           ))}
         </div>

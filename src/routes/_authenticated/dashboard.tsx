@@ -959,6 +959,8 @@ function Dashboard() {
                 secretariaIcone: p.secretarias?.icone,
                 data_abertura: p.data_abertura,
                 data_conclusao: p.data_conclusao,
+                prorrogado: p.prorrogado,
+                data_prorrogacao: p.data_prorrogacao,
                 categoria: categoriaDoProtocolo(p.tipo, p.categoria),
                 tipo: p.tipo,
                 local: p.locais?.nome,

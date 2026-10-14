@@ -126,7 +126,7 @@ function MapaPage() {
       fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
-          .select("id, numero, numero_esic, assunto, status, local_id, secretaria_id, tipo, prorrogado, data_abertura")
+          .select("id, numero, numero_esic, assunto, status, local_id, secretaria_id, tipo, prorrogado, data_abertura, data_conclusao, data_prorrogacao")
           .eq("triagem_pendente", false)
           .in("secretaria_id", secretariaIdsSelecionadas)
           .not("local_id", "is", null)
@@ -153,6 +153,8 @@ function MapaPage() {
         secretariaIcone: p.secretarias?.icone,
         data_abertura: p.data_abertura,
         data_conclusao: p.data_conclusao,
+        prorrogado: p.prorrogado,
+        data_prorrogacao: p.data_prorrogacao,
         categoria: categoriaDoProtocolo(p.tipo, p.categoria),
         tipo: p.tipo,
         local: p.locais?.nome,
@@ -176,6 +178,11 @@ function MapaPage() {
         assunto: p.assunto,
         status: p.status,
         local_id: p.local_id,
+        tipo: p.tipo,
+        prorrogado: p.prorrogado,
+        data_abertura: p.data_abertura,
+        data_conclusao: p.data_conclusao,
+        data_prorrogacao: p.data_prorrogacao,
       }));
   }, [protocolosTodos, status, prazo, localFiltroId]);
 
