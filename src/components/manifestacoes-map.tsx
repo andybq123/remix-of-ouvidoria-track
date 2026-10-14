@@ -39,7 +39,7 @@ function obrasPinSvg(icone?: string | null, badgeCount?: number) {
     ? `<div style="position:absolute;top:-4px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#0f172a;color:#fff;font:700 10px/18px ui-sans-serif,system-ui,sans-serif;text-align:center;border:2px solid #fff;box-sizing:border-box;">${badge}</div>`
     : "";
   const symbol = customIcon
-    ? `<div style="position:absolute;top:5px;left:0;width:30px;height:24px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;">${customIcon.emoji}</div>`
+    ? `<div style="position:absolute;top:5px;left:0;width:30px;height:24px;display:flex;align-items:center;justify-content:center;font-family:system-ui,'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;font-size:15px;line-height:1;">${customIcon.emoji}</div>`
     : `<img src="/icons/obras-marker.png" alt="" style="position:absolute;left:7px;top:6px;width:16px;height:16px;object-fit:contain;pointer-events:none;" />`;
   return `
     <div style="position:relative;width:30px;height:42px;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.35));">
@@ -150,7 +150,7 @@ function localSvg(count: number, icone?: string | null) {
         <circle cx="20" cy="20" r="17" fill="${c.fill}" stroke="#ffffff" stroke-width="3"/>
 
       </svg>
-      <div style="position:absolute;left:0;top:7px;width:40px;text-align:center;font-size:21px;line-height:26px;">${cfg.emoji}</div>
+      <div style="position:absolute;left:0;top:7px;width:40px;text-align:center;font-family:system-ui,'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;font-size:21px;line-height:26px;">${cfg.emoji}</div>
       <div style="position:absolute;top:-4px;right:-6px;min-width:${badgeW}px;height:18px;padding:0 4px;border-radius:9px;background:#0f172a;color:#ffffff;font:700 11px/18px ui-sans-serif,system-ui,sans-serif;text-align:center;border:2px solid #ffffff;box-shadow:0 1px 2px rgba(0,0,0,0.35);box-sizing:border-box;">${badge}</div>
     </div>`;
 }
@@ -168,7 +168,7 @@ function clusterSvg(unitCount: number, totalProtocolos: number, icone?: string |
         <rect x="3" y="6" width="32" height="28" rx="6" fill="${c.fill}" stroke="#ffffff" stroke-width="2.5"/>
 
       </svg>
-      <div style="position:absolute;left:0;top:7px;width:40px;text-align:center;font-size:21px;line-height:26px;">${cfg.emoji}</div>
+      <div style="position:absolute;left:0;top:7px;width:40px;text-align:center;font-family:system-ui,'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;font-size:21px;line-height:26px;">${cfg.emoji}</div>
       <div style="position:absolute;top:-4px;right:-6px;min-width:${badgeW}px;height:18px;padding:0 4px;border-radius:9px;background:#0f172a;color:#ffffff;font:700 11px/18px ui-sans-serif,system-ui,sans-serif;text-align:center;border:2px solid #ffffff;box-shadow:0 1px 2px rgba(0,0,0,0.35);box-sizing:border-box;">${badge}</div>
     </div>`;
 }
