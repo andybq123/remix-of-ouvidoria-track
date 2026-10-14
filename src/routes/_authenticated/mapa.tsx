@@ -12,7 +12,7 @@ import { Plus, HeartPulse } from "lucide-react";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { toast } from "sonner";
 import { MapPointPicker } from "@/components/map-point-picker";
-import { categoriaDoProtocolo } from "@/lib/prazo";
+import { categoriaDoProtocolo, situacaoProtocolo } from "@/lib/prazo";
 import { mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
 import { MapDepartmentToggle } from "@/components/map-department-toggle";
 import {
@@ -41,6 +41,7 @@ export const Route = createFileRoute("/_authenticated/mapa")({
 function MapaPage() {
   const [mapScope, setMapScope] = useState<MapDepartmentScope>("saude");
   const [status, setStatus] = useState<string>("todos");
+  const [prazo, setPrazo] = useState<string>("todos");
   const [localFiltroId, setLocalFiltroId] = useState<string>("todos");
   const [detail, setDetail] = useState<any | null>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -87,7 +88,7 @@ function MapaPage() {
       fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
-          .select("id, numero, numero_esic, assunto, endereco, latitude, longitude, status, secretaria_id, local_id, categoria, tipo, data_abertura, data_conclusao, locais(nome), secretarias(nome, sigla, icone)")
+          .select("id, numero, numero_esic, assunto, endereco, latitude, longitude, status, secretaria_id, local_id, categoria, tipo, prorrogado, data_abertura, data_conclusao, locais(nome), secretarias(nome, sigla, icone)")
           .eq("triagem_pendente", false)
           .in("secretaria_id", secretariaIdsSelecionadas)
           .not("latitude", "is", null)
@@ -125,7 +126,7 @@ function MapaPage() {
       fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
-          .select("id, numero, numero_esic, assunto, status, local_id, secretaria_id")
+          .select("id, numero, numero_esic, assunto, status, local_id, secretaria_id, tipo, prorrogado, data_abertura")
           .eq("triagem_pendente", false)
           .in("secretaria_id", secretariaIdsSelecionadas)
           .not("local_id", "is", null)
@@ -137,6 +138,7 @@ function MapaPage() {
     return (protocolos as any[])
       .filter(p => status === "todos" || p.status === status)
       .filter(p => localFiltroId === "todos" || p.local_id === localFiltroId)
+      .filter(p => prazo === "todos" || (prazo === "atrasados") === (situacaoProtocolo(p as any).situacao === "vencido"))
       .map(p => ({
         id: p.id,
         lat: p.latitude as number,
@@ -156,13 +158,14 @@ function MapaPage() {
         local_id: p.local_id,
         mapDepartment: mapDepartmentOf(p.secretarias ?? {}),
       }));
-  }, [protocolos, status, localFiltroId]);
+  }, [protocolos, status, prazo, localFiltroId]);
 
   // Para popups dos locais: lista de protocolos por local_id (independe de coordenadas)
   const pointsParaLocais = useMemo<MapPoint[]>(() => {
     return (protocolosTodos as any[])
       .filter(p => status === "todos" || p.status === status)
       .filter(p => localFiltroId === "todos" || p.local_id === localFiltroId)
+      .filter(p => prazo === "todos" || (prazo === "atrasados") === (situacaoProtocolo(p as any).situacao === "vencido"))
       .map(p => ({
         id: p.id,
         lat: NaN,
@@ -173,7 +176,7 @@ function MapaPage() {
         status: p.status,
         local_id: p.local_id,
       }));
-  }, [protocolosTodos, status, localFiltroId]);
+  }, [protocolosTodos, status, prazo, localFiltroId]);
 
   const secretariaPoints = useMemo<SecretariaPoint[]>(() => {
     return secretariasSelecionadas
@@ -214,7 +217,7 @@ function MapaPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <HeartPulse className="h-6 w-6 text-emerald-500" />
-            {mapScope === "saude" ? "Mapa da Saúde" : mapScope === "obras" ? "Mapa de Obras (SOSU)" : "Mapa — Saúde e Obras"}
+            {mapScope === "saude" ? "Mapa da Saúde" : "Mapa de Obras (SOSU)"}
           </h1>
           <p className="text-sm text-muted-foreground">
             Pontos e protocolos das áreas selecionadas em Brusque.
@@ -234,14 +237,14 @@ function MapaPage() {
 
       <MapDepartmentToggle
         value={mapScope}
-        onChange={(value) => { setMapScope(value); setLocalFiltroId("todos"); }}
+        onChange={(value) => { setMapScope(value); setLocalFiltroId("todos"); setPrazo(value === "obras" ? "atrasados" : "todos"); }}
       />
 
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Filtros</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div className="space-y-1.5">
             <Label>Status</Label>
             <Select value={status} onValueChange={setStatus}>
@@ -251,6 +254,17 @@ function MapaPage() {
                 <SelectItem value="aberto">Aberto</SelectItem>
                 <SelectItem value="em_andamento">Em andamento</SelectItem>
                 <SelectItem value="concluido">Concluído</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Prazo</Label>
+            <Select value={prazo} onValueChange={setPrazo}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="atrasados">Somente atrasados</SelectItem>
+                <SelectItem value="no_prazo">Dentro do prazo</SelectItem>
               </SelectContent>
             </Select>
           </div>

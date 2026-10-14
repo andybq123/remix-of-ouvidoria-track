@@ -180,15 +180,15 @@ function Dashboard() {
     [locaisComCoord, mapDepartmentIds],
   );
   const mapProtocolos = useMemo(
-    () => filtrados.filter((p: any) => {
+    // Obras: todas as atrasadas, de qualquer mês (atrasos são antigos por definição).
+    () => (mapScope === "obras" ? allEnriched : filtrados).filter((p: any) => {
       if (!mapDepartmentIds.has(p.secretaria_id)) return false;
-      // No mapa de Obras, mostrar apenas as ouvidorias atrasadas (vencidas).
       if (mapDepartmentOf(p.secretarias ?? {}) === "obras") {
         return p._s?.situacao === "vencido";
       }
       return true;
     }),
-    [filtrados, mapDepartmentIds],
+    [filtrados, allEnriched, mapScope, mapDepartmentIds],
   );
   const localCoordById = useMemo(
     () => new Map((locaisComCoord as any[]).map((l) => [l.id, { lat: l.latitude, lng: l.longitude }])),
@@ -967,7 +967,7 @@ function Dashboard() {
           />
           {mapScope !== "saude" && (
             <p className="text-xs text-muted-foreground mt-2">
-              Mostrando apenas ouvidorias de Obras <strong>atrasadas</strong>.
+              Mostrando <strong>{mapProtocolos.length}</strong> ouvidoria(s) de Obras <strong>atrasadas</strong> (todos os meses).
               {obrasSemCoord > 0 && (
                 <> {obrasSemCoord} atrasada(s) ainda sem localização no mapa — abra o protocolo e marque o endereço para o pino aparecer.</>
               )}
