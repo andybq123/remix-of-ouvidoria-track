@@ -236,3 +236,52 @@ export function resumoOperacional(protocolos: ProtocoloSlaInput[]) {
   }
   return { vencidos, venceHoje, vence3Dias, aguardando, concluidos, emAndamento, total: protocolos.length };
 }
+
+/* ------------------------------------------------------------------ *
+ * Resumo de prazo para popups de mapa (usa o mesmo cálculo do SLA).
+ * ------------------------------------------------------------------ */
+
+export type ResumoPrazoMapa = {
+  prazoFinal: Date;
+  /** Data-limite em dd/MM/yyyy */
+  prazoTexto: string;
+  /** Dias de atraso (>= 0). 0 quando não está atrasado. */
+  diasAtraso: number;
+  atrasado: boolean;
+  concluido: boolean;
+  /** Frase curta: "atrasada há 5 dias", "vence hoje", "faltam 12 dias", "Concluído". */
+  diasTexto: string;
+};
+
+/**
+ * Calcula o prazo de um protocolo para exibição em mapa.
+ * Retorna null quando faltam dados (sem data de abertura ou tipo desconhecido).
+ */
+export function resumoPrazoMapa(p: {
+  tipo?: string | null;
+  data_abertura?: string | null;
+  prorrogado?: boolean | null;
+  status?: string | null;
+  data_conclusao?: string | null;
+}): ResumoPrazoMapa | null {
+  const tipo = p.tipo as TipoProtocolo | null | undefined;
+  if (!p.data_abertura || !tipo || !PRAZOS[tipo]) return null;
+  const status = (p.status ?? "aberto") as StatusProtocolo;
+  const { prazoFinal } = calcularPrazo({
+    tipo,
+    data_abertura: p.data_abertura,
+    prorrogado: !!p.prorrogado,
+  });
+  const dias = diasRestantes(prazoFinal);
+  const concluido = status === "concluido";
+  const atrasado = !concluido && dias < 0;
+  const diasAtraso = atrasado ? Math.abs(dias) : 0;
+  const diasTexto = concluido
+    ? "Concluído"
+    : atrasado
+      ? `atrasada há ${diasAtraso} ${diasAtraso === 1 ? "dia" : "dias"}`
+      : dias === 0
+        ? "vence hoje"
+        : `faltam ${dias} ${dias === 1 ? "dia" : "dias"}`;
+  return { prazoFinal, prazoTexto: formatDate(prazoFinal), diasAtraso, atrasado, concluido, diasTexto };
+}

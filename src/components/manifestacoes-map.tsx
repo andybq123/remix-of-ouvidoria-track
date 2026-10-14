@@ -6,6 +6,7 @@ import { MAPBOX_TOKEN, MAPBOX_STYLE } from "@/lib/mapbox";
 import type { MapDepartment } from "@/lib/map-departments";
 import { mapDepartmentOf } from "@/lib/map-departments";
 import { obterIconeSecretaria, SECRETARIA_ICONES } from "@/lib/secretaria-map-icons";
+import { resumoPrazoMapa, type ResumoPrazoMapa } from "@/lib/prazo";
 
 export { SECRETARIA_ICONES };
 
@@ -97,6 +98,8 @@ export type MapPoint = {
   secretariaIcone?: string | null;
   data_abertura?: string | null;
   data_conclusao?: string | null;
+  prorrogado?: boolean | null;
+  data_prorrogacao?: string | null;
   categoria?: string | null;
   tipo?: string | null;
   local?: string | null;
