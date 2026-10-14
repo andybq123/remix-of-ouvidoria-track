@@ -35,6 +35,7 @@ Sistema completo de gestão de ouvidoria para prefeituras: cadastro e acompanham
 - Dashboard e página de mapas com alternância entre **Saúde**, **Obras/SOSU** e **as duas áreas**.
 - Pontos de protocolos com coordenadas e locais/unidades cadastrados, com popup de resumo dos últimos 3 meses.
 - Cadastro e reposicionamento manual de pontos vinculados à secretaria.
+- Importação administrativa em lote por número do protocolo e endereço, com prévia do resultado geocodificado antes de gravar.
 
 ### Administração
 - **Secretarias, assuntos, usuários e tarefas**.
