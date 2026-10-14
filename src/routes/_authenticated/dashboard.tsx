@@ -45,6 +45,14 @@ import { MapDepartmentToggle } from "@/components/map-department-toggle";
 import { mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
+  head: () => ({ meta: [
+    { title: "Painel de gestão | Controle SETA" },
+    { name: "description", content: "Indicadores, protocolos e mapas da Ouvidoria Municipal de Brusque." },
+    { property: "og:title", content: "Painel de gestão | Controle SETA" },
+    { property: "og:description", content: "Indicadores, protocolos e mapas da Ouvidoria Municipal de Brusque." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: Dashboard,
 });
 
@@ -135,7 +143,7 @@ function Dashboard() {
     queryFn: async () => (
       await supabase
         .from("locais")
-        .select("id, nome, latitude, longitude, secretaria_id, secretarias(nome, icone)")
+        .select("id, nome, latitude, longitude, secretaria_id, secretarias(nome, sigla, icone)")
         .not("latitude", "is", null)
         .not("longitude", "is", null)
         .order("nome")
@@ -913,6 +921,7 @@ function Dashboard() {
               nome: l.nome,
               secretaria: l.secretarias?.nome,
               secretariaIcone: l.secretarias?.icone,
+              mapDepartment: mapDepartmentOf(l.secretarias ?? {}),
             }))}
             onOpenProtocolo={(id) => {
               const p = enriched.find((x: any) => x.id === id);
