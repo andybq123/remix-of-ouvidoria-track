@@ -960,7 +960,7 @@ function Dashboard() {
           />
           {mapScope !== "saude" && obrasSemCoord > 0 && (
             <p className="text-xs text-muted-foreground mt-2">
-              {obrasSemCoord} protocolo(s) de Obras ainda sem localização no mapa. Use "Localizar no mapa" no protocolo para marcá-los.
+              {obrasSemCoord} protocolo(s) de Obras ainda sem localização no mapa. Abra o protocolo e marque o endereço para ele aparecer.
             </p>
           )}
         </CardContent>
