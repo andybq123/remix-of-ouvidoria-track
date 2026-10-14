@@ -306,7 +306,11 @@ function UnitProtocolList({
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono font-semibold text-primary">{p.numero}</span>
-                {p.status && (
+                {p.atrasada && p.status !== "concluido" ? (
+                  <span className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 font-semibold">
+                    Atrasada
+                  </span>
+                ) : p.status && (
                   <span className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted">
                     {p.status.replace(/_/g, " ")}
                   </span>
