@@ -180,7 +180,14 @@ function Dashboard() {
     [locaisComCoord, mapDepartmentIds],
   );
   const mapProtocolos = useMemo(
-    () => filtrados.filter((p: any) => mapDepartmentIds.has(p.secretaria_id)),
+    () => filtrados.filter((p: any) => {
+      if (!mapDepartmentIds.has(p.secretaria_id)) return false;
+      // No mapa de Obras, mostrar apenas as ouvidorias atrasadas (vencidas).
+      if (mapDepartmentOf(p.secretarias ?? {}) === "obras") {
+        return p._s?.situacao === "vencido";
+      }
+      return true;
+    }),
     [filtrados, mapDepartmentIds],
   );
   const localCoordById = useMemo(
