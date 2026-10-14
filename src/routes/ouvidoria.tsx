@@ -23,6 +23,8 @@ export const Route = createFileRoute("/ouvidoria")({
   ssr: false,
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Ouvidoria — Registre sua manifestação" },
       { name: "description", content: "Canal de ouvidoria do município. Registre denúncias, reclamações, elogios, sugestões e pedidos de informação — de forma pública, sigilosa ou anônima." },
       { property: "og:title", content: "Ouvidoria — Registre sua manifestação" },

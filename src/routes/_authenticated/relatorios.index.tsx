@@ -36,6 +36,14 @@ import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/relatorios/")({
+  head: () => ({ meta: [
+    { title: "Relatórios gerenciais | Controle SETA" },
+    { name: "description", content: "Relatórios gerenciais no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:title", content: "Relatórios gerenciais | Controle SETA" },
+    { property: "og:description", content: "Relatórios gerenciais no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: RelatoriosPage,
 });
 

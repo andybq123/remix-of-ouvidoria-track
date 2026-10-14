@@ -20,6 +20,14 @@ import { CheckCheck } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/atrasados")({
+  head: () => ({ meta: [
+    { title: "Protocolos atrasados | Controle SETA" },
+    { name: "description", content: "Protocolos atrasados no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:title", content: "Protocolos atrasados | Controle SETA" },
+    { property: "og:description", content: "Protocolos atrasados no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AtrasadosPage,
 });
 

@@ -9,6 +9,14 @@ import { toast } from "sonner";
 import { Shield, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/forgot-password")({
+  head: () => ({ meta: [
+    { title: "Recuperar senha | Controle SETA" },
+    { name: "description", content: "Recuperar senha no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:title", content: "Recuperar senha | Controle SETA" },
+    { property: "og:description", content: "Recuperar senha no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   ssr: false,
   component: ForgotPasswordPage,
 });

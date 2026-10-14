@@ -16,6 +16,14 @@ import { fetchAllPaginated } from "@/lib/fetch-all";
 import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
 
 export const Route = createFileRoute("/_authenticated/relatorios/secretaria/$id")({
+  head: () => ({ meta: [
+    { title: "Relatório da secretaria | Controle SETA" },
+    { name: "description", content: "Relatório da secretaria no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:title", content: "Relatório da secretaria | Controle SETA" },
+    { property: "og:description", content: "Relatório da secretaria no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: SecretariaRelatorio,
 });
 

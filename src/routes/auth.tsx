@@ -10,6 +10,14 @@ import { Shield, Mail, Lock, ArrowRight } from "lucide-react";
 import brusqueLogo from "@/assets/brusque-brasao.png";
 
 export const Route = createFileRoute("/auth")({
+  head: () => ({ meta: [
+    { title: "Entrar | Controle SETA" },
+    { name: "description", content: "Entrar no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:title", content: "Entrar | Controle SETA" },
+    { property: "og:description", content: "Entrar no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   ssr: false,
   beforeLoad: async () => {
     const { data } = await supabase.auth.getSession();
