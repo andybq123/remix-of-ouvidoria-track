@@ -965,9 +965,12 @@ function Dashboard() {
                 mapDepartment: mapDepartmentOf(p.secretarias ?? {}),
               }))}
           />
-          {mapScope !== "saude" && obrasSemCoord > 0 && (
+          {mapScope !== "saude" && (
             <p className="text-xs text-muted-foreground mt-2">
-              {obrasSemCoord} protocolo(s) de Obras ainda sem localização no mapa. Abra o protocolo e marque o endereço para ele aparecer.
+              Mostrando apenas ouvidorias de Obras <strong>atrasadas</strong>.
+              {obrasSemCoord > 0 && (
+                <> {obrasSemCoord} atrasada(s) ainda sem localização no mapa — abra o protocolo e marque o endereço para o pino aparecer.</>
+              )}
             </p>
           )}
         </CardContent>
