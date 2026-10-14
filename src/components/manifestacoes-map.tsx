@@ -92,6 +92,7 @@ export type MapPoint = {
   assunto?: string | null;
   endereco?: string | null;
   status?: string | null;
+  atrasada?: boolean;
   secretaria?: string | null;
   secretariaIcone?: string | null;
   data_abertura?: string | null;
@@ -108,7 +109,9 @@ function ProtocolMapPopup({ point, onOpen }: { point: MapPoint; onOpen?: (id: st
     <div className="space-y-1.5 min-w-[200px] max-w-[280px]">
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-sm font-bold text-primary">{point.numero}</span>
-        {point.status && <span className="text-[9px] uppercase tracking-wide rounded bg-muted px-1.5 py-0.5">{point.status.replace(/_/g, " ")}</span>}
+        {point.atrasada && point.status !== "concluido" ? (
+          <span className="text-[9px] uppercase tracking-wide rounded bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 px-1.5 py-0.5 font-semibold">Atrasada</span>
+        ) : point.status && <span className="text-[9px] uppercase tracking-wide rounded bg-muted px-1.5 py-0.5">{point.status.replace(/_/g, " ")}</span>}
       </div>
       {point.assunto && <p className="text-xs font-medium">{point.assunto}</p>}
       {point.endereco && <p className="text-xs text-muted-foreground">{point.endereco}</p>}
