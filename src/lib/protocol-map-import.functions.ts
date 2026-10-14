@@ -2,9 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { exigirAdmin } from "@/lib/admin-guard.server";
+import ouvidoriasData from "@/data/ouvidorias.json";
 import {
+  buildProtocolNumberOrFilter,
   MAX_PROTOCOL_MAP_IMPORT_LINES,
+  parseProtocolNumber,
   parseProtocolAddressLines,
+  protocolNumberMatches,
 } from "@/lib/protocol-map-import.shared";
 
 const INPUT = z.object({ text: z.string().trim().min(1).max(30_000) });
@@ -20,6 +24,22 @@ export type ProtocolMapCandidate = {
   displayName: string;
 };
 
+export type ProtocolMapProtocolMatch = {
+  id: string;
+  numero: string;
+  assunto: string | null;
+  secretaria: string | null;
+  currentEndereco: string | null;
+  hasCoordinates: boolean;
+  isAntigo: boolean;
+};
+
+export type ProtocolMapLegacyMatch = {
+  numero: string;
+  ano: number;
+  origem: string;
+};
+
 export type ProtocolMapPreviewRow = {
   line: number;
   numero: string;
@@ -32,6 +52,11 @@ export type ProtocolMapPreviewRow = {
   status: "pronto" | "nao_encontrado" | "duplicado" | "sem_resultado" | "fora_area" | "erro";
   message: string;
   candidates: ProtocolMapCandidate[];
+  numeroPersistido?: string | null;
+  protocolMatches?: ProtocolMapProtocolMatch[];
+  legacyMatches?: ProtocolMapLegacyMatch[];
+  geocodeStatus?: "pronto" | "sem_resultado" | "fora_area" | "erro";
+  geocodeMessage?: string;
 };
 
 function inBrusqueBounds(latitude: number, longitude: number): boolean {
@@ -134,11 +159,11 @@ export const previsualizarImportacaoProtocolosMapa = createServerFn({ method: "P
     for (let index = 0; index < parsed.entries.length; index++) {
       const entry = parsed.entries[index];
       if (index > 0) await new Promise((resolve) => setTimeout(resolve, 1_100));
-      const { data: matches, error } = await sb
+      const { data: possibleMatches, error } = await sb
         .from("protocolos")
-        .select("id, numero, assunto, endereco, latitude, longitude, secretarias(nome)")
-        .eq("numero", entry.numero)
-        .limit(2);
+        .select("id, numero, assunto, endereco, latitude, longitude, origem, secretarias(nome, sigla)")
+        .or(buildProtocolNumberOrFilter(entry.numero))
+        .limit(100);
       if (error) {
         rows.push({
           line: entry.line,
@@ -155,7 +180,44 @@ export const previsualizarImportacaoProtocolosMapa = createServerFn({ method: "P
         });
         continue;
       }
-      if (!matches?.length) {
+
+      const matches = (possibleMatches ?? []).filter((protocol) =>
+        protocolNumberMatches(entry.numero, protocol.numero),
+      );
+      const { baseDigits, yearDigits } = parseProtocolNumber(entry.numero);
+      const archivedByKey = new Map<string, ProtocolMapLegacyMatch>();
+      const baseNumber = Number(baseDigits);
+      if (Number.isSafeInteger(baseNumber) && baseNumber > 0) {
+        let archiveQuery = sb
+          .from("protocolos_antigos_conclusoes")
+          .select("numero, ano, source")
+          .eq("numero", baseNumber);
+        if (yearDigits) archiveQuery = archiveQuery.eq("ano", Number(yearDigits));
+        const { data: archiveRows } = await archiveQuery.limit(30);
+        for (const archived of archiveRows ?? []) {
+          const displayNumber = `${Number(archived.numero).toLocaleString("pt-BR")}/${archived.ano}`;
+          archivedByKey.set(`${archived.source}|${archived.ano}|${archived.numero}`, {
+            numero: displayNumber,
+            ano: archived.ano,
+            origem: `${archived.source} · conclusões antigas`,
+          });
+        }
+        const staticOld = (ouvidoriasData as Array<{ source: string; data: string; numero: number }>)
+          .filter((old) => Number(old.numero) === baseNumber)
+          .filter((old) => !yearDigits || old.data?.slice(0, 4) === yearDigits);
+        for (const archived of staticOld) {
+          const year = Number(archived.data?.slice(0, 4));
+          if (!year) continue;
+          const displayNumber = `${Number(archived.numero).toLocaleString("pt-BR")}/${year}`;
+          archivedByKey.set(`${archived.source}|${year}|${archived.numero}`, {
+            numero: displayNumber,
+            ano: year,
+            origem: `${archived.source} · arquivo histórico`,
+          });
+        }
+      }
+      const legacyMatches = [...archivedByKey.values()].slice(0, 10);
+      if (!matches.length) {
         rows.push({
           line: entry.line,
           numero: entry.numero,
@@ -166,72 +228,66 @@ export const previsualizarImportacaoProtocolosMapa = createServerFn({ method: "P
           currentEndereco: null,
           hasCoordinates: false,
           status: "nao_encontrado",
-          message: "Nenhum protocolo com esse número foi encontrado.",
+          message: legacyMatches.length
+            ? "Encontrado apenas no histórico. Importe esse protocolo antigo para a tabela principal antes de registrar um ponto no mapa."
+            : "Nenhum protocolo com esse número foi encontrado.",
           candidates: [],
-        });
-        continue;
-      }
-      if (matches.length > 1) {
-        rows.push({
-          line: entry.line,
-          numero: entry.numero,
-          endereco: entry.endereco,
-          protocolId: null,
-          assunto: null,
-          secretaria: null,
-          currentEndereco: null,
-          hasCoordinates: false,
-          status: "duplicado",
-          message: "Há mais de um protocolo com esse número; não será escolhido automaticamente.",
-          candidates: [],
+          legacyMatches,
         });
         continue;
       }
 
-      const protocol = matches[0];
+      const protocolMatches: ProtocolMapProtocolMatch[] = matches.map((protocol) => ({
+        id: protocol.id,
+        numero: protocol.numero,
+        assunto: protocol.assunto,
+        secretaria: protocol.secretarias?.nome ?? null,
+        currentEndereco: protocol.endereco,
+        hasCoordinates: protocol.latitude != null && protocol.longitude != null,
+        isAntigo: typeof protocol.origem === "string" && protocol.origem.startsWith("antigo:"),
+      }));
+      let candidates: ProtocolMapCandidate[] = [];
+      let geocodeStatus: ProtocolMapPreviewRow["geocodeStatus"] = "erro";
+      let geocodeMessage = "Falha ao geocodificar o endereço.";
+      let geocodeRateLimited = false;
       try {
         const result = await geocodeAddress(entry.endereco);
-        rows.push({
-          line: entry.line,
-          numero: entry.numero,
-          endereco: entry.endereco,
-          protocolId: protocol.id,
-          assunto: protocol.assunto,
-          secretaria: protocol.secretarias?.nome ?? null,
-          currentEndereco: protocol.endereco,
-          hasCoordinates: protocol.latitude != null && protocol.longitude != null,
-          status: result.candidates.length
-            ? "pronto"
-            : result.hadResults
-              ? "fora_area"
-              : "sem_resultado",
-          message: result.candidates.length
-            ? `${result.candidates.length} resultado(s) dentro da área de Brusque.`
-            : result.hadResults
-              ? "O resultado encontrado ficou fora da área aproximada de Brusque."
-              : "Endereço não localizado; revise o texto ou ajuste-o antes de tentar novamente.",
-          candidates: result.candidates,
-        });
+        candidates = result.candidates;
+        geocodeStatus = candidates.length ? "pronto" : result.hadResults ? "fora_area" : "sem_resultado";
+        geocodeMessage = candidates.length
+          ? `${candidates.length} resultado(s) dentro da área de Brusque.`
+          : result.hadResults
+            ? "O resultado encontrado ficou fora da área aproximada de Brusque."
+            : "Endereço não localizado; tente escolher o ponto manualmente no mapa.";
       } catch (geocodeError) {
-        rows.push({
-          line: entry.line,
-          numero: entry.numero,
-          endereco: entry.endereco,
-          protocolId: protocol.id,
-          assunto: protocol.assunto,
-          secretaria: protocol.secretarias?.nome ?? null,
-          currentEndereco: protocol.endereco,
-          hasCoordinates: protocol.latitude != null && protocol.longitude != null,
-          status: "erro",
-          message:
-            geocodeError instanceof Error
-              ? geocodeError.message
-              : "Falha ao geocodificar o endereço.",
-          candidates: [],
-        });
-        if (geocodeError instanceof Error && /limitou as consultas/.test(geocodeError.message))
-          break;
+        geocodeMessage = geocodeError instanceof Error
+          ? geocodeError.message
+          : "Falha ao geocodificar o endereço.";
+        geocodeRateLimited = geocodeError instanceof Error && /limitou as consultas/.test(geocodeError.message);
       }
+      const uniqueProtocol = matches.length === 1 ? protocolMatches[0] : null;
+      const status = matches.length > 1 ? "duplicado" : geocodeStatus;
+      rows.push({
+        line: entry.line,
+        numero: entry.numero,
+        endereco: entry.endereco,
+        protocolId: uniqueProtocol?.id ?? null,
+        numeroPersistido: uniqueProtocol?.numero ?? null,
+        protocolMatches,
+        assunto: uniqueProtocol?.assunto ?? null,
+        secretaria: uniqueProtocol?.secretaria ?? null,
+        currentEndereco: uniqueProtocol?.currentEndereco ?? null,
+        hasCoordinates: uniqueProtocol?.hasCoordinates ?? false,
+        status,
+        message: matches.length > 1
+          ? `${matches.length} protocolos correspondem a ${entry.numero}; escolha o ano/registro antes de continuar. Endereço: ${geocodeMessage}`
+          : geocodeMessage,
+        candidates,
+        geocodeStatus,
+        geocodeMessage,
+        legacyMatches,
+      });
+      if (geocodeRateLimited) break;
     }
 
     rows.sort((a, b) => a.line - b.line);

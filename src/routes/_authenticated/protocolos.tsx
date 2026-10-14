@@ -27,6 +27,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { MapPointPicker } from "@/components/map-point-picker";
+import { mapDepartmentOf } from "@/lib/map-departments";
 import { currentMonthValue, monthOptionsFromDates, isInMonth } from "@/lib/month-filter";
 import { importarProtocolosAntigos } from "@/lib/protocolos-antigos-import.functions";
 import { invalidateProtocoloCaches } from "@/hooks/use-protocolos-realtime";
@@ -368,6 +369,8 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
   const geocode = useServerFn(geocodeAddress);
 
   const locaisFiltrados = locais.filter(l => !secretariaId || l.secretaria_id === secretariaId);
+  const vaiParaTriagem = tipo === "esic"
+    || mapDepartmentOf(secretarias.find((s) => s.id === secretariaId) ?? {}) === "obras";
 
   async function handleExtrair() {
     if (!textoColar.trim()) return;
@@ -450,13 +453,13 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
         latitude: lat,
         longitude: lng,
         created_by: user?.id,
-        triagem_pendente: tipo === "esic",
+        triagem_pendente: vaiParaTriagem,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       invalidateProtocoloCaches(qc);
-      toast.success(tipo === "esic" ? "Pedido e-SIC cadastrado para triagem" : "Protocolo cadastrado");
+      toast.success(vaiParaTriagem ? "Protocolo cadastrado para triagem" : "Protocolo cadastrado");
       setOpen(false);
       setTipo("ouvidoria"); setCategoria("reclamacao"); setNumero(""); setNumeroEsic("");
       setAssunto(""); setDescricao(""); setSecretariaId(""); setLocalId(""); setSolicitante(""); setEndereco("");

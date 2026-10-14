@@ -42,7 +42,7 @@ import { format, startOfMonth, subMonths, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useRealtimeSync } from "@/hooks/realtime-sync-context";
 import { MapDepartmentToggle } from "@/components/map-department-toggle";
-import { matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
+import { mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -160,7 +160,7 @@ function Dashboard() {
     [allEnriched, mes],
   );
   const mapSecretarias = useMemo(
-    () => (secretarias as any[]).filter((s) => matchesMapDepartment(s, mapScope)),
+    () => (secretarias as any[]).filter((s) => mapDepartmentOf(s) !== null && matchesMapDepartment(s, mapScope)),
     [secretarias, mapScope],
   );
   const mapDepartmentIds = useMemo(
@@ -935,6 +935,7 @@ function Dashboard() {
                 tipo: p.tipo,
                 local: p.locais?.nome,
                 local_id: p.local_id,
+                mapDepartment: mapDepartmentOf(p.secretarias ?? {}),
               }))}
           />
         </CardContent>
