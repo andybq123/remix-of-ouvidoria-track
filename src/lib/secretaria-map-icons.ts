@@ -16,10 +16,19 @@ export const SECRETARIA_ICONES: Record<string, { emoji: string; label: string }>
   administracao: { emoji: "🏛️", label: "Administração" },
 };
 
+export function isCustomMapEmoji(value: string): boolean {
+  const segments = [...new Intl.Segmenter("pt-BR", { granularity: "grapheme" }).segment(value)];
+  return segments.length === 1 && /\p{Extended_Pictographic}/u.test(value)
+    && !/[<>"'&]/.test(value) && value.length <= 24;
+}
+
 export function obterIconeSecretaria(
   icone?: string | null,
   setor?: MapDepartment | null,
 ): { key: string; emoji: string; label: string } {
+  if (icone && isCustomMapEmoji(icone)) {
+    return { key: icone, emoji: icone, label: "Personalizado" };
+  }
   const automatico = setor && SECRETARIA_ICONES[setor] ? setor : "administracao";
   const key = icone && SECRETARIA_ICONES[icone] ? icone : automatico;
   const configuracao = SECRETARIA_ICONES[key] ?? SECRETARIA_ICONES.administracao;
