@@ -151,7 +151,7 @@ function AuthLayout() {
                 <NotificationBell />
                 <ThemeToggle />
                 {LayoutSwitch}
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <Button variant="destructive" size="sm" onClick={handleLogout}>
                   <LogOut className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Sair</span>
                 </Button>
               </div>
@@ -222,7 +222,7 @@ function AuthLayout() {
             <NotificationBell />
             <ThemeToggle />
             {LayoutSwitch}
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <Button variant="destructive" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>
@@ -394,7 +394,7 @@ function WorkspaceLayout({
                 onClick={() => void handleLogout()}
                 aria-label="Sair do sistema"
                 title="Sair"
-                className="workspace-logout"
+                className="workspace-logout bg-red-600 text-white hover:bg-red-700"
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -428,7 +428,7 @@ function WorkspaceLayout({
                   variant="ghost"
                   size="sm"
                   onClick={() => void handleLogout()}
-                  className="lg:hidden"
+                  className="lg:hidden bg-red-600 text-white hover:bg-red-700"
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>
