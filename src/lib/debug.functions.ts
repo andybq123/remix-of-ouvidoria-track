@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { BACKUP_TABELAS, BACKUP_GRUPOS, type BackupTabela } from "@/lib/backup-config";
+import { SECRETARIA_ICONES } from "@/lib/secretaria-map-icons";
 
 async function assertAdmin(context: any) {
   const { data, error } = await context.supabase.rpc("has_role", {
@@ -255,4 +256,37 @@ export const corrigirAcentosDados = createServerFn({ method: "POST" })
       if (corrigidos) resultado[tabela] = corrigidos;
     }
     return { resultado, restantes };
+  });
+
+export const debugListarSecretariasMapIcons = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("secretarias")
+      .select("id, nome, sigla, icone")
+      .order("nome");
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const debugAtualizarSecretariaMapIcon = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string; icone: string | null }) => {
+    if (!data || !/^[0-9a-f-]{36}$/i.test(data.id)) throw new Error("Secretaria inválida.");
+    if (data.icone !== null && !Object.prototype.hasOwnProperty.call(SECRETARIA_ICONES, data.icone)) {
+      throw new Error("Ícone inválido.");
+    }
+    return data;
+  })
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("secretarias")
+      .update({ icone: data.icone })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });

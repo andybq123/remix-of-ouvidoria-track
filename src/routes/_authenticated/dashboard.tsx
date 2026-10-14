@@ -83,7 +83,7 @@ function Dashboard() {
       fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
-          .select("*, secretarias(nome, sigla), locais(nome)")
+          .select("*, secretarias(nome, sigla, icone), locais(nome)")
           // O prazo e a contabilização e-SIC começam no recebimento, não na triagem.
           .or("triagem_pendente.eq.false,tipo.eq.esic")
           .order("data_abertura", { ascending: false })
@@ -929,6 +929,7 @@ function Dashboard() {
                 endereco: p.endereco,
                 status: p.status,
                 secretaria: p.secretarias?.nome,
+                secretariaIcone: p.secretarias?.icone,
                 data_abertura: p.data_abertura,
                 data_conclusao: p.data_conclusao,
                 categoria: categoriaDoProtocolo(p.tipo, p.categoria),

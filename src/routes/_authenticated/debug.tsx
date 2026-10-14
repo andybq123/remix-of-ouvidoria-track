@@ -11,12 +11,23 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Bug, Pencil, Trash2, Search, AlertTriangle, RefreshCw, MapPin, Upload } from "lucide-react";
+import { Bug, Pencil, Trash2, Search, AlertTriangle, RefreshCw, MapPin, Upload, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { MapPointPicker } from "@/components/map-point-picker";
 import { BACKUP_GRUPOS, BACKUP_TABELAS } from "@/lib/backup-config";
-import { debugContagens, debugExcluir, debugListar, debugSalvar, debugZerar, corrigirAcentosDados } from "@/lib/debug.functions";
+import {
+  debugContagens,
+  debugExcluir,
+  debugListar,
+  debugListarSecretariasMapIcons,
+  debugAtualizarSecretariaMapIcon,
+  debugSalvar,
+  debugZerar,
+  corrigirAcentosDados,
+} from "@/lib/debug.functions";
+import { mapDepartmentOf } from "@/lib/map-departments";
+import { obterIconeSecretaria, SECRETARIA_ICONES } from "@/lib/secretaria-map-icons";
 import {
   aplicarImportacaoProtocolosMapa,
   previsualizarImportacaoProtocolosMapa,
@@ -72,6 +83,8 @@ function DebugPage() {
   const corrigirAcentosFn = useServerFn(corrigirAcentosDados);
   const previewImportFn = useServerFn(previsualizarImportacaoProtocolosMapa);
   const applyImportFn = useServerFn(aplicarImportacaoProtocolosMapa);
+  const listarSecretariasMapIconsFn = useServerFn(debugListarSecretariasMapIcons);
+  const atualizarSecretariaMapIconFn = useServerFn(debugAtualizarSecretariaMapIcon);
   const [corrigindo, setCorrigindo] = useState(false);
   const [textoImportacaoMapa, setTextoImportacaoMapa] = useState("");
   const [previewImportacaoMapa, setPreviewImportacaoMapa] = useState<ImportRowView[]>([]);
@@ -79,6 +92,7 @@ function DebugPage() {
   const [previsualizandoMapa, setPrevisualizandoMapa] = useState(false);
   const [importandoMapa, setImportandoMapa] = useState(false);
   const [sobrescreverCoordenadas, setSobrescreverCoordenadas] = useState(false);
+  const [salvandoIconeSecretariaId, setSalvandoIconeSecretariaId] = useState<string | null>(null);
   const corrigirAcentosClick = async () => {
     setCorrigindo(true);
     try {
@@ -108,11 +122,29 @@ function DebugPage() {
     queryFn: () => listar({ data: { tabela, pagina, busca: buscaAtiva } }),
     enabled: isAdmin,
   });
+  const secretariasMapIcons = useQuery({
+    queryKey: ["debug-secretarias-map-icons"],
+    queryFn: () => listarSecretariasMapIconsFn(),
+    enabled: isAdmin,
+  });
 
   const recarregar = () => {
     qc.invalidateQueries({ queryKey: ["debug-lista"] });
     qc.invalidateQueries({ queryKey: ["debug-contagens"] });
   };
+
+  async function salvarIconeSecretaria(id: string, icone: string | null) {
+    setSalvandoIconeSecretariaId(id);
+    try {
+      await atualizarSecretariaMapIconFn({ data: { id, icone } });
+      toast.success("Ícone da secretaria atualizado.");
+      await qc.invalidateQueries();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Falha ao atualizar o ícone.");
+    } finally {
+      setSalvandoIconeSecretariaId(null);
+    }
+  }
 
   async function salvarEdicao() {
     if (!editando) return;
@@ -472,6 +504,63 @@ function DebugPage() {
                 </Button>
               </div>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-primary" /> Ícones das secretarias no mapa
+          </CardTitle>
+          <CardDescription>
+            Escolha o ícone exibido para cada secretaria nos mapas da Dashboard e da página Mapas. A opção automática usa o ícone correspondente ao setor Saúde ou Obras.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {secretariasMapIcons.isLoading && <p className="text-sm text-muted-foreground">Carregando secretarias...</p>}
+          {secretariasMapIcons.error && (
+            <p className="text-sm text-destructive">
+              {(secretariasMapIcons.error as Error).message}
+            </p>
+          )}
+          {secretariasMapIcons.data?.map((secretaria) => {
+            const currentIcon = obterIconeSecretaria(secretaria.icone, mapDepartmentOf(secretaria));
+            const selectedIcon = secretaria.icone && SECRETARIA_ICONES[secretaria.icone]
+              ? secretaria.icone
+              : "__automatico__";
+            return (
+              <div key={secretaria.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">
+                    {secretaria.nome}{secretaria.sigla ? ` (${secretaria.sigla})` : ""}
+                  </p>
+                  <Badge variant="outline" className="mt-1">
+                    {currentIcon.emoji} {currentIcon.label}
+                  </Badge>
+                </div>
+                <Select
+                  value={selectedIcon}
+                  onValueChange={(value) =>
+                    salvarIconeSecretaria(secretaria.id, value === "__automatico__" ? null : value)
+                  }
+                  disabled={salvandoIconeSecretariaId === secretaria.id}
+                >
+                  <SelectTrigger className="w-full sm:w-64" aria-label={`Ícone de ${secretaria.nome}`}>
+                    <SelectValue placeholder="Escolha o ícone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__automatico__">Automático por setor</SelectItem>
+                    {Object.entries(SECRETARIA_ICONES).map(([key, icon]) => (
+                      <SelectItem key={key} value={key}>{icon.emoji} {icon.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          })}
+          {secretariasMapIcons.data?.length === 0 && (
+            <p className="text-sm text-muted-foreground">Nenhuma secretaria cadastrada.</p>
           )}
         </CardContent>
       </Card>
