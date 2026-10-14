@@ -107,7 +107,48 @@ export type MapPoint = {
   mapDepartment?: MapDepartment | null;
 };
 
+/** Linha de prazo usada dentro da lista de protocolos do popup de um local. */
+function PrazoLinha({ point }: { point: MapPoint }) {
+  const prazo = resumoPrazoMapa(point);
+  if (!prazo) return null;
+  return (
+    <p
+      className={
+        prazo.atrasado
+          ? "mt-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400"
+          : "mt-0.5 text-[10px] text-muted-foreground"
+      }
+    >
+      Prazo {prazo.prazoTexto}
+      {!prazo.concluido ? ` · ${prazo.diasTexto}` : ""}
+    </p>
+  );
+}
+
+/** Destaque de prazo (data-limite + dias de atraso) no rodapé do popup. */
+function PrazoDestaque({ prazo }: { prazo: ResumoPrazoMapa }) {
+  return (
+    <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-1.5">
+      <span className="text-[11px] text-muted-foreground">
+        Prazo: <strong className="font-semibold text-foreground">{prazo.prazoTexto}</strong>
+      </span>
+      {!prazo.concluido && (
+        <span
+          className={
+            prazo.atrasado
+              ? "text-[11px] font-semibold text-red-600 dark:text-red-400"
+              : "text-[11px] text-muted-foreground"
+          }
+        >
+          {prazo.diasTexto}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function ProtocolMapPopup({ point, onOpen }: { point: MapPoint; onOpen?: (id: string) => void }) {
+  const prazo = resumoPrazoMapa(point);
   return (
     <div className="space-y-1.5 min-w-[200px] max-w-[280px]">
       <div className="flex items-center justify-between gap-2">
@@ -118,6 +159,7 @@ function ProtocolMapPopup({ point, onOpen }: { point: MapPoint; onOpen?: (id: st
       </div>
       {point.assunto && <p className="text-xs font-medium">{point.assunto}</p>}
       {point.endereco && <p className="text-xs text-muted-foreground">{point.endereco}</p>}
+      {prazo && <PrazoDestaque prazo={prazo} />}
       {onOpen && (
         <button type="button" className="text-xs text-primary underline" onClick={() => onOpen(point.id)}>
           Abrir protocolo
