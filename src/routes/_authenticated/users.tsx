@@ -18,6 +18,14 @@ import {
 import { useIsUserOnline } from "@/hooks/use-online-users";
 
 export const Route = createFileRoute("/_authenticated/users")({
+  head: () => ({ meta: [
+    { title: "Usuários | Controle SETA" },
+    { name: "description", content: "Usuários no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:title", content: "Usuários | Controle SETA" },
+    { property: "og:description", content: "Usuários no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: UsersPage,
 });
 

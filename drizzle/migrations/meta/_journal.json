@@ -15,6 +15,13 @@
       "when": 1791901965795,
       "tag": "0001_seguranca_triagem",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791990416950,
+      "tag": "0002_sync_existing_local_email_esic_fields",
+      "breakpoints": true
     }
   ]
 }

@@ -444,10 +444,10 @@ export type Database = {
           data_abertura: string
           data_conclusao: string | null
           data_prorrogacao: string | null
-          esic_prorrogacao_justificativa: string | null
           descricao: string | null
           detalhes: Json | null
           endereco: string | null
+          esic_prorrogacao_justificativa: string | null
           hash_consulta: string | null
           id: string
           ip_solicitante: string | null
@@ -485,10 +485,10 @@ export type Database = {
           data_abertura?: string
           data_conclusao?: string | null
           data_prorrogacao?: string | null
-          esic_prorrogacao_justificativa?: string | null
           descricao?: string | null
           detalhes?: Json | null
           endereco?: string | null
+          esic_prorrogacao_justificativa?: string | null
           hash_consulta?: string | null
           id?: string
           ip_solicitante?: string | null
@@ -526,10 +526,10 @@ export type Database = {
           data_abertura?: string
           data_conclusao?: string | null
           data_prorrogacao?: string | null
-          esic_prorrogacao_justificativa?: string | null
           descricao?: string | null
           detalhes?: Json | null
           endereco?: string | null
+          esic_prorrogacao_justificativa?: string | null
           hash_consulta?: string | null
           id?: string
           ip_solicitante?: string | null
@@ -793,6 +793,7 @@ export type Database = {
       }
       liberar_triagem: { Args: { p_id: string }; Returns: undefined }
       liberar_triagem_admin: { Args: { p_id: string }; Returns: undefined }
+      normalizar_numero_esic: { Args: { p_numero: string }; Returns: string }
       protocolo_esic_por_numero: {
         Args: { p_numero: string }
         Returns: {

@@ -33,13 +33,13 @@ function pinSvg(categoria?: string | null) {
 }
 
 function obrasPinSvg(icone?: string | null, badgeCount?: number) {
-  const customIcon = icone ? SECRETARIA_ICONES[icone] : null;
+  const customIcon = obterIconeSecretaria(icone, "obras");
   const badge = badgeCount == null ? "" : badgeCount > 99 ? "99+" : String(badgeCount);
   const badgeSvg = badge
     ? `<div style="position:absolute;top:-4px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#0f172a;color:#fff;font:700 10px/18px ui-sans-serif,system-ui,sans-serif;text-align:center;border:2px solid #fff;box-sizing:border-box;">${badge}</div>`
     : "";
   const symbol = customIcon
-    ? `<div style="position:absolute;top:5px;left:0;width:30px;height:24px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;">${customIcon.emoji}</div>`
+    ? `<div style="position:absolute;top:5px;left:0;width:30px;height:24px;display:flex;align-items:center;justify-content:center;font-family:system-ui,'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;font-size:15px;line-height:1;">${customIcon.emoji}</div>`
     : `<img src="/icons/obras-marker.png" alt="" style="position:absolute;left:7px;top:6px;width:16px;height:16px;object-fit:contain;pointer-events:none;" />`;
   return `
     <div style="position:relative;width:30px;height:42px;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.35));">
@@ -80,6 +80,7 @@ export type LocalPoint = {
   nome: string;
   secretaria?: string | null;
   secretariaIcone?: string | null;
+  mapDepartment?: MapDepartment | null;
 };
 
 export type MapPoint = {
@@ -138,7 +139,8 @@ function loadColor(count: number) {
 }
 
 // Health-unit marker: medical cross + count badge, colored by load
-function localSvg(count: number) {
+function localSvg(count: number, icone?: string | null) {
+  const cfg = obterIconeSecretaria(icone, "saude");
   const c = loadColor(count);
   const badge = count > 99 ? "99+" : String(count);
   const badgeW = badge.length >= 3 ? 22 : badge.length === 2 ? 18 : 16;
@@ -146,14 +148,16 @@ function localSvg(count: number) {
     <div style="position:relative;width:40px;height:40px;">
       <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" style="position:absolute;inset:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.4));">
         <circle cx="20" cy="20" r="17" fill="${c.fill}" stroke="#ffffff" stroke-width="3"/>
-        <path d="M16 10 H24 V16 H30 V24 H24 V30 H16 V24 H10 V16 H16 Z" fill="#ffffff"/>
+
       </svg>
+      <div style="position:absolute;left:0;top:7px;width:40px;text-align:center;font-family:system-ui,'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;font-size:21px;line-height:26px;">${cfg.emoji}</div>
       <div style="position:absolute;top:-4px;right:-6px;min-width:${badgeW}px;height:18px;padding:0 4px;border-radius:9px;background:#0f172a;color:#ffffff;font:700 11px/18px ui-sans-serif,system-ui,sans-serif;text-align:center;border:2px solid #ffffff;box-shadow:0 1px 2px rgba(0,0,0,0.35);box-sizing:border-box;">${badge}</div>
     </div>`;
 }
 
 // Cluster marker for multiple health units at the same coordinates
-function clusterSvg(unitCount: number, totalProtocolos: number) {
+function clusterSvg(unitCount: number, totalProtocolos: number, icone?: string | null) {
+  const cfg = obterIconeSecretaria(icone, "saude");
   const c = loadColor(totalProtocolos);
   const badge = unitCount > 99 ? "99+" : String(unitCount);
   const badgeW = badge.length >= 3 ? 22 : badge.length === 2 ? 18 : 16;
@@ -162,8 +166,9 @@ function clusterSvg(unitCount: number, totalProtocolos: number) {
       <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44" style="position:absolute;inset:0;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.45));">
         <rect x="6" y="10" width="32" height="28" rx="6" fill="#ffffff" stroke="${c.fill}" stroke-width="2.5" opacity="0.85"/>
         <rect x="3" y="6" width="32" height="28" rx="6" fill="${c.fill}" stroke="#ffffff" stroke-width="2.5"/>
-        <path d="M15 13 H23 V18 H28 V24 H23 V29 H15 V24 H10 V18 H15 Z" fill="#ffffff"/>
+
       </svg>
+      <div style="position:absolute;left:0;top:7px;width:40px;text-align:center;font-family:system-ui,'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;font-size:21px;line-height:26px;">${cfg.emoji}</div>
       <div style="position:absolute;top:-4px;right:-6px;min-width:${badgeW}px;height:18px;padding:0 4px;border-radius:9px;background:#0f172a;color:#ffffff;font:700 11px/18px ui-sans-serif,system-ui,sans-serif;text-align:center;border:2px solid #ffffff;box-shadow:0 1px 2px rgba(0,0,0,0.35);box-sizing:border-box;">${badge}</div>
     </div>`;
 }
@@ -411,7 +416,9 @@ export function ManifestacoesMap({
   const localGroups = useMemo(() => {
     const map = new Map<string, LocalPoint[]>();
     validLocais.forEach(l => {
-      const key = `${l.lat.toFixed(5)},${l.lng.toFixed(5)}`;
+      const department = l.mapDepartment ?? mapDepartmentOf({ nome: l.secretaria });
+      const icon = obterIconeSecretaria(l.secretariaIcone, department);
+      const key = `${l.lat.toFixed(5)},${l.lng.toFixed(5)},${department},${icon.key}`;
       const arr = map.get(key) ?? [];
       arr.push(l);
       map.set(key, arr);
@@ -491,7 +498,8 @@ export function ManifestacoesMap({
         const el = document.createElement("div");
         el.innerHTML = secretariaSvg(cfg.key);
         el.style.cursor = onMoveSecRef.current ? "grab" : "pointer";
-        el.title = onMoveSecRef.current ? "Arraste para reposicionar" : "";
+        el.setAttribute("aria-label", `Secretaria ${s.nome} · ${cfg.label}`);
+        el.title = onMoveSecRef.current ? "Arraste para reposicionar" : s.nome;
         const popupNode = document.createElement("div");
         const root = createRoot(popupNode);
         root.render(
@@ -530,13 +538,12 @@ export function ManifestacoesMap({
         // CLUSTER: multiple unidades sharing the same coordinate
         if (group.length > 1) {
           const totalProtos = group.reduce((acc, l) => acc + (protocolosPorLocal.get(l.id)?.length ?? 0), 0);
-          const worksIcon = mapDepartmentOf({ nome: group[0].secretaria }) === "obras"
-            && group.every((local) => mapDepartmentOf({ nome: local.secretaria }) === "obras"
-              && local.secretariaIcone === group[0].secretariaIcone);
+          const worksIcon = (group[0].mapDepartment ?? mapDepartmentOf({ nome: group[0].secretaria })) === "obras";
           const el = document.createElement("div");
           el.innerHTML = worksIcon
             ? obrasPinSvg(group[0].secretariaIcone, group.length)
-            : clusterSvg(group.length, totalProtos);
+            : clusterSvg(group.length, totalProtos, group[0].secretariaIcone);
+          el.setAttribute("aria-label", `Grupo de ${group.length} locais · ${obterIconeSecretaria(group[0].secretariaIcone, group[0].mapDepartment ?? mapDepartmentOf({ nome: group[0].secretaria })).label}`);
           el.style.cursor = "pointer";
           const popupNode = document.createElement("div");
           const root = createRoot(popupNode);
@@ -560,11 +567,12 @@ export function ManifestacoesMap({
         const l = group[0];
         const lista = protocolosPorLocal.get(l.id) ?? [];
         const count = lista.length;
-        const isWorksLocal = mapDepartmentOf({ nome: l.secretaria }) === "obras";
+        const isWorksLocal = (l.mapDepartment ?? mapDepartmentOf({ nome: l.secretaria })) === "obras";
         const el = document.createElement("div");
-        el.innerHTML = isWorksLocal ? obrasPinSvg(l.secretariaIcone, count) : localSvg(count);
+        el.innerHTML = isWorksLocal ? obrasPinSvg(l.secretariaIcone, count) : localSvg(count, l.secretariaIcone);
         el.style.cursor = onMoveLocalRef.current ? "grab" : "pointer";
-        el.title = onMoveLocalRef.current ? "Arraste para reposicionar" : "";
+        el.setAttribute("aria-label", `Local ${l.nome} · ${obterIconeSecretaria(l.secretariaIcone, l.mapDepartment ?? mapDepartmentOf({ nome: l.secretaria })).label}`);
+        el.title = onMoveLocalRef.current ? "Arraste para reposicionar" : l.nome;
         const popupNode = document.createElement("div");
         const root = createRoot(popupNode);
         root.render(

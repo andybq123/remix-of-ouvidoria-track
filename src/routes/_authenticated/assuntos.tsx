@@ -22,6 +22,14 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/assuntos")({
+  head: () => ({ meta: [
+    { title: "Catálogo de assuntos | Controle SETA" },
+    { name: "description", content: "Catálogo de assuntos no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:title", content: "Catálogo de assuntos | Controle SETA" },
+    { property: "og:description", content: "Catálogo de assuntos no sistema de gestão da Ouvidoria Municipal de Brusque." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: zodValidator(searchSchema),
   component: AssuntosPage,
 });

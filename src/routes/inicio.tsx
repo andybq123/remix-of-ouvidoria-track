@@ -19,6 +19,8 @@ export const Route = createFileRoute("/inicio")({
   ssr: false,
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Ouvidoria Municipal de Brusque — SC" },
       { name: "description", content: "Canal oficial de ouvidoria da Prefeitura Municipal de Brusque, SC. Registre manifestações, acompanhe protocolos e colabore com a administração pública." },
       { property: "og:title", content: "Ouvidoria Municipal de Brusque — SC" },

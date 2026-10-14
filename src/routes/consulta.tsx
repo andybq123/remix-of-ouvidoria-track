@@ -23,6 +23,10 @@ export const Route = createFileRoute("/consulta")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
+      { property: "og:title", content: "Consulta de protocolo | Controle SETA" },
+      { property: "og:description", content: "Consulta de protocolo da Ouvidoria Municipal de Brusque." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Consulta de Protocolo — Ouvidoria de Brusque" },
       { name: "description", content: "Consulte o andamento da sua manifestação na Ouvidoria Municipal de Brusque informando o número do protocolo e o código de consulta." },
     ],
