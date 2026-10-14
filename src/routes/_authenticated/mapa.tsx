@@ -27,6 +27,14 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/mapa")({
+  head: () => ({ meta: [
+    { title: "Mapa de Saúde e Obras | Controle SETA" },
+    { name: "description", content: "Locais e protocolos de Saúde e Obras em Brusque." },
+    { property: "og:title", content: "Mapa de Saúde e Obras | Controle SETA" },
+    { property: "og:description", content: "Locais e protocolos de Saúde e Obras em Brusque." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: MapaPage,
 });
 
@@ -94,7 +102,7 @@ function MapaPage() {
     queryFn: async () => (
       await supabase
         .from("locais")
-        .select("id, nome, latitude, longitude, secretaria_id, secretarias(nome, icone)")
+        .select("id, nome, latitude, longitude, secretaria_id, secretarias(nome, sigla, icone)")
         .in("secretaria_id", secretariaIdsSelecionadas)
         .order("nome")
     ).data ?? [],
@@ -191,6 +199,7 @@ function MapaPage() {
         nome: l.nome,
         secretaria: l.secretarias?.nome,
         secretariaIcone: l.secretarias?.icone,
+        mapDepartment: mapDepartmentOf(l.secretarias ?? {}),
       }));
   }, [locaisComCoord, localFiltroId]);
 

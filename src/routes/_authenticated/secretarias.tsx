@@ -12,9 +12,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Building2, Trash2, MapPin, Pencil, Tag, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
-import { SECRETARIA_ICONES } from "@/lib/secretaria-map-icons";
+import { isCustomMapEmoji, obterIconeSecretaria, SECRETARIA_ICONES } from "@/lib/secretaria-map-icons";
+import { mapDepartmentOf } from "@/lib/map-departments";
+import { SecretariaIconPicker } from "@/components/secretaria-icon-picker";
 
 export const Route = createFileRoute("/_authenticated/secretarias")({
+  head: () => ({ meta: [
+    { title: "Secretarias e ícones do mapa | Controle SETA" },
+    { name: "description", content: "Gerencie secretarias, locais, responsáveis e ícones dos mapas de Obras e Saúde." },
+    { property: "og:title", content: "Secretarias | Controle SETA" },
+    { property: "og:description", content: "Secretarias e ícones dos mapas de Obras e Saúde." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: SecretariasPage,
 });
 
@@ -112,16 +122,12 @@ function SecretariasPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-base flex items-center gap-2 min-w-0">
-                    {s.icone && SECRETARIA_ICONES[s.icone] ? (
-                      <span title={SECRETARIA_ICONES[s.icone].label}>{SECRETARIA_ICONES[s.icone].emoji}</span>
-                    ) : (
-                      <Building2 className="h-4 w-4 text-primary" />
-                    )}
+                    <span title={obterIconeSecretaria(s.icone, mapDepartmentOf(s)).label}>{obterIconeSecretaria(s.icone, mapDepartmentOf(s)).emoji}</span>
                     <span className="truncate">{s.nome}</span>
                     {s.sigla && <span className="text-xs text-muted-foreground font-normal">({s.sigla})</span>}
                   </CardTitle>
                   <div className="flex gap-1 shrink-0">
-                    <Button size="sm" variant="ghost" onClick={() => setEditSec(s)}><Pencil className="h-3 w-3" /></Button>
+                    <Button size="sm" variant="ghost" aria-label={`Editar ${s.nome}`} onClick={() => setEditSec(s)}><Pencil className="h-3 w-3" /></Button>
                     <Button size="sm" variant="ghost" onClick={() => { if (confirm("Excluir secretaria?")) delSec.mutate(s.id); }}>
                       <Trash2 className="h-3 w-3" />
                     </Button>
@@ -180,7 +186,7 @@ function NovaSecretariaDialog() {
   const [sigla, setSigla] = useState("");
   const [endereco, setEndereco] = useState("");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [icone, setIcone] = useState<string>("administracao");
+  const [icone, setIcone] = useState<string>("automatico");
 
   const create = useMutation({
     mutationFn: async () => {
@@ -191,7 +197,7 @@ function NovaSecretariaDialog() {
         endereco: endereco || null,
         latitude: coords?.lat ?? null,
         longitude: coords?.lng ?? null,
-        icone,
+        icone: icone === "automatico" ? null : icone,
         created_by: user?.id,
       }).select("id").single();
       if (error) throw error;
@@ -204,7 +210,7 @@ function NovaSecretariaDialog() {
       qc.invalidateQueries({ queryKey: ["locais"] });
       toast.success("Secretaria criada");
       setOpen(false); setNome(""); setSigla("");
-      setEndereco(""); setCoords(null); setIcone("administracao");
+      setEndereco(""); setCoords(null); setIcone("automatico");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -217,17 +223,7 @@ function NovaSecretariaDialog() {
         <div className="space-y-3">
           <div className="space-y-1.5"><Label>Nome *</Label><Input value={nome} onChange={e => setNome(e.target.value)} /></div>
           <div className="space-y-1.5"><Label>Sigla</Label><Input value={sigla} onChange={e => setSigla(e.target.value)} placeholder="Ex: SEMSA" /></div>
-          <div className="space-y-1.5">
-            <Label>Ícone no mapa</Label>
-            <Select value={icone} onValueChange={setIcone}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(SECRETARIA_ICONES).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>{v.emoji} {v.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <SecretariaIconPicker id="novo-icone" value={icone} onChange={setIcone} setor={mapDepartmentOf({ nome, sigla })} />
           <div className="space-y-1.5">
             <Label>Endereço da secretaria</Label>
             <AddressAutocomplete
@@ -246,7 +242,7 @@ function NovaSecretariaDialog() {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => create.mutate()} disabled={!nome || create.isPending}>Cadastrar</Button>
+          <Button onClick={() => create.mutate()} disabled={!nome || create.isPending || (icone !== "automatico" && !SECRETARIA_ICONES[icone] && !isCustomMapEmoji(icone))}>Cadastrar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -271,7 +267,7 @@ function EditSecretariaDialog({ secretaria, onClose }: { secretaria: any | null;
   const [sigla, setSigla] = useState("");
   const [endereco, setEndereco] = useState("");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [icone, setIcone] = useState<string>("administracao");
+  const [icone, setIcone] = useState<string>("automatico");
   const open = !!secretaria;
 
   useEffect(() => {
@@ -284,7 +280,7 @@ function EditSecretariaDialog({ secretaria, onClose }: { secretaria: any | null;
           ? { lat: secretaria.latitude, lng: secretaria.longitude }
           : null,
       );
-      setIcone(secretaria.icone ?? "administracao");
+      setIcone(secretaria.icone ?? "automatico");
     }
   }, [secretaria]);
 
@@ -296,11 +292,11 @@ function EditSecretariaDialog({ secretaria, onClose }: { secretaria: any | null;
         endereco: endereco || null,
         latitude: coords?.lat ?? null,
         longitude: coords?.lng ?? null,
-        icone,
+        icone: icone === "automatico" ? null : icone,
       }).eq("id", secretaria.id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["secretarias"] }); toast.success("Secretaria atualizada"); onClose(); },
+    onSuccess: async () => { await qc.invalidateQueries(); toast.success("Secretaria atualizada"); onClose(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -311,17 +307,7 @@ function EditSecretariaDialog({ secretaria, onClose }: { secretaria: any | null;
         <div className="space-y-3">
           <div className="space-y-1.5"><Label>Nome *</Label><Input value={nome} onChange={e => setNome(e.target.value)} /></div>
           <div className="space-y-1.5"><Label>Sigla</Label><Input value={sigla} onChange={e => setSigla(e.target.value)} /></div>
-          <div className="space-y-1.5">
-            <Label>Ícone no mapa</Label>
-            <Select value={icone} onValueChange={setIcone}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(SECRETARIA_ICONES).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>{v.emoji} {v.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <SecretariaIconPicker id="editar-icone" value={icone} onChange={setIcone} setor={mapDepartmentOf({ nome, sigla })} />
           <div className="space-y-1.5">
             <Label>Endereço</Label>
             <AddressAutocomplete
@@ -340,7 +326,7 @@ function EditSecretariaDialog({ secretaria, onClose }: { secretaria: any | null;
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => update.mutate()} disabled={!nome || update.isPending}>Salvar</Button>
+          <Button onClick={() => update.mutate()} disabled={!nome || update.isPending || (icone !== "automatico" && !SECRETARIA_ICONES[icone] && !isCustomMapEmoji(icone))}>Salvar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
