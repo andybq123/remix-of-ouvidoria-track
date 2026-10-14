@@ -1,11 +1,10 @@
-import { Building2, HeartPulse, Layers } from "lucide-react";
+import { Building2, HeartPulse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { MapDepartmentScope } from "@/lib/map-departments";
 
 const OPTIONS: { value: MapDepartmentScope; label: string; Icon: typeof HeartPulse }[] = [
   { value: "saude", label: "Saúde", Icon: HeartPulse },
   { value: "obras", label: "Obras", Icon: Building2 },
-  { value: "todos", label: "Saúde + Obras", Icon: Layers },
 ];
 
 export function MapDepartmentToggle({
