@@ -7,14 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Bug, Pencil, Trash2, Search, AlertTriangle, RefreshCw } from "lucide-react";
+import { Bug, Pencil, Trash2, Search, AlertTriangle, RefreshCw, MapPin, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { BACKUP_GRUPOS, BACKUP_TABELAS } from "@/lib/backup-config";
 import { debugContagens, debugExcluir, debugListar, debugSalvar, debugZerar, corrigirAcentosDados } from "@/lib/debug.functions";
+import {
+  aplicarImportacaoProtocolosMapa,
+  previsualizarImportacaoProtocolosMapa,
+  type ProtocolMapPreviewRow,
+} from "@/lib/protocol-map-import.functions";
+import { MAX_PROTOCOL_MAP_IMPORT_LINES } from "@/lib/protocol-map-import.shared";
 
 export const Route = createFileRoute("/_authenticated/debug")({
   head: () => ({
@@ -51,6 +58,8 @@ const resumoLinha = (r: Record<string, any>) =>
   [r.numero, r.nome, r.email, r.assunto, r.campo, r.remetente, r.provider, r.role]
     .filter(Boolean).slice(0, 3).join(" • ") || String(r.id);
 
+type ImportRowView = ProtocolMapPreviewRow & { selected: boolean; candidateIndex: number };
+
 function DebugPage() {
   const isAdmin = useIsAdmin();
   const qc = useQueryClient();
@@ -60,7 +69,14 @@ function DebugPage() {
   const excluir = useServerFn(debugExcluir);
   const zerar = useServerFn(debugZerar);
   const corrigirAcentosFn = useServerFn(corrigirAcentosDados);
+  const previewImportFn = useServerFn(previsualizarImportacaoProtocolosMapa);
+  const applyImportFn = useServerFn(aplicarImportacaoProtocolosMapa);
   const [corrigindo, setCorrigindo] = useState(false);
+  const [textoImportacaoMapa, setTextoImportacaoMapa] = useState("");
+  const [previewImportacaoMapa, setPreviewImportacaoMapa] = useState<ImportRowView[]>([]);
+  const [previsualizandoMapa, setPrevisualizandoMapa] = useState(false);
+  const [importandoMapa, setImportandoMapa] = useState(false);
+  const [sobrescreverCoordenadas, setSobrescreverCoordenadas] = useState(false);
   const corrigirAcentosClick = async () => {
     setCorrigindo(true);
     try {
@@ -130,6 +146,84 @@ function DebugPage() {
     finally { setZerando(false); }
   }
 
+  async function previsualizarImportacaoMapa() {
+    if (!textoImportacaoMapa.trim()) return toast.error("Cole os protocolos no campo antes de pré-visualizar.");
+    setPrevisualizandoMapa(true);
+    setPreviewImportacaoMapa([]);
+    try {
+      const resultado = await previewImportFn({ data: { text: textoImportacaoMapa } });
+      const linhas = resultado.rows.map((row) => ({
+        ...row,
+        selected: row.status === "pronto" && !row.hasCoordinates && row.candidates.length === 1,
+        candidateIndex: 0,
+      }));
+      setPreviewImportacaoMapa(linhas);
+      const prontos = linhas.filter((row) => row.status === "pronto").length;
+      toast.success(`Prévia pronta: ${prontos} protocolo(s) com endereço localizado.`);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Falha ao pré-visualizar a importação.");
+    } finally {
+      setPrevisualizandoMapa(false);
+    }
+  }
+
+  async function aplicarImportacaoMapa() {
+    const selecionadas = previewImportacaoMapa.filter(
+      (row) => row.selected && row.status === "pronto" && row.protocolId && row.candidates[row.candidateIndex]
+        && (!row.hasCoordinates || sobrescreverCoordenadas),
+    );
+    if (!selecionadas.length) return toast.error("Selecione ao menos um protocolo pronto para importar.");
+
+    setImportandoMapa(true);
+    try {
+      const resultado = await applyImportFn({
+        data: {
+          sobrescrever: sobrescreverCoordenadas,
+          rows: selecionadas.map((row) => {
+            const candidate = row.candidates[row.candidateIndex];
+            return {
+              protocolId: row.protocolId!,
+              numero: row.numero,
+              endereco: row.endereco,
+              latitude: candidate.latitude,
+              longitude: candidate.longitude,
+            };
+          }),
+        },
+      });
+      const resumo = `${resultado.atualizados.length} atualizado(s)`
+        + (resultado.ignorados.length ? ` · ${resultado.ignorados.length} ignorado(s)` : "")
+        + (resultado.erros.length ? ` · ${resultado.erros.length} erro(s)` : "");
+      if (resultado.atualizados.length) toast.success(resumo, { duration: 12000 });
+      else toast.warning(resumo, { duration: 12000 });
+      if (resultado.erros.length) toast.error(resultado.erros.slice(0, 3).join("\n"), { duration: 15000 });
+      setPreviewImportacaoMapa([]);
+      qc.invalidateQueries();
+      recarregar();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Falha ao importar os protocolos.");
+    } finally {
+      setImportandoMapa(false);
+    }
+  }
+
+  function selecionarPontosSemCoordenadas(selecionado: boolean) {
+    setPreviewImportacaoMapa((rows) => rows.map((row) => ({
+      ...row,
+      selected: selecionado && row.status === "pronto" && !row.hasCoordinates && row.candidates.length === 1,
+    })));
+  }
+
+  function alterarSelecaoImportacao(line: number, selected: boolean) {
+    setPreviewImportacaoMapa((rows) => rows.map((row) => row.line === line ? { ...row, selected } : row));
+  }
+
+  function alterarCandidatoImportacao(line: number, candidateIndex: number) {
+    setPreviewImportacaoMapa((rows) => rows.map((row) => row.line === line
+      ? { ...row, candidateIndex, selected: row.status === "pronto" && !row.hasCoordinates }
+      : row));
+  }
+
   if (!isAdmin) return <p className="text-muted-foreground">Apenas administradores podem acessar o debug.</p>;
 
   const totalPaginas = lista.data ? Math.max(1, Math.ceil(lista.data.total / lista.data.tam)) : 1;
@@ -149,6 +243,151 @@ function DebugPage() {
         <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
         <span>Alterações feitas aqui são definitivas. Faça um backup em Configurações → Backup antes de mexer.</span>
       </div>
+
+      <Card className="border-primary/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-primary" /> Importar protocolos para o mapa
+          </CardTitle>
+          <CardDescription>
+            Cole um protocolo por linha no formato <strong>número — endereço</strong>. O sistema confere o número, procura o endereço em Brusque e mostra a prévia antes de salvar.
+            Até {MAX_PROTOCOL_MAP_IMPORT_LINES} linhas por lote; as consultas ao mapa são feitas com intervalo para respeitar o serviço de geocodificação.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Textarea
+            className="min-h-36 font-mono text-sm"
+            placeholder={"1949 — R. Júlio de Modesti - Poço Fundo\n1950 — Rua do exemplo, Centro"}
+            value={textoImportacaoMapa}
+            onChange={(event) => {
+              setTextoImportacaoMapa(event.target.value);
+              setPreviewImportacaoMapa([]);
+            }}
+            disabled={previsualizandoMapa || importandoMapa}
+            aria-label="Protocolos e endereços para geocodificar"
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={previsualizarImportacaoMapa} disabled={previsualizandoMapa || importandoMapa || !textoImportacaoMapa.trim()}>
+              <Search className={previsualizandoMapa ? "mr-2 h-4 w-4 animate-pulse" : "mr-2 h-4 w-4"} />
+              {previsualizandoMapa ? "Localizando endereços..." : "Localizar e gerar prévia"}
+            </Button>
+            {previsualizandoMapa && <span className="text-xs text-muted-foreground">A consulta pode levar alguns segundos por linha.</span>}
+          </div>
+
+          {previewImportacaoMapa.length > 0 && (
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h3 className="font-semibold">Prévia da importação</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {previewImportacaoMapa.filter((row) => row.status === "pronto").length} endereço(s) localizado(s); {previewImportacaoMapa.length} linha(s) analisada(s).
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => selecionarPontosSemCoordenadas(true)}>
+                    Selecionar prontos com resultado único
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => selecionarPontosSemCoordenadas(false)}>
+                    Desmarcar todos
+                  </Button>
+                </div>
+              </div>
+
+              <label className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+                <Checkbox
+                  checked={sobrescreverCoordenadas}
+                  onCheckedChange={(checked) => setSobrescreverCoordenadas(!!checked)}
+                  disabled={importandoMapa}
+                />
+                <span>
+                  <span className="font-medium">Permitir substituir coordenadas já cadastradas</span>
+                  <span className="block text-xs text-muted-foreground">Registros com coordenadas existentes começam desmarcados e só serão atualizados se você marcar esta opção e selecionar a linha.</span>
+                </span>
+              </label>
+
+              <div className="max-h-[600px] space-y-2 overflow-y-auto pr-1">
+                {previewImportacaoMapa.map((row) => {
+                  const candidate = row.candidates[row.candidateIndex];
+                  const statusLabel = row.status === "pronto" ? "Localizado"
+                    : row.status === "nao_encontrado" ? "Protocolo não encontrado"
+                    : row.status === "duplicado" ? "Número duplicado"
+                    : row.status === "sem_resultado" ? "Endereço não localizado"
+                    : row.status === "fora_area" ? "Fora de Brusque"
+                    : "Revisar linha";
+                  return (
+                    <div key={`${row.line}-${row.numero}`} className="rounded-md border p-3">
+                      <div className="flex items-start gap-3">
+                        {row.status === "pronto" && row.protocolId && (
+                          <Checkbox
+                            checked={row.selected && (!row.hasCoordinates || sobrescreverCoordenadas)}
+                            disabled={importandoMapa || (row.hasCoordinates && !sobrescreverCoordenadas)}
+                            onCheckedChange={(checked) => alterarSelecaoImportacao(row.line, !!checked)}
+                            aria-label={`Incluir protocolo ${row.numero} na importação`}
+                          />
+                        )}
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono font-semibold">{row.numero || `Linha ${row.line}`}</span>
+                            {row.secretaria && <span className="text-xs text-muted-foreground">{row.secretaria}</span>}
+                            <Badge variant={row.status === "pronto" ? "secondary" : "outline"}>{statusLabel}</Badge>
+                          </div>
+                          {row.assunto && <p className="text-xs text-muted-foreground">{row.assunto}</p>}
+                          {row.endereco && <p className="text-sm">Endereço informado: <strong>{row.endereco}</strong></p>}
+                          <p className={`text-xs ${row.status === "pronto" ? "text-muted-foreground" : "text-destructive"}`}>{row.message}</p>
+                          {row.hasCoordinates && (
+                            <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                              Este protocolo já tem coordenadas{row.currentEndereco ? ` (${row.currentEndereco})` : ""}.
+                            </p>
+                          )}
+                          {candidate && (
+                            <div className="space-y-2 rounded bg-muted/50 p-2">
+                              {row.candidates.length > 1 && (
+                                <div className="space-y-1">
+                                  <Label className="text-xs">Endereço ambíguo — escolha uma das {row.candidates.length} opções</Label>
+                                  <Select value={String(row.candidateIndex)} onValueChange={(value) => alterarCandidatoImportacao(row.line, Number(value))}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      {row.candidates.map((option, index) => (
+                                        <SelectItem key={option.placeId} value={String(index)}>{option.displayName}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
+                              <p className="break-words text-xs">{candidate.displayName}</p>
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                                <span className="font-mono">{candidate.latitude.toFixed(6)}, {candidate.longitude.toFixed(6)}</span>
+                                <a
+                                  className="text-primary underline"
+                                  href={`https://www.openstreetmap.org/?mlat=${candidate.latitude}&mlon=${candidate.longitude}#map=18/${candidate.latitude}/${candidate.longitude}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  Conferir no mapa
+                                </a>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+                <p className="text-sm text-muted-foreground">
+                  {previewImportacaoMapa.filter((row) => row.selected && row.status === "pronto" && (!row.hasCoordinates || sobrescreverCoordenadas)).length} protocolo(s) selecionado(s).
+                </p>
+                <Button onClick={aplicarImportacaoMapa} disabled={importandoMapa || previsualizandoMapa}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  {importandoMapa ? "Gravando no sistema..." : "Importar selecionados"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

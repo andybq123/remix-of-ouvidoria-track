@@ -36,6 +36,7 @@ Sistema completo de gestão de ouvidoria para prefeituras: cadastro e acompanham
 - Pontos de protocolos com coordenadas e locais/unidades cadastrados, com popup de resumo dos últimos 3 meses.
 - Cadastro e reposicionamento manual de pontos vinculados à secretaria.
 
+
 ### Administração
 - **Secretarias, assuntos, usuários e tarefas**.
 - **Responsáveis por secretaria** (titular e substituto).
