@@ -1,0 +1,8 @@
+ALTER TABLE public.email_inbox_accounts ADD COLUMN IF NOT EXISTS gmail_history_id text, ADD COLUMN IF NOT EXISTS imap_uid_validity text, ADD COLUMN IF NOT EXISTS imap_last_uid bigint, ADD COLUMN IF NOT EXISTS ultima_sync_sucesso_em timestamptz, ADD COLUMN IF NOT EXISTS ultima_sync_erro_detalhe text;
+ALTER TABLE public.protocolos ADD COLUMN IF NOT EXISTS numero_esic text;
+ALTER TABLE public.protocolos ADD COLUMN IF NOT EXISTS esic_prorrogacao_justificativa text;
+CREATE OR REPLACE FUNCTION public.normalizar_numero_esic(p_numero text) RETURNS text LANGUAGE sql IMMUTABLE STRICT SET search_path = public AS $$ SELECT CASE WHEN regexp_replace(btrim(p_numero), '[.[:space:]]', '', 'g') ~ '^[0-9]+/[0-9]{4}$' THEN regexp_replace(regexp_replace(btrim(p_numero), '[.[:space:]]', '', 'g'), '^0+([0-9])', '\1') ELSE upper(regexp_replace(btrim(p_numero), '[.[:space:]]', '', 'g')) END; $$;
+CREATE OR REPLACE FUNCTION public.protocolo_esic_por_numero(p_numero text) RETURNS TABLE(id uuid, numero text, status public.protocolo_status) LANGUAGE sql STABLE SET search_path = public AS $$ SELECT p.id, p.numero, p.status FROM public.protocolos p WHERE p.tipo = 'esic'::public.protocolo_tipo AND public.normalizar_numero_esic(p.numero_esic) = public.normalizar_numero_esic(p_numero); $$;
+REVOKE ALL ON FUNCTION public.protocolo_esic_por_numero(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.protocolo_esic_por_numero(text) TO authenticated, service_role;
+NOTIFY pgrst, 'reload schema';

@@ -182,19 +182,24 @@ export type Database = {
           created_by: string | null
           descricao: string | null
           email: string
+          gmail_history_id: string | null
           id: string
           imap_host: string | null
+          imap_last_uid: number | null
           imap_password: string | null
           imap_port: number | null
           imap_tls: boolean | null
+          imap_uid_validity: string | null
           imap_user: string | null
           provider: string
           secretaria_id: string | null
           token: string
           ultima_sincronizacao: string | null
+          ultima_sync_erro_detalhe: string | null
           ultima_sync_erros: number
           ultima_sync_novos: number
           ultima_sync_processados: number
+          ultima_sync_sucesso_em: string | null
           updated_at: string
         }
         Insert: {
@@ -203,19 +208,24 @@ export type Database = {
           created_by?: string | null
           descricao?: string | null
           email: string
+          gmail_history_id?: string | null
           id?: string
           imap_host?: string | null
+          imap_last_uid?: number | null
           imap_password?: string | null
           imap_port?: number | null
           imap_tls?: boolean | null
+          imap_uid_validity?: string | null
           imap_user?: string | null
           provider?: string
           secretaria_id?: string | null
           token?: string
           ultima_sincronizacao?: string | null
+          ultima_sync_erro_detalhe?: string | null
           ultima_sync_erros?: number
           ultima_sync_novos?: number
           ultima_sync_processados?: number
+          ultima_sync_sucesso_em?: string | null
           updated_at?: string
         }
         Update: {
@@ -224,19 +234,24 @@ export type Database = {
           created_by?: string | null
           descricao?: string | null
           email?: string
+          gmail_history_id?: string | null
           id?: string
           imap_host?: string | null
+          imap_last_uid?: number | null
           imap_password?: string | null
           imap_port?: number | null
           imap_tls?: boolean | null
+          imap_uid_validity?: string | null
           imap_user?: string | null
           provider?: string
           secretaria_id?: string | null
           token?: string
           ultima_sincronizacao?: string | null
+          ultima_sync_erro_detalhe?: string | null
           ultima_sync_erros?: number
           ultima_sync_novos?: number
           ultima_sync_processados?: number
+          ultima_sync_sucesso_em?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -432,6 +447,7 @@ export type Database = {
           descricao: string | null
           detalhes: Json | null
           endereco: string | null
+          esic_prorrogacao_justificativa: string | null
           hash_consulta: string | null
           id: string
           ip_solicitante: string | null
@@ -441,6 +457,7 @@ export type Database = {
           local_id: string | null
           longitude: number | null
           numero: string
+          numero_esic: string | null
           origem: string | null
           prorrogado: boolean
           resolucao: string | null
@@ -471,6 +488,7 @@ export type Database = {
           descricao?: string | null
           detalhes?: Json | null
           endereco?: string | null
+          esic_prorrogacao_justificativa?: string | null
           hash_consulta?: string | null
           id?: string
           ip_solicitante?: string | null
@@ -480,6 +498,7 @@ export type Database = {
           local_id?: string | null
           longitude?: number | null
           numero: string
+          numero_esic?: string | null
           origem?: string | null
           prorrogado?: boolean
           resolucao?: string | null
@@ -510,6 +529,7 @@ export type Database = {
           descricao?: string | null
           detalhes?: Json | null
           endereco?: string | null
+          esic_prorrogacao_justificativa?: string | null
           hash_consulta?: string | null
           id?: string
           ip_solicitante?: string | null
@@ -519,6 +539,7 @@ export type Database = {
           local_id?: string | null
           longitude?: number | null
           numero?: string
+          numero_esic?: string | null
           origem?: string | null
           prorrogado?: boolean
           resolucao?: string | null
@@ -772,6 +793,15 @@ export type Database = {
       }
       liberar_triagem: { Args: { p_id: string }; Returns: undefined }
       liberar_triagem_admin: { Args: { p_id: string }; Returns: undefined }
+      normalizar_numero_esic: { Args: { p_numero: string }; Returns: string }
+      protocolo_esic_por_numero: {
+        Args: { p_numero: string }
+        Returns: {
+          id: string
+          numero: string
+          status: Database["public"]["Enums"]["protocolo_status"]
+        }[]
+      }
       reservar_triagem: { Args: { p_id: string }; Returns: Json }
       reservar_triagem_admin: { Args: { p_id: string }; Returns: Json }
       show_limit: { Args: never; Returns: number }
