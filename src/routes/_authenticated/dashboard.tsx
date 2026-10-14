@@ -924,7 +924,7 @@ function Dashboard() {
         </CardHeader>
         <CardContent>
           <ManifestacoesMap
-            height={320}
+            height={420}
             secretarias={mapSecretarias
               .filter((s) => s.latitude != null && s.longitude != null)
               .map<SecretariaPoint>((s) => ({
