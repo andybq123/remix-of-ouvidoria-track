@@ -17,6 +17,8 @@ import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
 import { formatDate, PRAZOS, categoriaLabel, categoriaBadgeClass, categoriaDoProtocolo, resumoPrazoMapa, type TipoProtocolo } from "@/lib/prazo";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { mapDepartmentOf } from "@/lib/map-departments";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { MapPointPicker } from "@/components/map-point-picker";
 
 export const Route = createFileRoute("/_authenticated/tarefas")({
   head: () => ({ meta: [
@@ -73,11 +75,69 @@ function MotivoTriagemBadge({ protocolo }: { protocolo: any }) {
   return null;
 }
 
+function EnderecoRapido({ protocolo, onFechar }: { protocolo: any; onFechar: () => void }) {
+  const qc = useQueryClient();
+  const [endereco, setEndereco] = useState<string>(protocolo.endereco ?? "");
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
+    protocolo.latitude != null && protocolo.longitude != null
+      ? { lat: Number(protocolo.latitude), lng: Number(protocolo.longitude) } : null,
+  );
+  const [mapaAberto, setMapaAberto] = useState(false);
+  const salvar = useMutation({
+    mutationFn: async () => {
+      if (!endereco.trim()) throw new Error("Informe o endereço");
+      if (!coords) throw new Error("Selecione uma sugestão ou marque o ponto no mapa");
+      const { error } = await supabase.from("protocolos")
+        .update({ endereco: endereco.trim(), latitude: coords.lat, longitude: coords.lng })
+        .eq("id", protocolo.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(`Endereço do protocolo ${protocolo.numero} salvo.`);
+      qc.invalidateQueries({ queryKey: ["atrasadas-localizacao"] });
+      qc.invalidateQueries({ queryKey: ["protocolos"] });
+      onFechar();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Erro ao salvar endereço"),
+  });
+  return (
+    <div className="basis-full space-y-2 border-t pt-3">
+      <AddressAutocomplete
+        value={endereco}
+        onChange={(v) => { setEndereco(v); setCoords(null); }}
+        onSelect={(r) => { setEndereco(r.label); setCoords({ lat: r.lat, lng: r.lng }); }}
+        placeholder="Digite a rua e selecione uma sugestão…"
+      />
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button size="sm" variant="outline" onClick={() => setMapaAberto(true)}>
+          <MapPin className="h-4 w-4 mr-1" /> Marcar no mapa
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          {coords ? "Ponto definido" : "Sem ponto no mapa"}
+        </span>
+        <div className="flex-1" />
+        <Button size="sm" variant="ghost" onClick={onFechar}>Cancelar</Button>
+        <Button size="sm" onClick={() => salvar.mutate()} disabled={salvar.isPending}>Salvar endereço</Button>
+      </div>
+      <MapPointPicker
+        open={mapaAberto}
+        onOpenChange={setMapaAberto}
+        initial={coords}
+        endereco={endereco}
+        protocoloContext={{ assunto: protocolo.assunto, descricao: protocolo.descricao, endereco, secretaria: protocolo.secretarias?.nome, local: protocolo.locais?.nome }}
+        onConfirm={(lat, lng, end) => { setCoords({ lat, lng }); if (end) setEndereco(end); }}
+      />
+    </div>
+  );
+}
+
 function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
   secretarias: any[]; onVoltar: () => void; onAbrir: (p: any) => void;
 }) {
   const [sec, setSec] = useState("");
   const [soSemLocal, setSoSemLocal] = useState(true);
+  const [busca, setBusca] = useState("");
+  const [editando, setEditando] = useState<string | null>(null);
   const { data: rows = [], isFetching } = useQuery({
     queryKey: ["atrasadas-localizacao", sec],
     enabled: !!sec,
@@ -98,7 +158,10 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
     },
   });
   const semLocal = (p: any) => p.latitude == null || p.longitude == null;
-  const lista = soSemLocal ? rows.filter((x) => semLocal(x.p)) : rows;
+  const termo = busca.trim().toLowerCase();
+  const lista = rows
+    .filter((x) => !soSemLocal || semLocal(x.p))
+    .filter((x) => !termo || `${x.p.numero} ${x.p.numero_esic ?? ""} ${x.p.assunto} ${x.p.solicitante ?? ""} ${x.p.endereco ?? ""}`.toLowerCase().includes(termo));
 
   return (
     <>
@@ -122,6 +185,8 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
             {secretarias.map((x) => <SelectItem key={x.id} value={x.id}>{x.nome}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Input placeholder="Buscar nº, assunto, solicitante, endereço…" value={busca}
+          onChange={(e) => setBusca(e.target.value)} className="w-[300px]" disabled={!sec} />
         <label className="flex items-center gap-2 text-sm cursor-pointer">
           <Checkbox checked={soSemLocal} onCheckedChange={(v) => setSoSemLocal(!!v)} />
           Somente sem localização
@@ -153,9 +218,16 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
                   <div className="font-medium text-sm">{p.assunto}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">{p.endereco || p.locais?.nome || "Endereço não informado"}</div>
                 </div>
-                <Button size="sm" onClick={() => onAbrir(p)}>
+                <Button size="sm" variant={editando === p.id ? "secondary" : "default"}
+                  onClick={() => setEditando(editando === p.id ? null : p.id)}>
+                  <MapPin className="h-4 w-4 mr-1" /> Alterar endereço
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => onAbrir(p)}>
                   <Eye className="h-4 w-4 mr-1" /> Abrir
                 </Button>
+                {editando === p.id && (
+                  <EnderecoRapido protocolo={p} onFechar={() => setEditando(null)} />
+                )}
               </CardContent>
             </Card>
           ))}
