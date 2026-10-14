@@ -539,7 +539,7 @@ function Dashboard() {
             </div>
           </div>
           <Link to="/tarefas" className="ml-auto">
-            <Button size="sm" variant="outline">Abrir fila de triagem</Button>
+            <Button size="sm" className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500">Abrir fila de triagem</Button>
           </Link>
         </CardContent>
       </Card>
