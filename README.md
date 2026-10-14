@@ -31,9 +31,10 @@ Sistema completo de gestão de ouvidoria para prefeituras: cadastro e acompanham
 - **Busca global avançada** por assunto e conteúdo das ouvidorias.
 - **Notificações em tempo real** entre usuários conectados.
 
-### Mapa da Saúde
-- Mapa com **pontos apenas das unidades da Saúde**, com popup de resumo dos últimos 3 meses.
-- Cadastro de **novo ponto vinculado à secretaria**.
+### Mapas da Saúde e de Obras (SOSU)
+- Dashboard e página de mapas com alternância entre **Saúde**, **Obras/SOSU** e **as duas áreas**.
+- Pontos de protocolos com coordenadas e locais/unidades cadastrados, com popup de resumo dos últimos 3 meses.
+- Cadastro e reposicionamento manual de pontos vinculados à secretaria.
 
 ### Administração
 - **Secretarias, assuntos, usuários e tarefas**.

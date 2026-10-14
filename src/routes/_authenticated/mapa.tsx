@@ -13,6 +13,8 @@ import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { toast } from "sonner";
 import { MapPointPicker } from "@/components/map-point-picker";
 import { categoriaDoProtocolo } from "@/lib/prazo";
+import { mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
+import { MapDepartmentToggle } from "@/components/map-department-toggle";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +31,7 @@ export const Route = createFileRoute("/_authenticated/mapa")({
 });
 
 function MapaPage() {
+  const [mapScope, setMapScope] = useState<MapDepartmentScope>("saude");
   const [status, setStatus] = useState<string>("todos");
   const [localFiltroId, setLocalFiltroId] = useState<string>("todos");
   const [detail, setDetail] = useState<any | null>(null);
@@ -49,29 +52,36 @@ function MapaPage() {
   const [savingMove, setSavingMove] = useState(false);
   const qc = useQueryClient();
 
-  const { data: saudeSec } = useQuery({
-    queryKey: ["secretaria-saude-mapa"],
+  const { data: secretariasMapa = [] } = useQuery({
+    queryKey: ["secretarias-mapa-setores"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("secretarias")
         .select("id, nome, sigla, endereco, latitude, longitude, icone")
-        .eq("nome", "Saúde")
-        .maybeSingle();
-      return data;
+        .order("nome");
+      if (error) throw error;
+      return (data ?? []).filter((s) => mapDepartmentOf(s) !== null);
     },
   });
-  const saudeId = saudeSec?.id;
+  const secretariasSelecionadas = useMemo(
+    () => secretariasMapa.filter((s) => matchesMapDepartment(s, mapScope)),
+    [secretariasMapa, mapScope],
+  );
+  const secretariaIdsSelecionadas = useMemo(
+    () => secretariasSelecionadas.map((s) => s.id),
+    [secretariasSelecionadas],
+  );
 
   const { data: protocolos = [] } = useQuery({
-    queryKey: ["protocolos-mapa-saude", saudeId],
-    enabled: !!saudeId,
+    queryKey: ["protocolos-mapa-setores", secretariaIdsSelecionadas],
+    enabled: secretariaIdsSelecionadas.length > 0,
     queryFn: () =>
       fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
           .select("id, numero, numero_esic, assunto, endereco, latitude, longitude, status, secretaria_id, local_id, categoria, tipo, data_abertura, data_conclusao, locais(nome), secretarias(nome)")
           .eq("triagem_pendente", false)
-          .eq("secretaria_id", saudeId!)
+          .in("secretaria_id", secretariaIdsSelecionadas)
           .not("latitude", "is", null)
           .not("longitude", "is", null)
           .range(from, to),
@@ -79,13 +89,13 @@ function MapaPage() {
   });
 
   const { data: locaisSaude = [] } = useQuery({
-    queryKey: ["locais-saude-mapa", saudeId],
-    enabled: !!saudeId,
+    queryKey: ["locais-setores-mapa", secretariaIdsSelecionadas],
+    enabled: secretariaIdsSelecionadas.length > 0,
     queryFn: async () => (
       await supabase
         .from("locais")
         .select("id, nome, latitude, longitude, secretaria_id, secretarias(nome, icone)")
-        .eq("secretaria_id", saudeId!)
+        .in("secretaria_id", secretariaIdsSelecionadas)
         .order("nome")
     ).data ?? [],
   });
@@ -101,15 +111,15 @@ function MapaPage() {
 
   // Inclui TODOS os protocolos (mesmo sem coordenadas) para listar no popup do local.
   const { data: protocolosTodos = [] } = useQuery({
-    queryKey: ["protocolos-por-local-saude", saudeId],
-    enabled: !!saudeId,
+    queryKey: ["protocolos-por-local-setores", secretariaIdsSelecionadas],
+    enabled: secretariaIdsSelecionadas.length > 0,
     queryFn: () =>
       fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
           .select("id, numero, numero_esic, assunto, status, local_id, secretaria_id")
           .eq("triagem_pendente", false)
-          .eq("secretaria_id", saudeId!)
+          .in("secretaria_id", secretariaIdsSelecionadas)
           .not("local_id", "is", null)
           .range(from, to),
       ),
@@ -156,17 +166,18 @@ function MapaPage() {
   }, [protocolosTodos, status, localFiltroId]);
 
   const secretariaPoints = useMemo<SecretariaPoint[]>(() => {
-    if (!saudeSec || saudeSec.latitude == null || saudeSec.longitude == null) return [];
-    return [{
-      id: saudeSec.id,
-      lat: saudeSec.latitude as number,
-      lng: saudeSec.longitude as number,
-      nome: saudeSec.nome,
-      sigla: saudeSec.sigla,
-      endereco: saudeSec.endereco,
-      icone: saudeSec.icone,
-    }];
-  }, [saudeSec]);
+    return secretariasSelecionadas
+      .filter((s) => s.latitude != null && s.longitude != null)
+      .map((s) => ({
+        id: s.id,
+        lat: s.latitude as number,
+        lng: s.longitude as number,
+        nome: s.nome,
+        sigla: s.sigla,
+        endereco: s.endereco,
+        icone: s.icone,
+      }));
+  }, [secretariasSelecionadas]);
 
   const localPoints = useMemo<LocalPoint[]>(() => {
     return locaisComCoord
@@ -191,12 +202,13 @@ function MapaPage() {
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <HeartPulse className="h-6 w-6 text-emerald-500" /> Mapa da Saúde
+            <HeartPulse className="h-6 w-6 text-emerald-500" />
+            {mapScope === "saude" ? "Mapa da Saúde" : mapScope === "obras" ? "Mapa de Obras (SOSU)" : "Mapa — Saúde e Obras"}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Unidades e protocolos da Secretaria de Saúde em Brusque.
+            Pontos e protocolos das áreas selecionadas em Brusque.
             {locaisSemCoord.length > 0 && (
-              <> <strong>{locaisSemCoord.length}</strong> unidade(s) da saúde ainda sem ponto no mapa.</>
+              <> <strong>{locaisSemCoord.length}</strong> unidade(s)/local(is) ainda sem ponto no mapa.</>
             )}
           </p>
         </div>
@@ -205,9 +217,14 @@ function MapaPage() {
           disabled={locaisSemCoord.length === 0}
           className="gap-2"
         >
-          <Plus className="h-4 w-4" /> Adicionar unidade no mapa
+          <Plus className="h-4 w-4" /> Adicionar local no mapa
         </Button>
       </div>
+
+      <MapDepartmentToggle
+        value={mapScope}
+        onChange={(value) => { setMapScope(value); setLocalFiltroId("todos"); }}
+      />
 
       <Card>
         <CardHeader className="pb-2">
@@ -227,11 +244,11 @@ function MapaPage() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Unidade de saúde</Label>
+            <Label>Unidade/local</Label>
             <Select value={localFiltroId} onValueChange={setLocalFiltroId}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todas as unidades</SelectItem>
+                <SelectItem value="todos">Todas as unidades/locais</SelectItem>
                 {locaisComCoord.map((l: any) => (
                   <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>
                 ))}
@@ -275,7 +292,7 @@ function MapaPage() {
               });
             }}
             onMoveSecretaria={async (id, lat, lng) => {
-              const sec = saudeSec && saudeSec.id === id ? saudeSec : null;
+              const sec = secretariasMapa.find((s) => s.id === id) ?? null;
               if (!sec) return false;
               return await new Promise<boolean>((resolve) => {
                 setPendingMove({
@@ -295,15 +312,15 @@ function MapaPage() {
       </Card>
       <ProtocoloDetailDialog protocolo={detail} open={!!detail} onOpenChange={(v) => !v && setDetail(null)} />
 
-      {/* Dialog: escolher qual unidade da saúde receber um ponto no mapa */}
+      {/* Dialog: escolher qual unidade/local receber um ponto no mapa */}
       <AlertDialog open={addOpen} onOpenChange={(v) => { if (!savingNewPoint) setAddOpen(v); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Adicionar unidade da saúde no mapa</AlertDialogTitle>
+            <AlertDialogTitle>Adicionar unidade/local no mapa</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-sm">
                 <p>
-                  Selecione uma unidade da Secretaria de Saúde que ainda não possui ponto no mapa.
+                  Selecione uma unidade ou local que ainda não possui ponto no mapa.
                   Em seguida, clique no mapa para marcar sua localização exata.
                 </p>
                 <div className="space-y-1.5">
@@ -313,7 +330,7 @@ function MapaPage() {
                     <SelectContent>
                       {locaisSemCoord.length === 0 && (
                         <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                          Todas as unidades já possuem coordenadas.
+                          Todas as unidades/locais já possuem coordenadas.
                         </div>
                       )}
                       {locaisSemCoord.map((l: any) => (
@@ -359,7 +376,7 @@ function MapaPage() {
           }
           toast.success(`${localSelecionadoParaAdicionar?.nome ?? "Unidade"} adicionada ao mapa.`);
           setAddLocalId("");
-          await qc.invalidateQueries({ queryKey: ["locais-saude-mapa"] });
+          await qc.invalidateQueries({ queryKey: ["locais-setores-mapa"] });
         }}
       />
 
@@ -425,7 +442,7 @@ function MapaPage() {
                 } else {
                   toast.success(`${pendingMove.nome} reposicionado.`);
                   await qc.invalidateQueries({
-                    queryKey: pendingMove.kind === "local" ? ["locais-saude-mapa"] : ["secretaria-saude-mapa"],
+                    queryKey: pendingMove.kind === "local" ? ["locais-setores-mapa"] : ["secretarias-mapa-setores"],
                   });
                   pendingMove.resolve(true);
                 }

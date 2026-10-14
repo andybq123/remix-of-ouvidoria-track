@@ -41,6 +41,8 @@ import {
 import { format, startOfMonth, subMonths, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useRealtimeSync } from "@/hooks/realtime-sync-context";
+import { MapDepartmentToggle } from "@/components/map-department-toggle";
+import { matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -73,6 +75,7 @@ function Dashboard() {
   } | null>(null);
   const [detail, setDetail] = useState<any | null>(null);
   const [mes, setMes] = useState<string>(currentMonthValue());
+  const [mapScope, setMapScope] = useState<MapDepartmentScope>("saude");
 
   const { data: protocolos = [] } = useQuery({
     queryKey: ["protocolos"],
@@ -155,6 +158,22 @@ function Dashboard() {
   const filtrados = useMemo(
     () => (mes === "all" ? allEnriched : allEnriched.filter(p => isInMonth(p.data_abertura, mes))),
     [allEnriched, mes],
+  );
+  const mapSecretarias = useMemo(
+    () => (secretarias as any[]).filter((s) => matchesMapDepartment(s, mapScope)),
+    [secretarias, mapScope],
+  );
+  const mapDepartmentIds = useMemo(
+    () => new Set(mapSecretarias.map((s: any) => s.id)),
+    [mapSecretarias],
+  );
+  const mapLocais = useMemo(
+    () => (locaisComCoord as any[]).filter((l) => mapDepartmentIds.has(l.secretaria_id)),
+    [locaisComCoord, mapDepartmentIds],
+  );
+  const mapProtocolos = useMemo(
+    () => filtrados.filter((p: any) => mapDepartmentIds.has(p.secretaria_id)),
+    [filtrados, mapDepartmentIds],
   );
   // Resumo operacional (motor de SLA único)
   const op = useMemo(() => resumoOperacional(filtrados as any), [filtrados]);
@@ -867,24 +886,27 @@ function Dashboard() {
       </div>
 
       <Card>
-        <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
+        <CardHeader className="pb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between space-y-0">
           <CardTitle className="text-base flex items-center gap-2">
             <MapPin className="h-4 w-4 text-primary" /> Mapa de Manifestações
           </CardTitle>
-          <Link to="/mapa" className="text-xs text-primary hover:underline">
-            Abrir mapa completo →
-          </Link>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between md:justify-end">
+            <MapDepartmentToggle value={mapScope} onChange={setMapScope} />
+            <Link to="/mapa" className="text-xs text-primary hover:underline whitespace-nowrap">
+              Abrir mapa completo →
+            </Link>
+          </div>
         </CardHeader>
         <CardContent>
           <ManifestacoesMap
             height={320}
-            secretarias={(secretarias as any[])
+            secretarias={mapSecretarias
               .filter((s) => s.latitude != null && s.longitude != null)
               .map<SecretariaPoint>((s) => ({
                 id: s.id, lat: s.latitude, lng: s.longitude, nome: s.nome,
                 sigla: s.sigla, endereco: s.endereco, icone: s.icone,
               }))}
-            locais={(locaisComCoord as any[]).map<LocalPoint>((l) => ({
+            locais={mapLocais.map<LocalPoint>((l: any) => ({
               id: l.id,
               lat: l.latitude,
               lng: l.longitude,
@@ -896,7 +918,7 @@ function Dashboard() {
               const p = enriched.find((x: any) => x.id === id);
               if (p) setDetail(p);
             }}
-            points={filtrados
+            points={mapProtocolos
               .map((p: any) => ({
                 id: p.id,
                 lat: p.latitude ?? NaN,
