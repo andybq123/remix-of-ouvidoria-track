@@ -8,13 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Inbox, Eye, CheckCheck, Lock, Trash2 } from "lucide-react";
+import { Inbox, Eye, CheckCheck, Lock, Trash2, MapPin, ArrowLeft } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { excluirProtocolos } from "@/lib/debug.functions";
 import { toast } from "sonner";
 import { fetchAllPaginated } from "@/lib/fetch-all";
 import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
-import { formatDate, PRAZOS, categoriaLabel, categoriaBadgeClass, categoriaDoProtocolo, type TipoProtocolo } from "@/lib/prazo";
+import { formatDate, PRAZOS, categoriaLabel, categoriaBadgeClass, categoriaDoProtocolo, resumoPrazoMapa, type TipoProtocolo } from "@/lib/prazo";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { mapDepartmentOf } from "@/lib/map-departments";
 
@@ -73,9 +73,102 @@ function MotivoTriagemBadge({ protocolo }: { protocolo: any }) {
   return null;
 }
 
+function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
+  secretarias: any[]; onVoltar: () => void; onAbrir: (p: any) => void;
+}) {
+  const [sec, setSec] = useState("");
+  const [soSemLocal, setSoSemLocal] = useState(true);
+  const { data: rows = [], isFetching } = useQuery({
+    queryKey: ["atrasadas-localizacao", sec],
+    enabled: !!sec,
+    queryFn: async () => {
+      const all = await fetchAllPaginated((from, to) =>
+        supabase
+          .from("protocolos")
+          .select("*, secretarias(nome, sigla), locais(nome)")
+          .eq("secretaria_id", sec)
+          .neq("status", "concluido")
+          .order("data_abertura", { ascending: true })
+          .range(from, to),
+      );
+      return all
+        .map((p: any) => ({ p, r: resumoPrazoMapa(p) }))
+        .filter((x) => x.r?.atrasado)
+        .sort((a, b) => (b.r!.diasAtraso - a.r!.diasAtraso));
+    },
+  });
+  const semLocal = (p: any) => p.latitude == null || p.longitude == null;
+  const lista = soSemLocal ? rows.filter((x) => semLocal(x.p)) : rows;
+
+  return (
+    <>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <MapPin className="h-6 w-6" /> Atrasadas por secretaria
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Ferramenta temporária: abra cada ouvidoria atrasada e marque a localização.
+          </p>
+        </div>
+        <Button size="sm" variant="outline" onClick={onVoltar}>
+          <ArrowLeft className="h-4 w-4 mr-1" /> Voltar à triagem
+        </Button>
+      </div>
+      <div className="flex items-center gap-3 flex-wrap">
+        <Select value={sec} onValueChange={setSec}>
+          <SelectTrigger className="w-[280px]"><SelectValue placeholder="Selecione a secretaria…" /></SelectTrigger>
+          <SelectContent>
+            {secretarias.map((x) => <SelectItem key={x.id} value={x.id}>{x.nome}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <Checkbox checked={soSemLocal} onCheckedChange={(v) => setSoSemLocal(!!v)} />
+          Somente sem localização
+        </label>
+        {sec && (
+          <span className="text-sm text-muted-foreground">
+            {isFetching ? "Carregando…" : `${lista.length} de ${rows.length} atrasada(s)`}
+          </span>
+        )}
+      </div>
+      {!sec ? (
+        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Escolha uma secretaria.</CardContent></Card>
+      ) : lista.length === 0 && !isFetching ? (
+        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Nenhuma ouvidoria atrasada {soSemLocal ? "sem localização " : ""}nesta secretaria.</CardContent></Card>
+      ) : (
+        <div className="space-y-2">
+          {lista.map(({ p, r }) => (
+            <Card key={p.id}>
+              <CardContent className="py-3 flex items-center gap-3 flex-wrap">
+                <div className="flex-1 min-w-[260px]">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="font-mono text-xs text-muted-foreground">{p.numero}</span>
+                    <Badge variant="destructive" className="text-[10px]">{r!.diasTexto}</Badge>
+                    <span className="text-xs text-muted-foreground">Prazo: {r!.prazoTexto}</span>
+                    {semLocal(p)
+                      ? <Badge variant="outline" className="text-[10px]">sem localização</Badge>
+                      : <Badge variant="secondary" className="text-[10px]">com localização</Badge>}
+                  </div>
+                  <div className="font-medium text-sm">{p.assunto}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{p.endereco || p.locais?.nome || "Endereço não informado"}</div>
+                </div>
+                <Button size="sm" onClick={() => onAbrir(p)}>
+                  <Eye className="h-4 w-4 mr-1" /> Abrir
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 function TarefasPage() {
   const qc = useQueryClient();
   const [detail, setDetail] = useState<any | null>(null);
+  const [modoAtrasadas, setModoAtrasadas] = useState(false);
   const [busca, setBusca] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchSec, setBatchSec] = useState<string>("");
@@ -205,6 +298,27 @@ function TarefasPage() {
     else setSelected(new Set(selecionaveis.map((p: any) => p.id)));
   }
 
+  if (modoAtrasadas) {
+    return (
+      <div className="space-y-4">
+        <AtrasadasLocalizacao
+          secretarias={secretarias as any[]}
+          onVoltar={() => setModoAtrasadas(false)}
+          onAbrir={(p) => setDetail(p)}
+        />
+        <ProtocoloDetailDialog
+          protocolo={detail}
+          open={!!detail}
+          onOpenChange={(v) => {
+            if (!v) setDetail(null);
+            qc.invalidateQueries({ queryKey: ["atrasadas-localizacao"] });
+            qc.invalidateQueries({ queryKey: ["protocolos"] });
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -216,7 +330,12 @@ function TarefasPage() {
             {filtrados.length} ouvidoria(s) aguardando triagem. Defina secretaria/local e salve para enviar ao módulo correspondente.
           </p>
         </div>
-        <Input placeholder="Buscar nº, assunto, solicitante…" value={busca} onChange={e => setBusca(e.target.value)} className="w-[280px]" />
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={() => setModoAtrasadas(true)}>
+            <MapPin className="h-4 w-4 mr-1" /> Atrasadas por secretaria
+          </Button>
+          <Input placeholder="Buscar nº, assunto, solicitante…" value={busca} onChange={e => setBusca(e.target.value)} className="w-[280px]" />
+        </div>
       </div>
 
       {selected.size > 0 && (
