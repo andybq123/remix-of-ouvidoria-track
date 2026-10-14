@@ -183,6 +183,16 @@ function Dashboard() {
     () => filtrados.filter((p: any) => mapDepartmentIds.has(p.secretaria_id)),
     [filtrados, mapDepartmentIds],
   );
+  const localCoordById = useMemo(
+    () => new Map((locaisComCoord as any[]).map((l) => [l.id, { lat: l.latitude, lng: l.longitude }])),
+    [locaisComCoord],
+  );
+  const obrasSemCoord = useMemo(
+    () => mapProtocolos.filter((p: any) =>
+      mapDepartmentOf(p.secretarias ?? {}) === "obras" &&
+      (p.latitude == null || p.longitude == null) && !localCoordById.has(p.local_id)).length,
+    [mapProtocolos, localCoordById],
+  );
   // Resumo operacional (motor de SLA único)
   const op = useMemo(() => resumoOperacional(filtrados as any), [filtrados]);
   const total = filtrados.length;
@@ -930,8 +940,8 @@ function Dashboard() {
             points={mapProtocolos
               .map((p: any) => ({
                 id: p.id,
-                lat: p.latitude ?? NaN,
-                lng: p.longitude ?? NaN,
+                lat: p.latitude ?? localCoordById.get(p.local_id)?.lat ?? NaN,
+                lng: p.longitude ?? localCoordById.get(p.local_id)?.lng ?? NaN,
                 numero: p.numero,
                 numero_esic: p.numero_esic,
                 assunto: p.assunto,
@@ -948,6 +958,11 @@ function Dashboard() {
                 mapDepartment: mapDepartmentOf(p.secretarias ?? {}),
               }))}
           />
+          {mapScope !== "saude" && obrasSemCoord > 0 && (
+            <p className="text-xs text-muted-foreground mt-2">
+              {obrasSemCoord} protocolo(s) de Obras ainda sem localização no mapa. Abra o protocolo e marque o endereço para ele aparecer.
+            </p>
+          )}
         </CardContent>
       </Card>
 
