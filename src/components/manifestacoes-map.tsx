@@ -4,6 +4,10 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { createRoot, type Root } from "react-dom/client";
 import { MAPBOX_TOKEN, MAPBOX_STYLE } from "@/lib/mapbox";
 import type { MapDepartment } from "@/lib/map-departments";
+import { mapDepartmentOf } from "@/lib/map-departments";
+import { obterIconeSecretaria, SECRETARIA_ICONES } from "@/lib/secretaria-map-icons";
+
+export { SECRETARIA_ICONES };
 
 // Color mapping by categoria (matches badge colors in src/lib/prazo.ts)
 const CATEGORIA_COLORS: Record<string, { fill: string; label: string }> = {
@@ -28,35 +32,27 @@ function pinSvg(categoria?: string | null) {
     </svg>`;
 }
 
-function obrasPinSvg() {
+function obrasPinSvg(icone?: string | null, badgeCount?: number) {
+  const customIcon = icone ? SECRETARIA_ICONES[icone] : null;
+  const badge = badgeCount == null ? "" : badgeCount > 99 ? "99+" : String(badgeCount);
+  const badgeSvg = badge
+    ? `<div style="position:absolute;top:-4px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#0f172a;color:#fff;font:700 10px/18px ui-sans-serif,system-ui,sans-serif;text-align:center;border:2px solid #fff;box-sizing:border-box;">${badge}</div>`
+    : "";
+  const symbol = customIcon
+    ? `<div style="position:absolute;top:5px;left:0;width:30px;height:24px;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;">${customIcon.emoji}</div>`
+    : `<img src="/icons/obras-marker.png" alt="" style="position:absolute;left:7px;top:6px;width:16px;height:16px;object-fit:contain;pointer-events:none;" />`;
   return `
     <div style="position:relative;width:30px;height:42px;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.35));">
       <svg xmlns="http://www.w3.org/2000/svg" width="30" height="42" viewBox="0 0 30 42" style="position:absolute;inset:0;">
         <path d="M15 1 C7 1 1 7 1 15 C1 25 15 41 15 41 C15 41 29 25 29 15 C29 7 23 1 15 1 Z"
           fill="#b45309" stroke="#fff" stroke-width="2"/>
       </svg>
-      <img src="/icons/obras-marker.png" alt="" style="position:absolute;left:7px;top:6px;width:16px;height:16px;object-fit:contain;pointer-events:none;" />
+      ${symbol}${badgeSvg}
     </div>`;
 }
 
-export const SECRETARIA_ICONES: Record<string, { emoji: string; label: string }> = {
-  saude:              { emoji: "🏥", label: "Saúde" },
-  educacao:           { emoji: "🎓", label: "Educação" },
-  obras:              { emoji: "🚧", label: "Obras" },
-  seguranca:          { emoji: "🛡️", label: "Segurança" },
-  meio_ambiente:      { emoji: "🌳", label: "Meio Ambiente" },
-  transporte:         { emoji: "🚌", label: "Transporte" },
-  cultura:            { emoji: "🎭", label: "Cultura" },
-  esporte:            { emoji: "⚽", label: "Esporte" },
-  agricultura:        { emoji: "🌱", label: "Agricultura" },
-  assistencia_social: { emoji: "🤝", label: "Assistência Social" },
-  fazenda:            { emoji: "💰", label: "Fazenda" },
-  turismo:            { emoji: "🧳", label: "Turismo" },
-  administracao:      { emoji: "🏛️", label: "Administração" },
-};
-
 function secretariaSvg(icone?: string | null) {
-  const cfg = SECRETARIA_ICONES[icone ?? "administracao"] ?? SECRETARIA_ICONES.administracao;
+  const cfg = obterIconeSecretaria(icone);
   return `
     <div style="position:relative;width:36px;height:46px;">
       <svg xmlns="http://www.w3.org/2000/svg" width="36" height="46" viewBox="0 0 36 46" style="position:absolute;inset:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.35));">
@@ -96,6 +92,7 @@ export type MapPoint = {
   endereco?: string | null;
   status?: string | null;
   secretaria?: string | null;
+  secretariaIcone?: string | null;
   data_abertura?: string | null;
   data_conclusao?: string | null;
   categoria?: string | null;
@@ -490,9 +487,9 @@ export function ManifestacoesMap({
 
       // secretarias
       validSecs.forEach(s => {
-        const cfg = SECRETARIA_ICONES[s.icone ?? "administracao"] ?? SECRETARIA_ICONES.administracao;
+        const cfg = obterIconeSecretaria(s.icone, mapDepartmentOf(s));
         const el = document.createElement("div");
-        el.innerHTML = secretariaSvg(s.icone);
+        el.innerHTML = secretariaSvg(cfg.key);
         el.style.cursor = onMoveSecRef.current ? "grab" : "pointer";
         el.title = onMoveSecRef.current ? "Arraste para reposicionar" : "";
         const popupNode = document.createElement("div");
@@ -533,8 +530,13 @@ export function ManifestacoesMap({
         // CLUSTER: multiple unidades sharing the same coordinate
         if (group.length > 1) {
           const totalProtos = group.reduce((acc, l) => acc + (protocolosPorLocal.get(l.id)?.length ?? 0), 0);
+          const worksIcon = mapDepartmentOf({ nome: group[0].secretaria }) === "obras"
+            && group.every((local) => mapDepartmentOf({ nome: local.secretaria }) === "obras"
+              && local.secretariaIcone === group[0].secretariaIcone);
           const el = document.createElement("div");
-          el.innerHTML = clusterSvg(group.length, totalProtos);
+          el.innerHTML = worksIcon
+            ? obrasPinSvg(group[0].secretariaIcone, group.length)
+            : clusterSvg(group.length, totalProtos);
           el.style.cursor = "pointer";
           const popupNode = document.createElement("div");
           const root = createRoot(popupNode);
@@ -547,7 +549,7 @@ export function ManifestacoesMap({
           );
           rootsRef.current.push(root);
           const popup = new mapboxgl.Popup({ offset: 24, maxWidth: "340px" }).setDOMContent(popupNode);
-          const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
+          const marker = new mapboxgl.Marker({ element: el, anchor: worksIcon ? "bottom" : "center" })
             .setLngLat([group[0].lng, group[0].lat])
             .setPopup(popup)
             .addTo(map);
@@ -558,8 +560,9 @@ export function ManifestacoesMap({
         const l = group[0];
         const lista = protocolosPorLocal.get(l.id) ?? [];
         const count = lista.length;
+        const isWorksLocal = mapDepartmentOf({ nome: l.secretaria }) === "obras";
         const el = document.createElement("div");
-        el.innerHTML = localSvg(count);
+        el.innerHTML = isWorksLocal ? obrasPinSvg(l.secretariaIcone, count) : localSvg(count);
         el.style.cursor = onMoveLocalRef.current ? "grab" : "pointer";
         el.title = onMoveLocalRef.current ? "Arraste para reposicionar" : "";
         const popupNode = document.createElement("div");
@@ -570,7 +573,7 @@ export function ManifestacoesMap({
         rootsRef.current.push(root);
         const popup = new mapboxgl.Popup({ offset: 22, maxWidth: "340px" }).setDOMContent(popupNode);
         const draggableLocal = !!onMoveLocalRef.current;
-        const marker = new mapboxgl.Marker({ element: el, anchor: "center", draggable: draggableLocal })
+        const marker = new mapboxgl.Marker({ element: el, anchor: isWorksLocal ? "bottom" : "center", draggable: draggableLocal })
           .setLngLat([l.lng, l.lat])
           .setPopup(popup)
           .addTo(map);
@@ -590,7 +593,7 @@ export function ManifestacoesMap({
       // Cada protocolo de Obras com coordenadas ganha um marcador próprio e identificável.
       validProtocolosObras.forEach((point) => {
         const el = document.createElement("div");
-        el.innerHTML = obrasPinSvg();
+        el.innerHTML = obrasPinSvg(point.secretariaIcone);
         el.style.cursor = "pointer";
         el.setAttribute("aria-label", `Obras · protocolo ${point.numero}`);
         const popupNode = document.createElement("div");

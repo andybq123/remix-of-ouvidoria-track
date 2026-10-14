@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Building2, Trash2, MapPin, Pencil, Tag, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
-import { SECRETARIA_ICONES } from "@/components/manifestacoes-map";
+import { SECRETARIA_ICONES } from "@/lib/secretaria-map-icons";
 
 export const Route = createFileRoute("/_authenticated/secretarias")({
   component: SecretariasPage,

@@ -79,7 +79,7 @@ function MapaPage() {
       fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
-          .select("id, numero, numero_esic, assunto, endereco, latitude, longitude, status, secretaria_id, local_id, categoria, tipo, data_abertura, data_conclusao, locais(nome), secretarias(nome, sigla)")
+          .select("id, numero, numero_esic, assunto, endereco, latitude, longitude, status, secretaria_id, local_id, categoria, tipo, data_abertura, data_conclusao, locais(nome), secretarias(nome, sigla, icone)")
           .eq("triagem_pendente", false)
           .in("secretaria_id", secretariaIdsSelecionadas)
           .not("latitude", "is", null)
@@ -139,6 +139,7 @@ function MapaPage() {
         endereco: p.endereco,
         status: p.status,
         secretaria: p.secretarias?.nome,
+        secretariaIcone: p.secretarias?.icone,
         data_abertura: p.data_abertura,
         data_conclusao: p.data_conclusao,
         categoria: categoriaDoProtocolo(p.tipo, p.categoria),
