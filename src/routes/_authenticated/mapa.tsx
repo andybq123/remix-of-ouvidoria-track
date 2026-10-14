@@ -148,6 +148,7 @@ function MapaPage() {
         assunto: p.assunto,
         endereco: p.endereco,
         status: p.status,
+        atrasada: situacaoProtocolo(p as any).situacao === "vencido",
         secretaria: p.secretarias?.nome,
         secretariaIcone: p.secretarias?.icone,
         data_abertura: p.data_abertura,
