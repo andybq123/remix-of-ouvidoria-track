@@ -17,6 +17,35 @@ export type ProtocolAddressParseResult = {
   issues: ProtocolAddressLineIssue[];
 };
 
+export function parseProtocolNumber(value: string) {
+  const [base = "", ...yearParts] = value.trim().split("/");
+  return {
+    baseDigits: base.replace(/\D/g, ""),
+    yearDigits: yearParts.join("").replace(/\D/g, ""),
+  };
+}
+
+export function protocolNumberMatches(query: string, stored: string): boolean {
+  const requested = parseProtocolNumber(query);
+  const candidate = parseProtocolNumber(stored);
+  if (!requested.baseDigits) {
+    return query.trim().toLocaleLowerCase("pt-BR") === stored.trim().toLocaleLowerCase("pt-BR");
+  }
+  if (requested.baseDigits !== candidate.baseDigits) return false;
+  return !requested.yearDigits || requested.yearDigits === candidate.yearDigits;
+}
+
+export function buildProtocolNumberOrFilter(value: string): string {
+  const { baseDigits, yearDigits } = parseProtocolNumber(value);
+  if (!baseDigits) return "numero.eq.__invalid_protocol_number__";
+  const formattedBase = baseDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const bases = [...new Set([baseDigits, formattedBase])];
+  const variants = yearDigits
+    ? bases.flatMap((base) => [`numero.eq.${base}/${yearDigits}`])
+    : bases.flatMap((base) => [`numero.eq.${base}`, `numero.like.${base}/%`]);
+  return [...new Set(variants)].join(",");
+}
+
 export function parseProtocolAddressLines(raw: string): ProtocolAddressParseResult {
   const parsed: ProtocolAddressLine[] = [];
   const issues: ProtocolAddressLineIssue[] = [];
@@ -37,11 +66,13 @@ export function parseProtocolAddressLines(raw: string): ProtocolAddressParseResu
 
     const numero = match[1].trim();
     const endereco = match[2].trim();
-    if (!numero || !endereco) {
+    if (!numero || !endereco || !parseProtocolNumber(numero).baseDigits) {
       issues.push({
         line: index + 1,
         text: trimmed,
-        message: "Informe o número do protocolo e o endereço.",
+        message: !parseProtocolNumber(numero).baseDigits
+          ? "O número do protocolo precisa conter ao menos um dígito."
+          : "Informe o número do protocolo e o endereço.",
       });
       return;
     }

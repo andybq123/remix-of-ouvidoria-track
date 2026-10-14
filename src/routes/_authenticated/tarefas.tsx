@@ -16,6 +16,7 @@ import { fetchAllPaginated } from "@/lib/fetch-all";
 import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
 import { formatDate, PRAZOS, categoriaLabel, categoriaBadgeClass, categoriaDoProtocolo, type TipoProtocolo } from "@/lib/prazo";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
+import { mapDepartmentOf } from "@/lib/map-departments";
 
 export const Route = createFileRoute("/_authenticated/tarefas")({
   component: TarefasPage,
@@ -40,6 +41,13 @@ const normAssunto = (s: string) =>
   (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 function MotivoTriagemBadge({ protocolo }: { protocolo: any }) {
+  if (mapDepartmentOf(protocolo.secretarias ?? {}) === "obras") {
+    return (
+      <Badge variant="outline" className="text-[10px] border-amber-500/50 text-amber-800 dark:text-amber-300 bg-amber-500/10">
+        Obras · informar endereço
+      </Badge>
+    );
+  }
   if (!protocolo.secretaria_id) {
     return (
       <Badge variant="outline" className="text-[10px] border-rose-500/50 text-rose-700 dark:text-rose-300 bg-rose-500/10">
@@ -124,6 +132,14 @@ function TarefasPage() {
     mutationFn: async () => {
       if (!batchSec) throw new Error("Selecione a secretaria");
       if (selected.size === 0) throw new Error("Selecione ao menos um protocolo");
+      if (mapDepartmentOf(secretarias.find((s) => s.id === batchSec) ?? {}) === "obras") {
+        const incompletos = protocolos
+          .filter((p) => selected.has(p.id))
+          .filter((p) => !String(p.endereco ?? "").trim() || p.latitude == null || p.longitude == null);
+        if (incompletos.length) {
+          throw new Error("Protocolos de Obras precisam de endereço e ponto no mapa. Abra cada protocolo na triagem para preencher esses campos antes de concluir.");
+        }
+      }
       let ok = 0;
       const conflitos: string[] = [];
       for (const id of Array.from(selected)) {

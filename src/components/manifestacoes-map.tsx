@@ -3,6 +3,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { createRoot, type Root } from "react-dom/client";
 import { MAPBOX_TOKEN, MAPBOX_STYLE } from "@/lib/mapbox";
+import type { MapDepartment } from "@/lib/map-departments";
 
 // Color mapping by categoria (matches badge colors in src/lib/prazo.ts)
 const CATEGORIA_COLORS: Record<string, { fill: string; label: string }> = {
@@ -25,6 +26,17 @@ function pinSvg(categoria?: string | null) {
         fill="${c.fill}" stroke="${stroke}" stroke-width="2"/>
       <circle cx="15" cy="15" r="5" fill="${text}" opacity="0.95"/>
     </svg>`;
+}
+
+function obrasPinSvg() {
+  return `
+    <div style="position:relative;width:30px;height:42px;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.35));">
+      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="42" viewBox="0 0 30 42" style="position:absolute;inset:0;">
+        <path d="M15 1 C7 1 1 7 1 15 C1 25 15 41 15 41 C15 41 29 25 29 15 C29 7 23 1 15 1 Z"
+          fill="#b45309" stroke="#fff" stroke-width="2"/>
+      </svg>
+      <img src="/icons/obras-marker.png" alt="" style="position:absolute;left:7px;top:6px;width:16px;height:16px;object-fit:contain;pointer-events:none;" />
+    </div>`;
 }
 
 export const SECRETARIA_ICONES: Record<string, { emoji: string; label: string }> = {
@@ -90,7 +102,26 @@ export type MapPoint = {
   tipo?: string | null;
   local?: string | null;
   local_id?: string | null;
+  mapDepartment?: MapDepartment | null;
 };
+
+function ProtocolMapPopup({ point, onOpen }: { point: MapPoint; onOpen?: (id: string) => void }) {
+  return (
+    <div className="space-y-1.5 min-w-[200px] max-w-[280px]">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-mono text-sm font-bold text-primary">{point.numero}</span>
+        {point.status && <span className="text-[9px] uppercase tracking-wide rounded bg-muted px-1.5 py-0.5">{point.status.replace(/_/g, " ")}</span>}
+      </div>
+      {point.assunto && <p className="text-xs font-medium">{point.assunto}</p>}
+      {point.endereco && <p className="text-xs text-muted-foreground">{point.endereco}</p>}
+      {onOpen && (
+        <button type="button" className="text-xs text-primary underline" onClick={() => onOpen(point.id)}>
+          Abrir protocolo
+        </button>
+      )}
+    </div>
+  );
+}
 
 function formatLocalDate(s: string) {
   const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -375,6 +406,10 @@ export function ManifestacoesMap({
     () => locais.filter(l => typeof l.lat === "number" && typeof l.lng === "number"),
     [locais],
   );
+  const validProtocolosObras = useMemo(
+    () => valid.filter(p => p.mapDepartment === "obras"),
+    [valid],
+  );
   // Group health units that share the same (rounded) coordinates so they become a cluster
   const localGroups = useMemo(() => {
     const map = new Map<string, LocalPoint[]>();
@@ -552,8 +587,26 @@ export function ManifestacoesMap({
         markersRef.current.push(marker);
       });
 
+      // Cada protocolo de Obras com coordenadas ganha um marcador próprio e identificável.
+      validProtocolosObras.forEach((point) => {
+        const el = document.createElement("div");
+        el.innerHTML = obrasPinSvg();
+        el.style.cursor = "pointer";
+        el.setAttribute("aria-label", `Obras · protocolo ${point.numero}`);
+        const popupNode = document.createElement("div");
+        const root = createRoot(popupNode);
+        root.render(<ProtocolMapPopup point={point} onOpen={(id) => onOpenRef.current?.(id)} />);
+        rootsRef.current.push(root);
+        const popup = new mapboxgl.Popup({ offset: 30, maxWidth: "300px" }).setDOMContent(popupNode);
+        const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+          .setLngLat([point.lng, point.lat])
+          .setPopup(popup)
+          .addTo(map);
+        markersRef.current.push(marker);
+      });
+
       // fit bounds
-      const all = [...validSecs, ...validLocais];
+      const all = [...validSecs, ...validLocais, ...validProtocolosObras];
       if (all.length === 1) {
         map.flyTo({ center: [all[0].lng, all[0].lat], zoom: 15, duration: 0 });
       } else if (all.length > 1) {
@@ -565,7 +618,7 @@ export function ManifestacoesMap({
 
     if (map.isStyleLoaded()) apply();
     else map.once("load", apply);
-  }, [valid, validSecs, validLocais, localGroups, protocolosPorLocal]);
+  }, [valid, validSecs, validLocais, validProtocolosObras, localGroups, protocolosPorLocal]);
 
   return (
     <div
@@ -584,7 +637,7 @@ export function ManifestacoesMap({
         ref={containerRef}
         style={{ height: "100%", width: "100%", borderRadius: 8, overflow: "hidden", contain: "paint" }}
       />
-      {!validSecs.length && !validLocais.length && (
+      {!validSecs.length && !validLocais.length && !validProtocolosObras.length && (
         <p className="text-xs text-muted-foreground mt-2 text-center">
           Nenhuma unidade cadastrada com coordenadas ainda.
         </p>

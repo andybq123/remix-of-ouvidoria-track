@@ -33,8 +33,10 @@ Sistema completo de gestão de ouvidoria para prefeituras: cadastro e acompanham
 
 ### Mapas da Saúde e de Obras (SOSU)
 - Dashboard e página de mapas com alternância entre **Saúde**, **Obras/SOSU** e **as duas áreas**.
-- Pontos de protocolos com coordenadas e locais/unidades cadastrados, com popup de resumo dos últimos 3 meses.
+- Protocolos de Obras com coordenadas aparecem como pontos individuais identificados por ícone próprio; unidades de Saúde mantêm seus agrupamentos e popups.
 - Cadastro e reposicionamento manual de pontos vinculados à secretaria.
+- Protocolos encaminhados à SOSU entram na triagem, onde é obrigatório informar o endereço e marcar o ponto no mapa.
+- Em **Debug**, é possível importar endereços em lote usando número curto ou completo (ex.: `2798` ou `2.798/2026`), selecionar o protocolo quando houver mais de um ano e escolher manualmente o ponto quando a busca automática falhar.
 
 
 ### Administração

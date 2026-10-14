@@ -79,7 +79,7 @@ function MapaPage() {
       fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
-          .select("id, numero, numero_esic, assunto, endereco, latitude, longitude, status, secretaria_id, local_id, categoria, tipo, data_abertura, data_conclusao, locais(nome), secretarias(nome)")
+          .select("id, numero, numero_esic, assunto, endereco, latitude, longitude, status, secretaria_id, local_id, categoria, tipo, data_abertura, data_conclusao, locais(nome), secretarias(nome, sigla)")
           .eq("triagem_pendente", false)
           .in("secretaria_id", secretariaIdsSelecionadas)
           .not("latitude", "is", null)
@@ -145,6 +145,7 @@ function MapaPage() {
         tipo: p.tipo,
         local: p.locais?.nome,
         local_id: p.local_id,
+        mapDepartment: mapDepartmentOf(p.secretarias ?? {}),
       }));
   }, [protocolos, status, localFiltroId]);
 

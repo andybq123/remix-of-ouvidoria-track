@@ -3,6 +3,7 @@ import { PROTOCOLO_EXTRACT_SYSTEM, normalizarExtracao, sanitizarTextoProtocolo }
 import { gerarNumeroProtocolo } from "@/lib/prazo";
 import { extrairPedidoEsic, acaoNotificacaoEsic } from "./esic";
 import { exigirIngestaoAtiva } from "./import-maintenance.server";
+import { mapDepartmentOf } from "@/lib/map-departments";
 
 function norm(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -564,10 +565,16 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
       `Para: ${extr.destinatario || ""}`,
     ].join("\n");
 
-    // e-SIC sempre entra na triagem. Ouvidorias seguem as regras existentes:
+    const { data: secretariaAtribuida } = secretariaId
+      ? await supabaseAdmin.from("secretarias").select("nome, sigla").eq("id", secretariaId).maybeSingle()
+      : { data: null };
+    const secretariaEObras = mapDepartmentOf(secretariaAtribuida ?? {}) === "obras";
+
+    // e-SIC e Obras/SOSU sempre entram na triagem. Ouvidorias das demais áreas seguem as regras existentes:
     //  (a) não conseguimos identificar a secretaria responsável, OU
-    //  (b) o assunto é da Saúde e exige decidir qual UBS/CAPS atende.
-    // Demais assuntos com secretaria já identificada seguem direto, sem triagem.
+    //  (b) o assunto é da Saúde e exige decidir qual UBS/CAPS atende, OU
+    //  (c) o assunto está marcado para triagem no catálogo.
+    // Demais assuntos com secretaria identificada seguem direto, sem triagem.
     const ASSUNTOS_SAUDE_TRIAGEM = [
       "demora em marcar consulta / procedimento",
       "falta de materiais em posto de saude",
@@ -581,7 +588,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
     // 2.240/2026: Postos de Saúde") ou com pequenas variações de grafia.
     const assuntoNorm = norm(extr.assunto_categoria || extr.assunto || "");
     const casaSaude = ASSUNTOS_SAUDE_TRIAGEM.some((a) => assuntoNorm.includes(a));
-    const precisaTriagem = emailEhEsic || (
+    const precisaTriagem = emailEhEsic || secretariaEObras || (
       extr.tipo === "ouvidoria" && (forcarTriagemAssunto || !secretariaId || casaSaude)
     );
 

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Bug, Pencil, Trash2, Search, AlertTriangle, RefreshCw, MapPin, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useIsAdmin } from "@/hooks/use-is-admin";
+import { MapPointPicker } from "@/components/map-point-picker";
 import { BACKUP_GRUPOS, BACKUP_TABELAS } from "@/lib/backup-config";
 import { debugContagens, debugExcluir, debugListar, debugSalvar, debugZerar, corrigirAcentosDados } from "@/lib/debug.functions";
 import {
@@ -74,6 +75,7 @@ function DebugPage() {
   const [corrigindo, setCorrigindo] = useState(false);
   const [textoImportacaoMapa, setTextoImportacaoMapa] = useState("");
   const [previewImportacaoMapa, setPreviewImportacaoMapa] = useState<ImportRowView[]>([]);
+  const [mapPickerLine, setMapPickerLine] = useState<number | null>(null);
   const [previsualizandoMapa, setPrevisualizandoMapa] = useState(false);
   const [importandoMapa, setImportandoMapa] = useState(false);
   const [sobrescreverCoordenadas, setSobrescreverCoordenadas] = useState(false);
@@ -154,7 +156,7 @@ function DebugPage() {
       const resultado = await previewImportFn({ data: { text: textoImportacaoMapa } });
       const linhas = resultado.rows.map((row) => ({
         ...row,
-        selected: row.status === "pronto" && !row.hasCoordinates && row.candidates.length === 1,
+        selected: row.status === "pronto" && !!row.protocolId && !row.hasCoordinates && row.candidates.length === 1,
         candidateIndex: 0,
       }));
       setPreviewImportacaoMapa(linhas);
@@ -183,7 +185,7 @@ function DebugPage() {
             const candidate = row.candidates[row.candidateIndex];
             return {
               protocolId: row.protocolId!,
-              numero: row.numero,
+              numero: row.numeroPersistido ?? row.numero,
               endereco: row.endereco,
               latitude: candidate.latitude,
               longitude: candidate.longitude,
@@ -210,7 +212,7 @@ function DebugPage() {
   function selecionarPontosSemCoordenadas(selecionado: boolean) {
     setPreviewImportacaoMapa((rows) => rows.map((row) => ({
       ...row,
-      selected: selecionado && row.status === "pronto" && !row.hasCoordinates && row.candidates.length === 1,
+      selected: selecionado && row.status === "pronto" && !!row.protocolId && !row.hasCoordinates && row.candidates.length === 1,
     })));
   }
 
@@ -224,10 +226,62 @@ function DebugPage() {
       : row));
   }
 
+  function selecionarProtocoloImportacao(line: number, protocolId: string) {
+    setPreviewImportacaoMapa((rows) => rows.map((row) => {
+      if (row.line !== line) return row;
+      const protocol = row.protocolMatches?.find((match) => match.id === protocolId);
+      if (!protocol) return row;
+      const status = row.geocodeStatus ?? "erro";
+      return {
+        ...row,
+        protocolId: protocol.id,
+        numeroPersistido: protocol.numero,
+        assunto: protocol.assunto,
+        secretaria: protocol.secretaria,
+        currentEndereco: protocol.currentEndereco,
+        hasCoordinates: protocol.hasCoordinates,
+        status,
+        message: row.geocodeMessage ?? row.message,
+        selected: status === "pronto" && !protocol.hasCoordinates && row.candidates.length === 1,
+      };
+    }));
+  }
+
+  function confirmarPontoManual(latitude: number, longitude: number, enderecoReverso?: string) {
+    const line = mapPickerLine;
+    if (line == null) return;
+    if (latitude < -27.3 || latitude > -26.9 || longitude < -49.1 || longitude > -48.7) {
+      toast.error("Escolha um ponto dentro da área de Brusque.");
+      return;
+    }
+    setPreviewImportacaoMapa((rows) => rows.map((row) => row.line === line
+      ? {
+          ...row,
+          endereco: row.endereco || enderecoReverso || "Ponto escolhido manualmente",
+          candidates: [{
+            placeId: `manual-${line}`,
+            latitude,
+            longitude,
+            displayName: enderecoReverso || "Ponto escolhido manualmente no mapa",
+          }],
+          candidateIndex: 0,
+          geocodeStatus: "pronto",
+          geocodeMessage: "Ponto definido manualmente no mapa.",
+          status: row.protocolId ? "pronto" : row.status,
+          message: row.protocolId ? "Ponto definido manualmente no mapa." : row.message,
+          selected: !!row.protocolId && (!row.hasCoordinates || sobrescreverCoordenadas),
+        }
+      : row));
+    setMapPickerLine(null);
+    toast.success("Ponto manual adicionado à prévia.");
+  }
+
   if (!isAdmin) return <p className="text-muted-foreground">Apenas administradores podem acessar o debug.</p>;
 
   const totalPaginas = lista.data ? Math.max(1, Math.ceil(lista.data.total / lista.data.tam)) : 1;
   const c = contagens.data ?? {};
+  const pontoPickerRow = previewImportacaoMapa.find((row) => row.line === mapPickerLine);
+  const pontoPickerCandidate = pontoPickerRow?.candidates[pontoPickerRow.candidateIndex];
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -251,6 +305,7 @@ function DebugPage() {
           </CardTitle>
           <CardDescription>
             Cole um protocolo por linha no formato <strong>número — endereço</strong>. O sistema confere o número, procura o endereço em Brusque e mostra a prévia antes de salvar.
+            A busca aceita número curto (ex.: <strong>2798</strong>) ou com ano, como está salvo no sistema; resultados ambíguos pedem escolha do protocolo.
             Até {MAX_PROTOCOL_MAP_IMPORT_LINES} linhas por lote; as consultas ao mapa são feitas com intervalo para respeitar o serviço de geocodificação.
           </CardDescription>
         </CardHeader>
@@ -309,8 +364,8 @@ function DebugPage() {
                 {previewImportacaoMapa.map((row) => {
                   const candidate = row.candidates[row.candidateIndex];
                   const statusLabel = row.status === "pronto" ? "Localizado"
-                    : row.status === "nao_encontrado" ? "Protocolo não encontrado"
-                    : row.status === "duplicado" ? "Número duplicado"
+                    : row.status === "nao_encontrado" ? (row.legacyMatches?.length ? "Só no histórico" : "Protocolo não encontrado")
+                    : row.status === "duplicado" ? "Escolha o protocolo"
                     : row.status === "sem_resultado" ? "Endereço não localizado"
                     : row.status === "fora_area" ? "Fora de Brusque"
                     : "Revisar linha";
@@ -327,13 +382,39 @@ function DebugPage() {
                         )}
                         <div className="min-w-0 flex-1 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-mono font-semibold">{row.numero || `Linha ${row.line}`}</span>
+                            <span className="font-mono font-semibold">{(row.numeroPersistido ?? row.numero) || `Linha ${row.line}`}</span>
+                            {row.numeroPersistido && row.numeroPersistido !== row.numero && (
+                              <span className="text-xs text-muted-foreground">Busca: {row.numero}</span>
+                            )}
                             {row.secretaria && <span className="text-xs text-muted-foreground">{row.secretaria}</span>}
                             <Badge variant={row.status === "pronto" ? "secondary" : "outline"}>{statusLabel}</Badge>
                           </div>
                           {row.assunto && <p className="text-xs text-muted-foreground">{row.assunto}</p>}
                           {row.endereco && <p className="text-sm">Endereço informado: <strong>{row.endereco}</strong></p>}
                           <p className={`text-xs ${row.status === "pronto" ? "text-muted-foreground" : "text-destructive"}`}>{row.message}</p>
+                          {row.protocolMatches && row.protocolMatches.length > 1 && !row.protocolId && (
+                            <div className="space-y-1 rounded bg-muted/50 p-2">
+                              <Label className="text-xs">Qual registro corresponde a este protocolo?</Label>
+                              <Select value={row.protocolId ?? ""} onValueChange={(value) => selecionarProtocoloImportacao(row.line, value)}>
+                                <SelectTrigger><SelectValue placeholder="Selecione o ano e o protocolo" /></SelectTrigger>
+                                <SelectContent>
+                                  {row.protocolMatches.map((match) => (
+                                    <SelectItem key={match.id} value={match.id}>
+                                      {match.numero} · {match.secretaria ?? "sem secretaria"}{match.isAntigo ? " · antigo" : ""}{match.hasCoordinates ? " · já tem ponto" : ""}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          {!!row.legacyMatches?.length && (
+                            <div className="rounded bg-muted/50 p-2 text-xs">
+                              <p className="font-medium">Correspondências encontradas nos protocolos antigos:</p>
+                              {row.legacyMatches.map((match) => (
+                                <p key={`${match.origem}-${match.numero}`}>{match.numero} · {match.origem}</p>
+                              ))}
+                            </div>
+                          )}
                           {row.hasCoordinates && (
                             <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
                               Este protocolo já tem coordenadas{row.currentEndereco ? ` (${row.currentEndereco})` : ""}.
@@ -367,6 +448,12 @@ function DebugPage() {
                                 </a>
                               </div>
                             </div>
+                          )}
+                          {row.protocolId && (
+                            <Button type="button" size="sm" variant="outline" onClick={() => setMapPickerLine(row.line)} disabled={importandoMapa}>
+                              <MapPin className="mr-1.5 h-4 w-4" />
+                              {candidate ? "Ajustar ponto no mapa" : "Localizar ponto manualmente no mapa"}
+                            </Button>
                           )}
                         </div>
                       </div>
@@ -503,6 +590,21 @@ function DebugPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <MapPointPicker
+        open={mapPickerLine != null}
+        onOpenChange={(open) => { if (!open) setMapPickerLine(null); }}
+        initial={pontoPickerCandidate
+          ? { lat: pontoPickerCandidate.latitude, lng: pontoPickerCandidate.longitude }
+          : null}
+        endereco={pontoPickerRow?.endereco}
+        protocoloContext={{
+          assunto: pontoPickerRow?.assunto ?? undefined,
+          endereco: pontoPickerRow?.endereco,
+          secretaria: pontoPickerRow?.secretaria ?? undefined,
+        }}
+        onConfirm={confirmarPontoManual}
+      />
     </div>
   );
 }

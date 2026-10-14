@@ -18,9 +18,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CheckCircle2, RotateCw, Trash2, Save, Pencil, X, History } from "lucide-react";
-import { Inbox, Lock, ExternalLink } from "lucide-react";
+import { Inbox, Lock, ExternalLink, MapPin } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { invalidateProtocoloCaches } from "@/hooks/use-protocolos-realtime";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { MapPointPicker } from "@/components/map-point-picker";
+import { mapDepartmentOf } from "@/lib/map-departments";
 import {
   situacaoProtocolo, situacaoClasses, situacaoLabel, formatDate, calcularSla,
   PRAZOS, CATEGORIAS, categoriaLabel, categoriaSigla, categoriaBadgeClass, categoriaDoProtocolo, categoriaPersistida,
@@ -36,6 +39,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
   const isAdmin = useIsAdmin();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
+  const [mapPickerOpen, setMapPickerOpen] = useState(false);
   const [concluirOpen, setConcluirOpen] = useState(false);
   const [concluirData, setConcluirData] = useState<string>("");
   const [prorrogarOpen, setProrrogarOpen] = useState(false);
@@ -166,6 +170,8 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
         prorrogado: !!protocolo.prorrogado,
         esic_prorrogacao_justificativa: protocolo.esic_prorrogacao_justificativa ?? "",
         endereco: protocolo.endereco ?? "",
+        latitude: protocolo.latitude ?? null,
+        longitude: protocolo.longitude ?? null,
       });
       // Força modo edição em triagem para que o triador preencha a descrição obrigatória
       setEditing(!!protocolo.triagem_pendente);
@@ -213,6 +219,10 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
   const sla = calcularSla(protocolo as any);
 
   const locaisFiltrados = locais.filter((l: any) => !form.secretaria_id || l.secretaria_id === form.secretaria_id);
+  const secretariaSelecionada = secretarias.find((s) => s.id === form.secretaria_id)
+    ?? protocolo.secretarias
+    ?? {};
+  const isObras = mapDepartmentOf(secretariaSelecionada) === "obras";
 
   function handleSave() {
     if (form.tipo === "esic" && !String(form.numero_esic ?? "").trim()) {
@@ -222,6 +232,11 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
     if (form.tipo === "esic" && protocolo.tipo !== "esic" && form.prorrogado
         && String(form.esic_prorrogacao_justificativa ?? "").trim().length < 20) {
       toast.error("Registre a justificativa da prorrogação antes de converter este protocolo para e-SIC.");
+      return;
+    }
+    if (isObras && form.endereco !== (protocolo.endereco ?? "") && String(form.endereco ?? "").trim()
+        && (form.latitude == null || form.longitude == null)) {
+      toast.error("Selecione uma sugestão de endereço ou marque o ponto no mapa antes de salvar.");
       return;
     }
     const patch: any = {
@@ -234,6 +249,9 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
       assunto: form.assunto,
       descricao: form.descricao || null,
       solicitante: form.solicitante || null,
+      endereco: String(form.endereco ?? "").trim() || null,
+      latitude: form.latitude ?? null,
+      longitude: form.longitude ?? null,
       secretaria_id: form.secretaria_id || null,
       local_id: form.local_id || null,
       data_abertura: form.data_abertura,
@@ -320,6 +338,11 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
       toast.error("Registre a justificativa da prorrogação antes de converter este protocolo para e-SIC.");
       return;
     }
+    if (isObras && (!String(form.endereco ?? "").trim()
+        || form.latitude == null || form.longitude == null)) {
+      toast.error("Informe o endereço e marque o ponto no mapa para que o protocolo apareça no mapa de Obras.");
+      return;
+    }
     const { error: upErr } = await supabase
       .from("protocolos")
       .update({
@@ -329,6 +352,9 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
         numero_esic: form.tipo === "esic" ? String(form.numero_esic).trim() : null,
         ...(form.tipo === "esic" ? { esic_prorrogacao_justificativa: String(form.esic_prorrogacao_justificativa ?? "").trim() || null } : {}),
         assunto: form.assunto,
+        endereco: String(form.endereco ?? "").trim() || null,
+        latitude: form.latitude ?? null,
+        longitude: form.longitude ?? null,
         secretaria_id: form.secretaria_id || null,
         local_id: form.local_id || null,
       })
@@ -659,6 +685,49 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
                 </p>
               )}
             </Field2>
+            {isObras && (
+              <Field2 label={protocolo.triagem_pendente ? "Endereço da ocorrência *" : "Endereço da ocorrência"}>
+                <div className="space-y-2">
+                  <AddressAutocomplete
+                    value={form.endereco ?? ""}
+                    onChange={(value) =>
+                      setForm({
+                        ...form,
+                        endereco: value,
+                        latitude: null,
+                        longitude: null,
+                      })
+                    }
+                    onSelect={(result) =>
+                      setForm({
+                        ...form,
+                        endereco: result.label,
+                        latitude: result.lat,
+                        longitude: result.lng,
+                      })
+                    }
+                    placeholder="Digite a rua e selecione uma sugestão…"
+                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button type="button" size="sm" variant="outline" onClick={() => setMapPickerOpen(true)}>
+                      <MapPin className="mr-1.5 h-4 w-4" /> Marcar ponto no mapa
+                    </Button>
+                    {form.latitude != null && form.longitude != null ? (
+                      <span className="text-xs text-emerald-700 dark:text-emerald-300">
+                        Ponto definido ({Number(form.latitude).toFixed(5)}, {Number(form.longitude).toFixed(5)})
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Nenhum ponto definido</span>
+                    )}
+                  </div>
+                  {protocolo.triagem_pendente && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Obrigatório para concluir a triagem e exibir o protocolo no mapa de Obras.
+                    </p>
+                  )}
+                </div>
+              </Field2>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <Field2 label="Solicitante">
                 <Input value={form.solicitante} onChange={e => setForm({ ...form, solicitante: e.target.value })} />
@@ -749,6 +818,32 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
         })()}
       </DialogContent>
     </Dialog>
+
+    <MapPointPicker
+      open={mapPickerOpen}
+      onOpenChange={setMapPickerOpen}
+      initial={form.latitude != null && form.longitude != null
+        ? { lat: Number(form.latitude), lng: Number(form.longitude) }
+        : null}
+      endereco={form.endereco ?? ""}
+      protocoloContext={{
+        assunto: form.assunto,
+        descricao: form.descricao,
+        endereco: form.endereco,
+        secretaria: secretariaSelecionada.nome,
+        local: locais.find((local) => local.id === form.local_id)?.nome,
+        categoria: form.categoria,
+      }}
+      onConfirm={(lat, lng, endereco) => {
+        setForm({
+          ...form,
+          latitude: lat,
+          longitude: lng,
+          endereco: String(form.endereco ?? "").trim() || endereco || "",
+        });
+        toast.success("Ponto definido no mapa.");
+      }}
+    />
 
     <AlertDialog open={concluirOpen} onOpenChange={setConcluirOpen}>
       <AlertDialogContent>

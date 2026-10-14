@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseProtocolAddressLines } from "./protocol-map-import.shared";
+import {
+  buildProtocolNumberOrFilter,
+  parseProtocolAddressLines,
+  protocolNumberMatches,
+} from "./protocol-map-import.shared";
 
 describe("parseProtocolAddressLines", () => {
   it("lê número — endereço e ignora linhas vazias", () => {
@@ -28,5 +32,28 @@ describe("parseProtocolAddressLines", () => {
     expect(result.issues).toHaveLength(3);
     expect(result.issues.some((issue) => issue.message.includes("duplicidade"))).toBe(true);
     expect(result.issues.some((issue) => issue.message.includes("formato"))).toBe(true);
+  });
+});
+
+describe("protocol number lookup", () => {
+  it("matches short, dotted and year-suffixed protocol numbers", () => {
+    expect(protocolNumberMatches("2798", "2.798/2026")).toBe(true);
+    expect(protocolNumberMatches("2.798/2026", "2798/2026")).toBe(true);
+    expect(protocolNumberMatches("2798/2026", "2.798/2025")).toBe(false);
+  });
+
+  it("searches both unformatted and Brazilian thousands-separated numbers", () => {
+    expect(buildProtocolNumberOrFilter("2798")).toContain("numero.like.2.798/%");
+    expect(buildProtocolNumberOrFilter("2798")).toContain("numero.eq.2798");
+    expect(buildProtocolNumberOrFilter("2.798/2026")).toContain("numero.eq.2.798/2026");
+    expect(buildProtocolNumberOrFilter("not-a-number")).toBe(
+      "numero.eq.__invalid_protocol_number__",
+    );
+  });
+
+  it("rejects address lines without a numeric protocol identifier", () => {
+    const result = parseProtocolAddressLines("ABC — Rua do exemplo, Centro");
+    expect(result.entries).toEqual([]);
+    expect(result.issues[0].message).toContain("ao menos um dígito");
   });
 });
