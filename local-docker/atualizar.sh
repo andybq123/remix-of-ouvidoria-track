@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-#  Seta360 — Atualizador via GitHub (VPS)
+#  OuviDesk — Atualizador via GitHub (VPS)
 #  Baixa as alterações mais recentes e reinicia o sistema.
 #
 #  Uso:

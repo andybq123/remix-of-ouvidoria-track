@@ -24,9 +24,9 @@ import {
 export const Route = createFileRoute("/_authenticated/backup")({
   head: () => ({
     meta: [
-      { title: "Backup — Seta360" },
+      { title: "Backup — OuviDesk" },
       { name: "description", content: "Faça backup e restaure protocolos, usuários, secretarias e assuntos." },
-      { property: "og:title", content: "Backup — Seta360" },
+      { property: "og:title", content: "Backup — OuviDesk" },
       { property: "og:description", content: "Backup e restauração dos dados do sistema." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -121,11 +121,11 @@ function BackupPage() {
         contagem.usuarios = u.rows.length;
       }
       files["manifesto.json"] = strToU8(JSON.stringify({
-        formato: "controle-seta-backup", versao: 1, criado_em: new Date().toISOString(),
+        formato: "ouvidesk-backup", versao: 1, criado_em: new Date().toISOString(),
         grupos: grupos.map((g) => g.id), contagem,
       }, null, 2));
       const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
-      baixar(zipSync(files, { level: 6 }), `backup-seta-${stamp}.zip`);
+      baixar(zipSync(files, { level: 6 }), `backup-ouvidesk-${stamp}.zip`);
       toast.success("Backup gerado e baixado.");
     } catch (e: any) {
       toast.error(`Falha no backup: ${e.message}`);

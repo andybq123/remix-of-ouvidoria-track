@@ -27,7 +27,7 @@ const ALL = ouvidorias as OuvidoriaRecord[];
 export const Route = createFileRoute("/_authenticated/protocolos-antigos/$source/$numero")({
   head: ({ params }) => ({
     meta: [
-      { property: "og:title", content: "Protocolos antigos | Seta360" },
+      { property: "og:title", content: "Protocolos antigos | OuviDesk" },
       { property: "og:description", content: "Protocolos antigos da Ouvidoria Municipal de Brusque." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

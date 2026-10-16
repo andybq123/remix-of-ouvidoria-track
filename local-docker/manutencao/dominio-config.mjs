@@ -74,7 +74,7 @@ function backend(address, trusted) {
 }
 export function siteCaddy(domain, proxy) {
   const routes = trusted => `handle @supabase {\n        ${backend('127.0.0.1:54321', trusted)}\n      }\n      handle {\n        ${backend('127.0.0.1:8080', trusted)}\n      }`;
-  return `${domain} {\n  # Controle SETA: gerenciado por alterar_dominio.sh; sem alterar outros sites.\n  encode gzip\n  header Cache-Control "no-store"\n  @supabase path /auth/v1/* /rest/v1/* /realtime/v1/* /storage/v1/* /functions/v1/*\n${proxy === 'laranja' ? `  # Faixas oficiais Cloudflare (13/10/2026); não confiar em headers de origem direta.\n  @cloudflare remote_ip ${CF4} ${CF6}\n  tls {\n    issuer acme {\n      disable_tlsalpn_challenge\n    }\n  }\n  route {\n    handle @cloudflare {\n      ${routes(true)}\n    }\n    handle {\n      ${routes(false)}\n    }\n  }` : `  route {\n    ${routes(false)}\n  }`}\n}`;
+  return `${domain} {\n  # OuviDesk: gerenciado por alterar_dominio.sh; sem alterar outros sites.\n  encode gzip\n  header Cache-Control "no-store"\n  @supabase path /auth/v1/* /rest/v1/* /realtime/v1/* /storage/v1/* /functions/v1/*\n${proxy === 'laranja' ? `  # Faixas oficiais Cloudflare (13/10/2026); não confiar em headers de origem direta.\n  @cloudflare remote_ip ${CF4} ${CF6}\n  tls {\n    issuer acme {\n      disable_tlsalpn_challenge\n    }\n  }\n  route {\n    handle @cloudflare {\n      ${routes(true)}\n    }\n    handle {\n      ${routes(false)}\n    }\n  }` : `  route {\n    ${routes(false)}\n  }`}\n}`;
 }
 export function substituirSite(text, oldDomain, domain, proxy) {
   const tokens = tokensCaddy(text); const blocks = [];

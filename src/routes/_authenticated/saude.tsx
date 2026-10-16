@@ -22,9 +22,9 @@ const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"
 
 export const Route = createFileRoute("/_authenticated/saude")({
   head: () => ({ meta: [
-    { title: "Saúde | Seta360" },
+    { title: "Saúde | OuviDesk" },
     { name: "description", content: "Saúde no sistema de gestão da Ouvidoria Municipal de Brusque." },
-    { property: "og:title", content: "Saúde | Seta360" },
+    { property: "og:title", content: "Saúde | OuviDesk" },
     { property: "og:description", content: "Saúde no sistema de gestão da Ouvidoria Municipal de Brusque." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
