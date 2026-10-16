@@ -27,7 +27,7 @@ export const Route = createFileRoute("/consulta")({
       { property: "og:description", content: "Consulta de protocolo da Ouvidoria Municipal de Brusque." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { title: "Consulta de Protocolo — Ouvidoria de Brusque" },
+      { title: "Consulta de Protocolo | OuviDesk" },
       { name: "description", content: "Consulte o andamento da sua manifestação na Ouvidoria Municipal de Brusque informando o número do protocolo e o código de consulta." },
     ],
   }),
