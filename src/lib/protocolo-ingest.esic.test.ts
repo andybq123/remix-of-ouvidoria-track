@@ -117,7 +117,7 @@ describe("ingerirEmail: pedidos e-SIC", () => {
       local_id: null,
       solicitante: "Sandi E Oliveira Advogados",
     });
-    expect(mock.tables.protocolos[0].numero).not.toBe("026/2026");
+    expect(mock.tables.protocolos[0].numero).not.toBe("0.026/2026");
     expect(mock.tables.email_inbox_log[0]).toMatchObject({ status: "processado", erro: null });
   });
   it("não duplica uma mensagem já processada", async () => {
@@ -144,14 +144,14 @@ describe("ingerirEmail: pedidos e-SIC", () => {
   it("não confunde número oficial e-SIC com um protocolo de Ouvidoria", async () => {
     mock.tables.protocolos.push({
       id: "ouvidoria",
-      numero: "026/2026",
+      numero: "0.026/2026",
       tipo: "ouvidoria",
       status: "aberto",
     });
     expect((await ingerirEmail(entrada)).ok).toBe(true);
     expect(mock.tables.protocolos).toHaveLength(2);
     expect(mock.tables.protocolos[0].status).toBe("aberto");
-    expect(mock.tables.protocolos[1].numero_esic).toBe("026/2026");
+    expect(mock.tables.protocolos[1].numero_esic).toBe("0.026/2026");
   });
   it("registra erro recuperável, sem criar pedido com número inventado", async () => {
     const res = await ingerirEmail({

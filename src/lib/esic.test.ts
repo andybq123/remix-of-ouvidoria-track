@@ -16,7 +16,7 @@ Para: SETA - OUV - Ouvidoria Geral`;
 describe("notificações e-SIC", () => {
   it("extrai o número e os campos do exemplo real sem IA", () => {
     expect(extrairPedidoEsic(exemplo)).toMatchObject({
-      numero: "026/2026",
+      numero: "0.026/2026",
       assunto: "Pedido",
       solicitante: "Sandi E Oliveira Advogados",
       destinatario: "SETA - OUV - Ouvidoria Geral",
@@ -35,7 +35,7 @@ describe("notificações e-SIC", () => {
         "Pedido de e-SIC 026/2026 recebido\nNovo Protocolo recebido. Nº: 026/2026 Assunto: Pedido De: Sandi E Oliveira Advogados Para: SETA - OUV - Ouvidoria Geral",
       ),
     ).toMatchObject({
-      numero: "026/2026",
+      numero: "0.026/2026",
       assunto: "Pedido",
       solicitante: "Sandi E Oliveira Advogados",
       destinatario: "SETA - OUV - Ouvidoria Geral",
