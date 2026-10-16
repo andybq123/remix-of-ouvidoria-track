@@ -438,9 +438,6 @@ function WorkspaceLayout({
             <main className="workspace-main">
               <div className="workspace-page-intro">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-                    Controle SETA
-                  </div>
                 </div>
                 <div className="workspace-date hidden md:flex">
                   <span className="workspace-status-dot" /> Ambiente operacional
