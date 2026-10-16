@@ -138,19 +138,19 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
   const [soSemLocal, setSoSemLocal] = useState(true);
   const [busca, setBusca] = useState("");
   const [editando, setEditando] = useState<string | null>(null);
+  const todas = sec === "todas";
   const { data: rows = [], isFetching } = useQuery({
     queryKey: ["atrasadas-localizacao", sec],
     enabled: !!sec,
     queryFn: async () => {
-      const all = await fetchAllPaginated((from, to) =>
-        supabase
+      const all = await fetchAllPaginated((from, to) => {
+        let q = supabase
           .from("protocolos")
           .select("*, secretarias(nome, sigla), locais(nome)")
-          .eq("secretaria_id", sec)
-          .neq("status", "concluido")
-          .order("data_abertura", { ascending: true })
-          .range(from, to),
-      );
+          .neq("status", "concluido");
+        if (!todas) q = q.eq("secretaria_id", sec);
+        return q.order("data_abertura", { ascending: true }).range(from, to);
+      });
       return all
         .map((p: any) => ({ p, r: resumoPrazoMapa(p) }))
         .filter((x) => x.r?.atrasado)
