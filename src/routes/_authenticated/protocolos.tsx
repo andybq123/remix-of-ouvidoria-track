@@ -1,3 +1,4 @@
+import { formatarNumeroEsic } from "@/lib/esic";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -451,7 +452,7 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
       }
       const { error } = await supabase.from("protocolos").insert({
         numero: numero || gerarNumeroProtocolo(tipo),
-        numero_esic: tipo === "esic" ? (numeroEsic.trim() || null) : null,
+        numero_esic: tipo === "esic" ? (formatarNumeroEsic(numeroEsic) || null) : null,
         tipo, categoria: categoriaPersistida(tipo, categoria), assunto, descricao: descricao || null,
         secretaria_id: secretariaId || null,
         local_id: localId || null,

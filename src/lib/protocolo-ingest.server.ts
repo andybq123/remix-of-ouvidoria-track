@@ -1,7 +1,7 @@
 import { urlValida1doc } from "./url-1doc";
 import { PROTOCOLO_EXTRACT_SYSTEM, normalizarExtracao, sanitizarTextoProtocolo } from "@/lib/protocolo-extract.shared";
 import { gerarNumeroProtocolo } from "@/lib/prazo";
-import { extrairPedidoEsic, acaoNotificacaoEsic } from "./esic";
+import { extrairPedidoEsic, acaoNotificacaoEsic, formatarNumeroEsic } from "./esic";
 import { exigirIngestaoAtiva } from "./import-maintenance.server";
 import { mapDepartmentOf } from "@/lib/map-departments";
 
@@ -352,7 +352,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
       extr.tipo = "esic";
       extr.categoria = "pedido_informacao";
     }
-    const numeroEsic = emailEhEsic ? (numeroDoAssunto || extr.numero || null) : null;
+    const numeroEsic = emailEhEsic ? (formatarNumeroEsic(numeroDoAssunto || extr.numero) || null) : null;
 
     // ===== Detectar se é atualização/baixa de protocolo já existente =====
     if (extr.numero) {

@@ -1,3 +1,4 @@
+import { formatarNumeroEsic } from "@/lib/esic";
 import { urlValida1doc } from "@/lib/url-1doc";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -241,7 +242,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
     }
     const patch: any = {
       numero: form.numero,
-      numero_esic: form.tipo === "esic" ? String(form.numero_esic).trim() : null,
+      numero_esic: form.tipo === "esic" ? formatarNumeroEsic(form.numero_esic) : null,
       ...(form.tipo === "esic" ? { esic_prorrogacao_justificativa: String(form.esic_prorrogacao_justificativa ?? "").trim() || null } : {}),
       tipo: form.tipo,
       categoria: categoriaPersistida(form.tipo as TipoProtocolo, form.categoria as CategoriaProtocolo),
@@ -349,7 +350,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
         descricao: relato,
         tipo: form.tipo,
         categoria: categoriaPersistida(form.tipo as TipoProtocolo, form.categoria as CategoriaProtocolo),
-        numero_esic: form.tipo === "esic" ? String(form.numero_esic).trim() : null,
+        numero_esic: form.tipo === "esic" ? formatarNumeroEsic(form.numero_esic) : null,
         ...(form.tipo === "esic" ? { esic_prorrogacao_justificativa: String(form.esic_prorrogacao_justificativa ?? "").trim() || null } : {}),
         assunto: form.assunto,
         endereco: String(form.endereco ?? "").trim() || null,
@@ -625,7 +626,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
               </Field2>
               {form.tipo === "esic" && (
                 <Field2 label="Número do pedido e-SIC *">
-                  <Input value={form.numero_esic ?? ""} onChange={e => setForm({ ...form, numero_esic: e.target.value })} placeholder="Ex.: 026/2026" />
+                  <Input value={form.numero_esic ?? ""} onChange={e => setForm({ ...form, numero_esic: e.target.value })} placeholder="Ex.: 092/2026" onBlur={e => setForm({ ...form, numero_esic: formatarNumeroEsic(e.target.value) })} />
                 </Field2>
               )}
               {form.tipo === "esic" && form.prorrogado && (
