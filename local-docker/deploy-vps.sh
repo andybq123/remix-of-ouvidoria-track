@@ -31,7 +31,7 @@ rodar()  { # rodar "descrição" comando...
   while kill -0 "$pid" 2>/dev/null; do
     printf "\r   ${AZ}%s${R} %s " "${s:i++%10:1}" "$msg"; sleep 0.15
   done
-  if wait "$pid"; then printf "\r   ${VD}✔${R} %s   \n" "$msg"; else printf "\r   ${VM}✖${R} %s\n" "$msg"; falha "$msg"; fi
+  if wait "$pid"; then printf "\r   ${VD}✔${R} %s   \n" "$msg"; else printf "\r   ${VM}✖${R} %s\n" "$msg"; echo; tail -n 15 "$LOG"; falha "$msg"; fi
 }
 
 trap 'printf "\n${VM}Instalação interrompida.${R} Log: %s\n" "$LOG"' INT
