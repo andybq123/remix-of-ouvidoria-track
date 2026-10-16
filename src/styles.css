@@ -396,33 +396,6 @@
   padding: 22px 18px 36px;
 }
 
-.workspace-page-intro {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.workspace-date {
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--card);
-  padding: 8px 12px;
-  color: var(--muted-foreground);
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.workspace-status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: oklch(0.67 0.17 150);
-  box-shadow: 0 0 0 3px oklch(0.67 0.17 150 / 14%);
-}
 
 .workspace-shell main .bg-card {
   border-color: var(--border);
