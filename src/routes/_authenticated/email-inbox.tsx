@@ -38,9 +38,9 @@ function formatDelta(ms: number): string {
 
 export const Route = createFileRoute("/_authenticated/email-inbox")({
   head: () => ({ meta: [
-    { title: "E-mails | Controle SETA" },
+    { title: "E-mails | Seta360" },
     { name: "description", content: "E-mails no sistema de gestão da Ouvidoria Municipal de Brusque." },
-    { property: "og:title", content: "E-mails | Controle SETA" },
+    { property: "og:title", content: "E-mails | Seta360" },
     { property: "og:description", content: "E-mails no sistema de gestão da Ouvidoria Municipal de Brusque." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

@@ -23,9 +23,9 @@ import { MapPointPicker } from "@/components/map-point-picker";
 
 export const Route = createFileRoute("/_authenticated/tarefas")({
   head: () => ({ meta: [
-    { title: "Tarefas | Controle SETA" },
+    { title: "Tarefas | Seta360" },
     { name: "description", content: "Tarefas no sistema de gestão da Ouvidoria Municipal de Brusque." },
-    { property: "og:title", content: "Tarefas | Controle SETA" },
+    { property: "og:title", content: "Tarefas | Seta360" },
     { property: "og:description", content: "Tarefas no sistema de gestão da Ouvidoria Municipal de Brusque." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

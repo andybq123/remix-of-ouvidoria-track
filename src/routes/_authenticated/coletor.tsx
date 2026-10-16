@@ -29,7 +29,7 @@ import {
 import { getColetorInfo } from "@/lib/coletor.functions";
 
 export const Route = createFileRoute("/_authenticated/coletor")({
-  head: () => ({ meta: [{ title: "Coletor 1doc | Controle SETA" }, { name: "description", content: "Coleta de protocolos do 1doc no Controle SETA." }, { property: "og:title", content: "Coletor 1doc | Controle SETA" }, { property: "og:description", content: "Coleta de protocolos do 1doc no Controle SETA." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({ meta: [{ title: "Coletor 1doc | Seta360" }, { name: "description", content: "Coleta de protocolos do 1doc no Seta360." }, { property: "og:title", content: "Coletor 1doc | Seta360" }, { property: "og:description", content: "Coleta de protocolos do 1doc no Seta360." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: ColetorPage,
 });
 

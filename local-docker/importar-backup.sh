@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-#  Controle SETA — Importa o backup do sistema original (nuvem)
+#  Seta360 — Importa o backup do sistema original (nuvem)
 #  para o banco local da VPS, mantendo os mesmos IDs e ligações.
 #
 #  Uso:  ./importar-backup.sh /root/backup_sistema_seta.zip

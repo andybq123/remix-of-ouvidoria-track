@@ -28,9 +28,9 @@ import {
 
 export const Route = createFileRoute("/_authenticated/mapa")({
   head: () => ({ meta: [
-    { title: "Mapa de Saúde e Obras | Controle SETA" },
+    { title: "Mapa de Saúde e Obras | Seta360" },
     { name: "description", content: "Locais e protocolos de Saúde e Obras em Brusque." },
-    { property: "og:title", content: "Mapa de Saúde e Obras | Controle SETA" },
+    { property: "og:title", content: "Mapa de Saúde e Obras | Seta360" },
     { property: "og:description", content: "Locais e protocolos de Saúde e Obras em Brusque." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

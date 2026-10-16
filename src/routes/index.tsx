@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
-    { title: "Controle SETA | Ouvidoria de Brusque" },
+    { title: "Seta360 | Ouvidoria de Brusque" },
     { name: "description", content: "Acesso ao sistema de gestão da Ouvidoria Municipal de Brusque." },
-    { property: "og:title", content: "Controle SETA | Ouvidoria de Brusque" },
+    { property: "og:title", content: "Seta360 | Ouvidoria de Brusque" },
     { property: "og:description", content: "Acesso ao sistema de gestão da Ouvidoria Municipal de Brusque." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

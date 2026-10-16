@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-#  Controle SETA — Atualizador via GitHub (VPS)
+#  Seta360 — Atualizador via GitHub (VPS)
 #  Baixa as alterações mais recentes e reinicia o sistema.
 #
 #  Uso:

@@ -38,9 +38,9 @@ import { MAX_PROTOCOL_MAP_IMPORT_LINES } from "@/lib/protocol-map-import.shared"
 export const Route = createFileRoute("/_authenticated/debug")({
   head: () => ({
     meta: [
-      { title: "Debug — Controle SETA" },
+      { title: "Debug — Seta360" },
       { name: "description", content: "Edite registros do sistema e zere partes dos dados." },
-      { property: "og:title", content: "Debug — Controle SETA" },
+      { property: "og:title", content: "Debug — Seta360" },
       { property: "og:description", content: "Ferramentas de administração dos dados do sistema." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
