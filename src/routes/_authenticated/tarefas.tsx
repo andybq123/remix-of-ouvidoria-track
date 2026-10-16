@@ -201,7 +201,7 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
       {!sec ? (
         <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Escolha uma secretaria.</CardContent></Card>
       ) : lista.length === 0 && !isFetching ? (
-        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Nenhuma ouvidoria atrasada {soSemLocal ? "sem localização " : ""}nesta secretaria.</CardContent></Card>
+        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Nenhuma ouvidoria atrasada {soSemLocal ? "sem localização " : ""}{todas ? "em nenhuma secretaria." : "nesta secretaria."}</CardContent></Card>
       ) : (
         <div className="space-y-2">
           {lista.map(({ p, r }) => (
