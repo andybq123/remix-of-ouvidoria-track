@@ -52,7 +52,8 @@ if [ "$MODO" = "prod" ]; then
   done
   echo ""
   if [ "$PRONTO" = "1" ]; then
-    rm -rf ../.output && mv /tmp/seta-build/.output ../.output
+    # Prepara a nova versão em pasta temporária; o sistema atual continua no ar.
+    NOVO=/tmp/seta-build/.output
     # A compilação do GitHub vem apontando para o banco da nuvem.
     # Troca pelos endereços/chaves do banco LOCAL definidos em .env.local.
     LOCAL_URL="$(grep -E '^VITE_SUPABASE_URL=' .env.local | head -1 | cut -d= -f2- | tr -d '"')"
@@ -62,16 +63,16 @@ if [ "$MODO" = "prod" ]; then
     CLOUD_KEY="$(grep -E '^VITE_SUPABASE_PUBLISHABLE_KEY=' ../.env | head -1 | cut -d= -f2- | tr -d '"')"
     CLOUD_PID="$(grep -E '^VITE_SUPABASE_PROJECT_ID=' ../.env | head -1 | cut -d= -f2- | tr -d '"')"
     if [ -n "$LOCAL_URL" ] && [ -n "$LOCAL_KEY" ] && [ -n "$CLOUD_URL" ] && [ -n "$CLOUD_KEY" ]; then
-      grep -rlF -e "$CLOUD_URL" -e "$CLOUD_KEY" ../.output 2>/dev/null | while read -r f; do
+      grep -rlF -e "$CLOUD_URL" -e "$CLOUD_KEY" "$NOVO" 2>/dev/null | while read -r f; do
         sed -i -e "s#${CLOUD_URL}#${LOCAL_URL}#g" -e "s#${CLOUD_KEY}#${LOCAL_KEY}#g" "$f"
         [ -n "$CLOUD_PID" ] && [ -n "$LOCAL_PID" ] && sed -i "s#${CLOUD_PID}#${LOCAL_PID}#g" "$f"
       done
-      if grep -rqF "$CLOUD_URL" ../.output 2>/dev/null; then
+      if grep -rqF "$CLOUD_URL" "$NOVO" 2>/dev/null; then
         echo "ERRO: não consegui apontar o sistema para o banco local."; exit 1
       fi
       # Os arquivos mudaram de tamanho: atualiza o mapa interno do servidor,
       # senão o navegador recebe arquivos cortados (tela em branco).
-      node ./corrigir-tamanhos.mjs ../.output || {
+      node ./corrigir-tamanhos.mjs "$NOVO" || {
         echo "ERRO: não consegui ajustar os tamanhos dos arquivos."; exit 1; }
       echo "==> Sistema apontado para o banco local ($LOCAL_URL)."
     else
@@ -96,6 +97,12 @@ if [ -n "$DBC" ] && ls ./atualizacoes-banco/*.sql >/dev/null 2>&1; then
 fi
 
 echo "==> Reiniciando o sistema (modo: $MODO)..."
+# Troca rápida: só agora a versão antiga é substituída (poucos segundos fora do ar).
+if [ "$MODO" = "prod" ] && [ "$PRONTO" = "1" ]; then
+  rm -rf ../.output.antiga
+  [ -d ../.output ] && mv ../.output ../.output.antiga
+  mv /tmp/seta-build/.output ../.output
+fi
 docker compose -f docker-compose.yml -f docker-compose.prod.yml rm -sf app >/dev/null 2>&1 || true
 if [ "$MODO" = "prod" ]; then
   ( docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate >"$LOG_BUILD" 2>&1 ) &

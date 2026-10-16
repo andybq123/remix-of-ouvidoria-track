@@ -115,7 +115,6 @@ function AuthLayout() {
             <img src={brusqueLogo} alt="" className="h-10 w-10 object-contain" />
             <div className="min-w-0">
               <div className="text-sm font-semibold leading-tight truncate">Ouvidoria de Brusque</div>
-              <div className="text-[11px] text-slate-400 leading-tight truncate">Controladoria do Município</div>
             </div>
           </div>
           <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
@@ -335,9 +334,6 @@ function WorkspaceLayout({
               <img src={brusqueLogo} alt="Brasão de Brusque" className="h-10 w-10 object-contain" />
               <div className="min-w-0">
                 <div className="truncate text-sm font-bold">Ouvidoria de Brusque</div>
-                <div className="truncate text-xs text-muted-foreground">
-                  Controladoria do Município
-                </div>
               </div>
               <span className="workspace-brand-mark" aria-hidden="true">
                 S
