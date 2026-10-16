@@ -420,7 +420,6 @@
 @media (max-width: 520px) {
   .workspace-header { min-height: 62px; padding-inline: 12px; }
   .workspace-main { padding: 18px 12px 28px; }
-  .workspace-page-intro { margin-bottom: 12px; }
   .workspace-header > div:last-child { gap: 4px; }
   .workspace-header > div:last-child > button,
   .workspace-header > div:last-child [data-slot="dropdown-menu-trigger"] {
