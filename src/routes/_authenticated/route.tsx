@@ -441,9 +441,6 @@ function WorkspaceLayout({
                   <div className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
                     Controle SETA
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Acompanhe e gerencie as manifestações com clareza e agilidade.
-                  </p>
                 </div>
                 <div className="workspace-date hidden md:flex">
                   <span className="workspace-status-dot" /> Ambiente operacional
