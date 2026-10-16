@@ -11,12 +11,13 @@ export function chaveNumeroEsic(numero: string): string {
   return partes ? `${partes[1].replace(/^0+(?=\d)/, "")}/${partes[2]}` : limpo.toUpperCase();
 }
 
-/** Padrão oficial: "092/2026" (número com 3 dígitos, sem pontos ou espaços). */
+/** Padrão do sistema: "x.xxx/2026" (4 dígitos com ponto de milhar, ex.: 0.092/2026). */
 export function formatarNumeroEsic(numero: string | null | undefined): string {
   const limpo = String(numero ?? "").trim().replace(/^n[ºo°.]?\s*e[\s-]?sic\s*:?\s*/i, "").replace(/[.\s]/g, "");
   const partes = limpo.match(/^(\d+)\/(\d{4})$/);
   if (!partes) return limpo;
-  return `${String(parseInt(partes[1], 10)).padStart(3, "0")}/${partes[2]}`;
+  const n = String(parseInt(partes[1], 10)).padStart(4, "0");
+  return `${n.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}/${partes[2]}`;
 }
 
 /** Extrai o formato conhecido do e-mail; não inventa número, data ou solicitante. */

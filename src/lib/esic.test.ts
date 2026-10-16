@@ -16,7 +16,7 @@ Para: SETA - OUV - Ouvidoria Geral`;
 describe("notificações e-SIC", () => {
   it("extrai o número e os campos do exemplo real sem IA", () => {
     expect(extrairPedidoEsic(exemplo)).toMatchObject({
-      numero: "026/2026",
+      numero: "0.026/2026",
       assunto: "Pedido",
       solicitante: "Sandi E Oliveira Advogados",
       destinatario: "SETA - OUV - Ouvidoria Geral",
@@ -26,7 +26,7 @@ describe("notificações e-SIC", () => {
   });
   it("prioriza o número oficial no título sobre o cabeçalho interno", () => {
     expect(extrairPedidoEsic(exemplo.replace("Nº: 026/2026", "Nº: 999/2026"))?.numero).toBe(
-      "026/2026",
+      "0.026/2026",
     );
   });
   it("extrai os mesmos campos quando o corpo está em uma única linha", () => {
@@ -35,7 +35,7 @@ describe("notificações e-SIC", () => {
         "Pedido de e-SIC 026/2026 recebido\nNovo Protocolo recebido. Nº: 026/2026 Assunto: Pedido De: Sandi E Oliveira Advogados Para: SETA - OUV - Ouvidoria Geral",
       ),
     ).toMatchObject({
-      numero: "026/2026",
+      numero: "0.026/2026",
       assunto: "Pedido",
       solicitante: "Sandi E Oliveira Advogados",
       destinatario: "SETA - OUV - Ouvidoria Geral",
@@ -75,13 +75,15 @@ describe("notificações e-SIC", () => {
 
 import { formatarNumeroEsic as fmtEsic, extrairPedidoEsic as extrEsic } from "./esic";
 describe("padrão Nº e-SIC", () => {
-  it("formata no padrão 092/2026", () => {
-    expect(fmtEsic("92/2026")).toBe("092/2026");
-    expect(fmtEsic("Nº e-SIC 092/2026")).toBe("092/2026");
-    expect(fmtEsic(" 0.092 / 2026")).toBe("092/2026");
+  it("formata no padrão x.xxx/2026", () => {
+    expect(fmtEsic("92/2026")).toBe("0.092/2026");
+    expect(fmtEsic("Nº e-SIC 092/2026")).toBe("0.092/2026");
+    expect(fmtEsic(" 0.092 / 2026")).toBe("0.092/2026");
+    expect(fmtEsic("1234/2026")).toBe("1.234/2026");
+    expect(fmtEsic("093/2026")).not.toBe(fmtEsic("092/2026"));
   });
   it("prefere o Nº e-SIC ao Nº interno do e-mail", () => {
     const t = "Pedido de e-SIC recebido\nNº: 1.234/2026\n" + "x".repeat(2500) + "\nNº e-SIC 092/2026\nAssunto: Pedido";
-    expect(extrEsic(t)?.numero).toBe("092/2026");
+    expect(extrEsic(t)?.numero).toBe("0.092/2026");
   });
 });
