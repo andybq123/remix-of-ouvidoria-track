@@ -1,7 +1,7 @@
 import { urlValida1doc } from "./url-1doc";
 import { PROTOCOLO_EXTRACT_SYSTEM, normalizarExtracao, sanitizarTextoProtocolo } from "@/lib/protocolo-extract.shared";
 import { gerarNumeroProtocolo } from "@/lib/prazo";
-import { extrairPedidoEsic, acaoNotificacaoEsic } from "./esic";
+import { extrairPedidoEsic, acaoNotificacaoEsic, formatarNumeroEsic } from "./esic";
 import { exigirIngestaoAtiva } from "./import-maintenance.server";
 import { mapDepartmentOf } from "@/lib/map-departments";
 
