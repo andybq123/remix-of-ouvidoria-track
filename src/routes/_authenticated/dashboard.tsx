@@ -44,6 +44,9 @@ import { useRealtimeSync } from "@/hooks/realtime-sync-context";
 import { MapDepartmentToggle } from "@/components/map-department-toggle";
 import { mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
 
+const DASHBOARD_COLUNAS =
+  "id, numero, numero_esic, tipo, categoria, assunto, status, secretaria_id, local_id, solicitante, endereco, latitude, longitude, data_abertura, data_conclusao, data_prorrogacao, prorrogado, created_at, triagem_concluida_em, triagem_pendente, origem, sigilo, secretarias(nome, sigla, icone), locais(nome)";
+
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [
     { title: "Painel de gestão | Controle SETA" },
@@ -82,16 +85,27 @@ function Dashboard() {
     source: "filtrados" | "all";
   } | null>(null);
   const [detail, setDetail] = useState<any | null>(null);
+  // O painel carrega dados resumidos; ao abrir, busca o protocolo completo.
+  const abrirDetalhe = async (p: any) => {
+    if (!p?.id) return;
+    const { data } = await supabase
+      .from("protocolos")
+      .select("*, secretarias(nome, sigla, icone), locais(nome)")
+      .eq("id", p.id)
+      .maybeSingle();
+    setDetail(data ? { ...p, ...data } : p);
+  };
   const [mes, setMes] = useState<string>(currentMonthValue());
   const [mapScope, setMapScope] = useState<MapDepartmentScope>("saude");
 
   const { data: protocolos = [] } = useQuery({
-    queryKey: ["protocolos"],
+    // Chave própria: o painel busca só as colunas que usa (sem textos longos).
+    queryKey: ["protocolos-dashboard"],
     queryFn: () =>
       fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
-          .select("*, secretarias(nome, sigla, icone), locais(nome)")
+          .select(DASHBOARD_COLUNAS)
           // O prazo e a contabilização e-SIC começam no recebimento, não na triagem.
           .or("triagem_pendente.eq.false,tipo.eq.esic")
           .order("data_abertura", { ascending: false })
@@ -244,8 +258,14 @@ function Dashboard() {
     return Math.round((soma / fechados.length) * 10) / 10;
   }, [concluidos]);
 
-  // Satisfação proxy: % no prazo (sem vencidos) sobre total
-  const satisfacao = total > 0 ? Math.round(((total - vencidos.length) / total) * 100) : 100;
+  // Taxa de resolução no prazo: concluídos até a data final do prazo / concluídos
+  const concluidoNoPrazo = (p: any) =>
+    !!p.data_conclusao && !!p.data_abertura &&
+    p.data_conclusao <= format(calcularPrazo({ tipo: p.tipo, data_abertura: p.data_abertura, prorrogado: !!p.prorrogado }).prazoFinal, "yyyy-MM-dd");
+  const concluidosComData = concluidos.filter((p: any) => p.data_conclusao);
+  const satisfacao = concluidosComData.length > 0
+    ? Math.round((concluidosComData.filter(concluidoNoPrazo).length / concluidosComData.length) * 100)
+    : 100;
   const pctConcluidos = total > 0 ? ((concluidos.length / total) * 100).toFixed(2) : "0";
   const pctAndamento = total > 0 ? ((ativos.length / total) * 100).toFixed(2) : "0";
   const pctAtrasados = total > 0 ? ((vencidos.length / total) * 100).toFixed(2) : "0";
@@ -604,10 +624,10 @@ function Dashboard() {
         />
         <KpiCard icon={Timer} tone="violet" label="Prazo Médio de Resposta" value={`${prazoMedio}`} suffix="dias" hint="Meta: 5 dias"
           onClick={() => openDrill("Protocolos concluídos (prazo médio)", p => p.status === "concluido" && !!p.data_conclusao)} />
-        <KpiCard icon={Smile} tone="emerald" label="Satisfação do Usuário" value={`${satisfacao}%`}
+        <KpiCard icon={Smile} tone="emerald" label="Resolução no Prazo" value={`${satisfacao}%`}
           hint={satisfacao >= 80 ? "Ótimo" : satisfacao >= 60 ? "Bom" : "Atenção"}
           hintTrend={satisfacao >= 80 ? "up" : "down"}
-          onClick={() => openDrill("Protocolos no prazo", p => p._s.situacao !== "vencido")} />
+          onClick={() => openDrill("Concluídos dentro do prazo", p => p.status === "concluido" && concluidoNoPrazo(p))} />
       </div>
 
       {/* Charts row 1 */}
@@ -942,7 +962,7 @@ function Dashboard() {
             }))}
             onOpenProtocolo={(id) => {
               const p = enriched.find((x: any) => x.id === id);
-              if (p) setDetail(p);
+              if (p) void abrirDetalhe(p);
             }}
             points={mapProtocolos
               .map((p: any) => ({
@@ -998,7 +1018,7 @@ function Dashboard() {
           }
           // Keep the drill open so the user returns to the KPI list after
           // acting on a single protocol.
-          setDetail(p);
+          void abrirDetalhe(p);
         }}
       />
       <ProtocoloDetailDialog protocolo={detail} open={!!detail} onOpenChange={(v) => !v && setDetail(null)} />
