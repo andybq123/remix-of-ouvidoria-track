@@ -163,7 +163,14 @@ $DOMAIN {
   reverse_proxy 127.0.0.1:8080
 }
 EOF
-rodar "Aplicando configuração do servidor web" bash -c 'systemctl reload caddy || systemctl restart caddy'
+rodar "Validando configuração do servidor web" caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+if ! bash -c 'systemctl reload caddy 2>/dev/null || systemctl restart caddy' >>"$LOG" 2>&1; then
+  aviso "Caddy não subiu de primeira; tentando novamente..."
+  sleep 3
+  bash -c 'systemctl reset-failed caddy 2>/dev/null; systemctl restart caddy' >>"$LOG" 2>&1 \
+    && ok "Configuração do servidor web aplicada" \
+    || { aviso "HTTPS não ativou agora (DNS ainda propagando?). O sistema vai funcionar e o HTTPS ativa depois com: systemctl restart caddy"; }
+else ok "Configuração do servidor web aplicada"; fi
 IFACE="$(ip route | awk '/default/ {print $5; exit}')"
 for P in 8080 54321 54322 54323 54324; do
   iptables -C DOCKER-USER ! -s 127.0.0.1 -i "$IFACE" -p tcp --dport $P -j DROP 2>/dev/null || \
