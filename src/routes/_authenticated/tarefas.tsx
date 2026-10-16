@@ -138,19 +138,19 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
   const [soSemLocal, setSoSemLocal] = useState(true);
   const [busca, setBusca] = useState("");
   const [editando, setEditando] = useState<string | null>(null);
+  const todas = sec === "todas";
   const { data: rows = [], isFetching } = useQuery({
     queryKey: ["atrasadas-localizacao", sec],
     enabled: !!sec,
     queryFn: async () => {
-      const all = await fetchAllPaginated((from, to) =>
-        supabase
+      const all = await fetchAllPaginated((from, to) => {
+        let q = supabase
           .from("protocolos")
           .select("*, secretarias(nome, sigla), locais(nome)")
-          .eq("secretaria_id", sec)
-          .neq("status", "concluido")
-          .order("data_abertura", { ascending: true })
-          .range(from, to),
-      );
+          .neq("status", "concluido");
+        if (!todas) q = q.eq("secretaria_id", sec);
+        return q.order("data_abertura", { ascending: true }).range(from, to);
+      });
       return all
         .map((p: any) => ({ p, r: resumoPrazoMapa(p) }))
         .filter((x) => x.r?.atrasado)
@@ -182,6 +182,7 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
         <Select value={sec} onValueChange={setSec}>
           <SelectTrigger className="w-[280px]"><SelectValue placeholder="Selecione a secretaria…" /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="todas">Todas as secretarias</SelectItem>
             {secretarias.map((x) => <SelectItem key={x.id} value={x.id}>{x.nome}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -200,7 +201,7 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
       {!sec ? (
         <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Escolha uma secretaria.</CardContent></Card>
       ) : lista.length === 0 && !isFetching ? (
-        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Nenhuma ouvidoria atrasada {soSemLocal ? "sem localização " : ""}nesta secretaria.</CardContent></Card>
+        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Nenhuma ouvidoria atrasada {soSemLocal ? "sem localização " : ""}{todas ? "em nenhuma secretaria." : "nesta secretaria."}</CardContent></Card>
       ) : (
         <div className="space-y-2">
           {lista.map(({ p, r }) => (
@@ -209,6 +210,9 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
                 <div className="flex-1 min-w-[260px]">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className="font-mono text-xs text-muted-foreground">{p.numero}</span>
+                    {todas && p.secretarias?.nome && (
+                      <Badge variant="outline" className="text-[10px]">{p.secretarias.nome}</Badge>
+                    )}
                     <Badge variant="destructive" className="text-[10px]">{r!.diasTexto}</Badge>
                     <span className="text-xs text-muted-foreground">Prazo: {r!.prazoTexto}</span>
                     {semLocal(p)
