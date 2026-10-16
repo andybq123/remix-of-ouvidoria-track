@@ -75,13 +75,15 @@ describe("notificações e-SIC", () => {
 
 import { formatarNumeroEsic as fmtEsic, extrairPedidoEsic as extrEsic } from "./esic";
 describe("padrão Nº e-SIC", () => {
-  it("formata no padrão 092/2026", () => {
-    expect(fmtEsic("92/2026")).toBe("092/2026");
-    expect(fmtEsic("Nº e-SIC 092/2026")).toBe("092/2026");
-    expect(fmtEsic(" 0.092 / 2026")).toBe("092/2026");
+  it("formata no padrão x.xxx/2026", () => {
+    expect(fmtEsic("92/2026")).toBe("0.092/2026");
+    expect(fmtEsic("Nº e-SIC 092/2026")).toBe("0.092/2026");
+    expect(fmtEsic(" 0.092 / 2026")).toBe("0.092/2026");
+    expect(fmtEsic("1234/2026")).toBe("1.234/2026");
+    expect(fmtEsic("093/2026")).not.toBe(fmtEsic("092/2026"));
   });
   it("prefere o Nº e-SIC ao Nº interno do e-mail", () => {
     const t = "Pedido de e-SIC recebido\nNº: 1.234/2026\n" + "x".repeat(2500) + "\nNº e-SIC 092/2026\nAssunto: Pedido";
-    expect(extrEsic(t)?.numero).toBe("092/2026");
+    expect(extrEsic(t)?.numero).toBe("0.092/2026");
   });
 });

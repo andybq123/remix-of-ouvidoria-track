@@ -626,7 +626,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
               </Field2>
               {form.tipo === "esic" && (
                 <Field2 label="Número do pedido e-SIC *">
-                  <Input value={form.numero_esic ?? ""} onChange={e => setForm({ ...form, numero_esic: e.target.value })} placeholder="Ex.: 092/2026" onBlur={e => setForm({ ...form, numero_esic: formatarNumeroEsic(e.target.value) })} />
+                  <Input value={form.numero_esic ?? ""} onChange={e => setForm({ ...form, numero_esic: e.target.value })} placeholder="Ex.: 0.092/2026" onBlur={e => setForm({ ...form, numero_esic: formatarNumeroEsic(e.target.value) })} />
                 </Field2>
               )}
               {form.tipo === "esic" && form.prorrogado && (
