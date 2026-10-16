@@ -436,13 +436,6 @@ function WorkspaceLayout({
             </header>
 
             <main className="workspace-main">
-              <div className="workspace-page-intro">
-                <div>
-                </div>
-                <div className="workspace-date hidden md:flex">
-                  <span className="workspace-status-dot" /> Ambiente operacional
-                </div>
-              </div>
               <Outlet />
             </main>
           </div>
