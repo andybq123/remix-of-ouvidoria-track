@@ -1,3 +1,4 @@
+import { termosBusca, matchProtocolo } from "@/lib/search-protocolos";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -158,10 +159,10 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
     },
   });
   const semLocal = (p: any) => p.latitude == null || p.longitude == null;
-  const termo = busca.trim().toLowerCase();
+  const termos = termosBusca(busca);
   const lista = rows
     .filter((x) => !soSemLocal || semLocal(x.p))
-    .filter((x) => !termo || `${x.p.numero} ${x.p.numero_esic ?? ""} ${x.p.assunto} ${x.p.solicitante ?? ""} ${x.p.endereco ?? ""}`.toLowerCase().includes(termo));
+    .filter((x) => matchProtocolo(x.p, termos));
 
   return (
     <>
@@ -295,9 +296,7 @@ function TarefasPage() {
   });
 
   const filtrados = protocolos.filter((p: any) => {
-    if (!busca) return true;
-    const s = busca.toLowerCase();
-    return `${p.numero} ${p.numero_esic ?? ""} ${p.tipo === "esic" ? "e-SIC acesso à informação" : ""} ${p.assunto} ${p.solicitante ?? ""}`.toLowerCase().includes(s);
+    return matchProtocolo(p, termosBusca(busca));
   });
 
   // Items that are locked by someone else are not selectable in batch

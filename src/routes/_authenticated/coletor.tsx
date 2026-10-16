@@ -1,3 +1,4 @@
+import { termosBusca, matchProtocolo } from "@/lib/search-protocolos";
 import { urlValida1doc } from "@/lib/url-1doc";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -188,12 +189,9 @@ function ProtocolosColetados() {
   });
 
   const filtrados = useMemo(() => {
-    const t = busca.trim().toLowerCase();
-    if (!t) return protocolos;
-    return protocolos.filter((p) =>
-      [p.numero, p.assunto, p.descricao, p.status, p.solicitante, p.secretarias?.nome]
-        .filter(Boolean).some((s) => String(s).toLowerCase().includes(t)),
-    );
+    const termos = termosBusca(busca);
+    if (!termos.length) return protocolos;
+    return protocolos.filter((p) => matchProtocolo(p, termos));
   }, [protocolos, busca]);
 
   const idsFiltrados = useMemo(() => filtrados.map((p) => p.id), [filtrados]);

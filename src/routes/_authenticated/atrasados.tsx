@@ -1,3 +1,4 @@
+import { termosBusca, matchProtocolo } from "@/lib/search-protocolos";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -73,9 +74,7 @@ function AtrasadosPage() {
       .filter(p => filtroTipo === "todos" || p.tipo === filtroTipo)
       .filter(p => filtroSec === "todos" || p.secretaria_id === filtroSec)
       .filter(p => {
-        if (!busca) return true;
-        const s = busca.toLowerCase();
-        return `${p.numero} ${p.assunto} ${p.solicitante ?? ""}`.toLowerCase().includes(s);
+        return matchProtocolo(p, termosBusca(busca));
       })
       .sort(sortProtocolosPorNumero);
   }, [protocolos, filtroTipo, filtroSec, busca, refDate]);
