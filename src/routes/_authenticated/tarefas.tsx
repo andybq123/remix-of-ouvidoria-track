@@ -182,6 +182,7 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
         <Select value={sec} onValueChange={setSec}>
           <SelectTrigger className="w-[280px]"><SelectValue placeholder="Selecione a secretaria…" /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="todas">Todas as secretarias</SelectItem>
             {secretarias.map((x) => <SelectItem key={x.id} value={x.id}>{x.nome}</SelectItem>)}
           </SelectContent>
         </Select>
