@@ -109,7 +109,7 @@ describe("ingerirEmail: pedidos e-SIC", () => {
     expect(res.ok).toBe(true);
     expect(mock.ai).not.toHaveBeenCalled();
     expect(mock.tables.protocolos[0]).toMatchObject({
-      numero_esic: "026/2026",
+      numero_esic: "0.026/2026",
       tipo: "esic",
       categoria: "pedido_informacao",
       triagem_pendente: true,

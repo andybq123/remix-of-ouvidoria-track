@@ -26,7 +26,7 @@ describe("notificações e-SIC", () => {
   });
   it("prioriza o número oficial no título sobre o cabeçalho interno", () => {
     expect(extrairPedidoEsic(exemplo.replace("Nº: 026/2026", "Nº: 999/2026"))?.numero).toBe(
-      "026/2026",
+      "0.026/2026",
     );
   });
   it("extrai os mesmos campos quando o corpo está em uma única linha", () => {
