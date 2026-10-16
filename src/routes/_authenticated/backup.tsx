@@ -24,9 +24,9 @@ import {
 export const Route = createFileRoute("/_authenticated/backup")({
   head: () => ({
     meta: [
-      { title: "Backup — Controle SETA" },
+      { title: "Backup — Seta360" },
       { name: "description", content: "Faça backup e restaure protocolos, usuários, secretarias e assuntos." },
-      { property: "og:title", content: "Backup — Controle SETA" },
+      { property: "og:title", content: "Backup — Seta360" },
       { property: "og:description", content: "Backup e restauração dos dados do sistema." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

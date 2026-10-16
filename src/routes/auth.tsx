@@ -11,9 +11,9 @@ import brusqueLogo from "@/assets/brusque-brasao.png";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [
-    { title: "Entrar | Controle SETA" },
+    { title: "Entrar | Seta360" },
     { name: "description", content: "Entrar no sistema de gestão da Ouvidoria Municipal de Brusque." },
-    { property: "og:title", content: "Entrar | Controle SETA" },
+    { property: "og:title", content: "Entrar | Seta360" },
     { property: "og:description", content: "Entrar no sistema de gestão da Ouvidoria Municipal de Brusque." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

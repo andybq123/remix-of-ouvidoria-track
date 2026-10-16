@@ -10,9 +10,9 @@ import { Shield, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({ meta: [
-    { title: "Recuperar senha | Controle SETA" },
+    { title: "Recuperar senha | Seta360" },
     { name: "description", content: "Recuperar senha no sistema de gestão da Ouvidoria Municipal de Brusque." },
-    { property: "og:title", content: "Recuperar senha | Controle SETA" },
+    { property: "og:title", content: "Recuperar senha | Seta360" },
     { property: "og:description", content: "Recuperar senha no sistema de gestão da Ouvidoria Municipal de Brusque." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

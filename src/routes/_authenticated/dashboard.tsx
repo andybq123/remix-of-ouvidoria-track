@@ -49,9 +49,9 @@ const DASHBOARD_COLUNAS =
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [
-    { title: "Painel de gestão | Controle SETA" },
+    { title: "Painel de gestão | Seta360" },
     { name: "description", content: "Indicadores, protocolos e mapas da Ouvidoria Municipal de Brusque." },
-    { property: "og:title", content: "Painel de gestão | Controle SETA" },
+    { property: "og:title", content: "Painel de gestão | Seta360" },
     { property: "og:description", content: "Indicadores, protocolos e mapas da Ouvidoria Municipal de Brusque." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

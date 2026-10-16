@@ -23,9 +23,9 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_authenticated/assuntos")({
   head: () => ({ meta: [
-    { title: "Catálogo de assuntos | Controle SETA" },
+    { title: "Catálogo de assuntos | Seta360" },
     { name: "description", content: "Catálogo de assuntos no sistema de gestão da Ouvidoria Municipal de Brusque." },
-    { property: "og:title", content: "Catálogo de assuntos | Controle SETA" },
+    { property: "og:title", content: "Catálogo de assuntos | Seta360" },
     { property: "og:description", content: "Catálogo de assuntos no sistema de gestão da Ouvidoria Municipal de Brusque." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

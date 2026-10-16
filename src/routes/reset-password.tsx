@@ -10,9 +10,9 @@ import { Shield, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [
-    { title: "Redefinir senha | Controle SETA" },
+    { title: "Redefinir senha | Seta360" },
     { name: "description", content: "Redefinir senha no sistema de gestão da Ouvidoria Municipal de Brusque." },
-    { property: "og:title", content: "Redefinir senha | Controle SETA" },
+    { property: "og:title", content: "Redefinir senha | Seta360" },
     { property: "og:description", content: "Redefinir senha no sistema de gestão da Ouvidoria Municipal de Brusque." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
