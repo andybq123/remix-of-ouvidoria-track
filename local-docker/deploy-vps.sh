@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-#  Seta360 — Instalador para VPS Linux (Ubuntu/Debian)
+#  OuviDesk — Instalador para VPS Linux (Ubuntu/Debian)
 #  Instala tudo 100% local (app + banco + login) em MODO PRODUÇÃO,
 #  com domínio próprio e HTTPS automático.
 #
@@ -43,7 +43,7 @@ cat <<EOF
 ${AZ}${B}
    ╔══════════════════════════════════════════════════════╗
    ║                                                      ║
-   ║        SETA360  ·  Instalador da VPS           ║
+   ║        OUVIDESK  ·  Instalador da VPS           ║
    ║        Ouvidoria · Triagem · Mapas · Relatórios      ║
    ║                                                      ║
    ╚══════════════════════════════════════════════════════╝${R}

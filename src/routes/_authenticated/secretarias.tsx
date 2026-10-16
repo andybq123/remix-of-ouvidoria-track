@@ -18,9 +18,9 @@ import { SecretariaIconPicker } from "@/components/secretaria-icon-picker";
 
 export const Route = createFileRoute("/_authenticated/secretarias")({
   head: () => ({ meta: [
-    { title: "Secretarias e ícones do mapa | Seta360" },
+    { title: "Secretarias e ícones do mapa | OuviDesk" },
     { name: "description", content: "Gerencie secretarias, locais, responsáveis e ícones dos mapas de Obras e Saúde." },
-    { property: "og:title", content: "Secretarias | Seta360" },
+    { property: "og:title", content: "Secretarias | OuviDesk" },
     { property: "og:description", content: "Secretarias e ícones dos mapas de Obras e Saúde." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

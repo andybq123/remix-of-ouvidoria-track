@@ -23,7 +23,7 @@ export const Route = createFileRoute("/consulta")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { property: "og:title", content: "Consulta de protocolo | Seta360" },
+      { property: "og:title", content: "Consulta de protocolo | OuviDesk" },
       { property: "og:description", content: "Consulta de protocolo da Ouvidoria Municipal de Brusque." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

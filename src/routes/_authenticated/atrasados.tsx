@@ -22,9 +22,9 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 
 export const Route = createFileRoute("/_authenticated/atrasados")({
   head: () => ({ meta: [
-    { title: "Protocolos atrasados | Seta360" },
+    { title: "Protocolos atrasados | OuviDesk" },
     { name: "description", content: "Protocolos atrasados no sistema de gestão da Ouvidoria Municipal de Brusque." },
-    { property: "og:title", content: "Protocolos atrasados | Seta360" },
+    { property: "og:title", content: "Protocolos atrasados | OuviDesk" },
     { property: "og:description", content: "Protocolos atrasados no sistema de gestão da Ouvidoria Municipal de Brusque." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

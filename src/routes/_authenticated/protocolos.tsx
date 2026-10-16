@@ -35,9 +35,9 @@ import { invalidateProtocoloCaches } from "@/hooks/use-protocolos-realtime";
 
 export const Route = createFileRoute("/_authenticated/protocolos")({
   head: () => ({ meta: [
-    { title: "Protocolos e triagem | Seta360" },
+    { title: "Protocolos e triagem | OuviDesk" },
     { name: "description", content: "Protocolos e triagem no sistema de gestão da Ouvidoria Municipal de Brusque." },
-    { property: "og:title", content: "Protocolos e triagem | Seta360" },
+    { property: "og:title", content: "Protocolos e triagem | OuviDesk" },
     { property: "og:description", content: "Protocolos e triagem no sistema de gestão da Ouvidoria Municipal de Brusque." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

@@ -37,9 +37,9 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/relatorios/")({
   head: () => ({ meta: [
-    { title: "Relatórios gerenciais | Seta360" },
+    { title: "Relatórios gerenciais | OuviDesk" },
     { name: "description", content: "Relatórios gerenciais no sistema de gestão da Ouvidoria Municipal de Brusque." },
-    { property: "og:title", content: "Relatórios gerenciais | Seta360" },
+    { property: "og:title", content: "Relatórios gerenciais | OuviDesk" },
     { property: "og:description", content: "Relatórios gerenciais no sistema de gestão da Ouvidoria Municipal de Brusque." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

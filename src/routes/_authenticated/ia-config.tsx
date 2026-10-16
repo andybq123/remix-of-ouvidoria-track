@@ -15,9 +15,9 @@ import { getAiConfig, saveAiProvider, saveAiPriority, testAiProvider } from "@/l
 export const Route = createFileRoute("/_authenticated/ia-config")({
   head: () => ({
     meta: [
-      { title: "Configuração de IA — Seta360" },
+      { title: "Configuração de IA — OuviDesk" },
       { name: "description", content: "Configure as IAs Groq e Google Gemini individualmente e a ordem de uso." },
-      { property: "og:title", content: "Configuração de IA — Seta360" },
+      { property: "og:title", content: "Configuração de IA — OuviDesk" },
       { property: "og:description", content: "Configure as IAs Groq e Google Gemini individualmente." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
