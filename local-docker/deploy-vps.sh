@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-#  Controle SETA — Instalador para VPS Linux (Ubuntu/Debian)
+#  Seta360 — Instalador para VPS Linux (Ubuntu/Debian)
 #  Instala tudo 100% local (app + banco + login) em MODO PRODUÇÃO,
 #  com domínio próprio e HTTPS automático.
 #
@@ -43,7 +43,7 @@ cat <<EOF
 ${AZ}${B}
    ╔══════════════════════════════════════════════════════╗
    ║                                                      ║
-   ║        CONTROLE SETA  ·  Instalador da VPS           ║
+   ║        SETA360  ·  Instalador da VPS           ║
    ║        Ouvidoria · Triagem · Mapas · Relatórios      ║
    ║                                                      ║
    ╚══════════════════════════════════════════════════════╝${R}
