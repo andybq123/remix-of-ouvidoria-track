@@ -43,8 +43,8 @@ cat <<EOF
 ${AZ}${B}
    ╔══════════════════════════════════════════════════════╗
    ║                                                      ║
-   ║        OUVIDESK  ·  Instalador da VPS           ║
-   ║        Ouvidoria · Triagem · Mapas · Relatórios      ║
+   ║            OUVIDESK  ·  Instalador da VPS            ║
+   ║       Ouvidoria · Triagem · Mapas · Relatórios       ║
    ║                                                      ║
    ╚══════════════════════════════════════════════════════╝${R}
 
@@ -213,7 +213,7 @@ echo
 printf "${VD}${B}"
 cat <<EOF
    ╔══════════════════════════════════════════════════════╗
-   ║           ✔  INSTALAÇÃO CONCLUÍDA COM SUCESSO         ║
+   ║         ✔  INSTALAÇÃO CONCLUÍDA COM SUCESSO          ║
    ╚══════════════════════════════════════════════════════╝
 EOF
 printf "${R}"

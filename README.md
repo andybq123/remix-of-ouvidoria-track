@@ -1,4 +1,4 @@
-# Controle SETA — Sistema de Ouvidoria e Transparência
+# OuviDesk — Sistema de Ouvidoria e Transparência
 
 Sistema completo de gestão de ouvidoria para prefeituras: cadastro e acompanhamento de protocolos, triagem inteligente de e-mails com IA, controle de prazos legais, mapa de unidades da Saúde e relatórios gerenciais.
 

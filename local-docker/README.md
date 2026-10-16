@@ -1,4 +1,4 @@
-# Controle SETA — rodando localmente
+# OuviDesk — rodando localmente
 
 Requisitos: **Docker Desktop** e **Node.js 20+**.
 
