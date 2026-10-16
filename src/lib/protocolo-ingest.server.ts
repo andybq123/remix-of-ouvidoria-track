@@ -352,7 +352,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
       extr.tipo = "esic";
       extr.categoria = "pedido_informacao";
     }
-    const numeroEsic = emailEhEsic ? (numeroDoAssunto || extr.numero || null) : null;
+    const numeroEsic = emailEhEsic ? (formatarNumeroEsic(numeroDoAssunto || extr.numero) || null) : null;
 
     // ===== Detectar se é atualização/baixa de protocolo já existente =====
     if (extr.numero) {
