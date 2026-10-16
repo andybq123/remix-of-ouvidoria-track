@@ -210,6 +210,9 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
                 <div className="flex-1 min-w-[260px]">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className="font-mono text-xs text-muted-foreground">{p.numero}</span>
+                    {todas && p.secretarias?.nome && (
+                      <Badge variant="outline" className="text-[10px]">{p.secretarias.nome}</Badge>
+                    )}
                     <Badge variant="destructive" className="text-[10px]">{r!.diasTexto}</Badge>
                     <span className="text-xs text-muted-foreground">Prazo: {r!.prazoTexto}</span>
                     {semLocal(p)
