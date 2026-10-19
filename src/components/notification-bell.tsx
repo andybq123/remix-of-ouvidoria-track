@@ -14,20 +14,23 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<any | null>(null);
 
+  // Só protocolos em aberto fora da triagem, com as colunas usadas no aviso.
+  // Atualizações chegam pelo tempo real; a consulta periódica é só uma garantia.
   const { data: protocolos = [] } = useQuery({
-    queryKey: ["protocolos"],
+    queryKey: ["protocolos-alertas"],
     queryFn: () =>
       fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
-          .select("*, secretarias(nome, sigla), locais(nome)")
+          .select("id, numero, assunto, tipo, status, data_abertura, prorrogado, triagem_pendente, secretarias(sigla)")
+          .neq("status", "concluido")
+          .eq("triagem_pendente", false)
           .order("data_abertura", { ascending: false })
           .range(from, to),
       ),
-    refetchInterval: 60_000,
+    refetchInterval: 5 * 60_000,
   });
 
-  // Fila de triagem (dados reais do banco)
   const { data: triagemPendentes = 0 } = useQuery({
     queryKey: ["triagem-pendentes-count"],
     queryFn: async () => {
@@ -37,8 +40,19 @@ export function NotificationBell() {
         .eq("triagem_pendente", true);
       return count ?? 0;
     },
-    refetchInterval: 60_000,
+    refetchInterval: 5 * 60_000,
   });
+
+  // Ao abrir um aviso, busca o registro completo para o detalhe.
+  const abrirDetalhe = async (id: string) => {
+    setOpen(false);
+    const { data } = await supabase
+      .from("protocolos")
+      .select("*, secretarias(nome, sigla), locais(nome)")
+      .eq("id", id)
+      .maybeSingle();
+    if (data) setDetail(data);
+  };
 
   const alertas = protocolos
     .filter((p: any) => p.status !== "concluido" && !p.triagem_pendente)
