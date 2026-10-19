@@ -133,11 +133,20 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
-        router.invalidate();
-        if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+    let lastUserId: string | null | undefined;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const uid = session?.user?.id ?? null;
+      if (event === "INITIAL_SESSION") { lastUserId = uid; return; }
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      if (event === "SIGNED_OUT" || (lastUserId !== undefined && uid !== lastUserId)) {
+        // Logout ou troca de usuário: cancela e limpa todo o cache privado em memória.
+        queryClient.cancelQueries();
+        queryClient.clear();
+      } else {
+        queryClient.invalidateQueries();
       }
+      lastUserId = uid;
+      router.invalidate();
     });
     return () => subscription.unsubscribe();
   }, [router, queryClient]);
