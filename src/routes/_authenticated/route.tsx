@@ -78,6 +78,7 @@ function AuthLayout() {
     { to: "/assuntos", label: "Assuntos", icon: Tag },
     { to: "/email-inbox", label: "E-mails", icon: Mail },
     { to: "/coletor", label: "Coletor 1doc", icon: Download },
+    { to: "/agente-1doc", label: "Agente 1Doc", icon: Bot },
     { to: "/users", label: "Usuários", icon: Users },
     { to: "/ia-config", label: "IA", icon: Sparkles },
     { to: "/backup", label: "Backup", icon: DatabaseBackup },
