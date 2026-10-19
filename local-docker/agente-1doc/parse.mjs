@@ -81,3 +81,31 @@ export function atualizacaoProtocolo(protocolo, analise) {
   }
   return upd;
 }
+
+/** Decide se vale chamar a IA (só quando as regras falharam). */
+export function precisaIA(texto, analise, protocolo = {}) {
+  const t = String(texto || "");
+  const encerrada = /deu baixa|arquivou|arquivad|finaliz/i.test(t);
+  const semData = encerrada && !analise.baixado_em && !analise.arquivado_em;
+  const semEndereco = !String(protocolo.endereco || "").trim() && !analise.endereco
+    && /endere[çc]o|\b(rua|r\.|av\.|avenida|travessa|servid[aã]o)\s+\S/i.test(t);
+  return semData || semEndereco;
+}
+
+/** Aceita só datas ISO plausíveis e endereço de 5 a 300 caracteres. */
+export function validarRespostaIA(json, agora = new Date()) {
+  const out = { baixado_em: null, arquivado_em: null, endereco: null };
+  if (!json || typeof json !== "object") return out;
+  const limite = agora.getTime() + 86400_000;
+  for (const k of ["baixado_em", "arquivado_em"]) {
+    const v = json[k];
+    if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(v)) continue;
+    const d = new Date(/T/.test(v) ? v : `${v.slice(0, 10)}T12:00:00-03:00`);
+    if (!Number.isNaN(d.getTime()) && d.getUTCFullYear() >= 2000 && d.getTime() <= limite) out[k] = d.toISOString();
+  }
+  if (typeof json.endereco === "string") {
+    const e = json.endereco.replace(/\s+/g, " ").trim();
+    if (e.length >= 5 && e.length <= 300) out.endereco = e;
+  }
+  return out;
+}

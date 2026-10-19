@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 // @ts-expect-error módulo JS compartilhado com o agente da VPS
-import { analisarTexto1doc, atualizacaoProtocolo } from "../../local-docker/agente-1doc/parse.mjs";
+import { analisarTexto1doc, atualizacaoProtocolo, precisaIA, validarRespostaIA } from "../../local-docker/agente-1doc/parse.mjs";
 
 const EXEMPLO = `17/09/2026 14:16:49
 
@@ -46,5 +46,23 @@ describe("agente 1Doc", () => {
     const a = analisarTexto1doc("Endereço: Rua Azambuja, Brusque - SC");
     expect(atualizacaoProtocolo({ status: "aberto", endereco: "" }, a).endereco).toBe("Rua Azambuja, Brusque - SC");
     expect(atualizacaoProtocolo({ status: "aberto", endereco: "Rua X" }, a).endereco).toBeUndefined();
+  });
+  it("IA quando encerrada sem data", () => {
+    const tx = "SETA deu baixa na solicitação";
+    expect(precisaIA(tx, analisarTexto1doc(tx), { endereco: "Rua X" })).toBe(true);
+  });
+  it("sem IA quando a regra leu a data", () => {
+    expect(precisaIA(EXEMPLO, analisarTexto1doc(EXEMPLO), { endereco: "Rua X" })).toBe(false);
+  });
+  it("sem IA para endereço quando o protocolo já tem", () => {
+    const tx = "Local: Rua Azambuja 100";
+    expect(precisaIA(tx, analisarTexto1doc(tx), { endereco: "Rua X" })).toBe(false);
+    expect(precisaIA(tx, analisarTexto1doc(tx), { endereco: "" })).toBe(true);
+  });
+  it("descarta data inválida da IA", () => {
+    const v = validarRespostaIA({ baixado_em: "ontem", arquivado_em: "2099-01-01", endereco: "Rua Azambuja, 100" }, new Date("2026-10-19"));
+    expect(v.baixado_em).toBeNull();
+    expect(v.arquivado_em).toBeNull();
+    expect(v.endereco).toBe("Rua Azambuja, 100");
   });
 });
