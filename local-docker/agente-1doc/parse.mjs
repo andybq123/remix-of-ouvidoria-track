@@ -73,8 +73,10 @@ export function atualizacaoProtocolo(protocolo, analise) {
     onedoc_verificado_em: new Date().toISOString(),
   };
   if (analise.endereco && !String(protocolo.endereco || "").trim()) upd.endereco = analise.endereco;
-  const fim = analise.baixado_em || analise.arquivado_em;
-  if (protocolo.status !== "concluido" && analise.situacao !== "em_andamento" && fim) {
+  // Só conclui com a linha "deu baixa ... em dd/mm/aaaa" lida na página.
+  // Sem ela, o protocolo continua aberto (apenas o endereço é atualizado).
+  const fim = analise.baixado_em;
+  if (protocolo.status !== "concluido" && fim) {
     upd.status = "concluido";
     // data_conclusao é "date": usa o dia em Brasília
     upd.data_conclusao = new Date(new Date(fim).getTime() - 3 * 3600_000).toISOString().slice(0, 10);

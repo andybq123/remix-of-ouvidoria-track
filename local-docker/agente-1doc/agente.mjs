@@ -143,10 +143,8 @@ async function processar(job) {
             const ia = await chamarIA(texto);
             if (ia && (ia.baixado_em || ia.arquivado_em || ia.endereco)) {
               fonte = "ia";
-              a.baixado_em ||= ia.baixado_em;
-              a.arquivado_em ||= ia.arquivado_em;
+              // A IA nunca conclui: só a linha "deu baixa" lida pela regra fecha o protocolo.
               a.endereco ||= ia.endereco;
-              if (a.situacao === "em_andamento") a.situacao = a.arquivado_em ? "arquivada" : a.baixado_em ? "baixada" : a.situacao;
             }
           }
           const upd = atualizacaoProtocolo(p, a);
