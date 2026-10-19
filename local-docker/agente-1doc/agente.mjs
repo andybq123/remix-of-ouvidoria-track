@@ -75,7 +75,7 @@ async function processar(job) {
     const ids = job.protocolo_ids || [];
     for (let i = 0; i < ids.length; i += 100) {
       const lote = ids.slice(i, i + 100);
-      const prots = await rest(`protocolos?select=id,numero,status,url&id=in.(${lote.join(",")})`);
+      const prots = await rest(`protocolos?select=id,numero,status,url,endereco&id=in.(${lote.join(",")})`);
       for (const p of prots) {
         const r = { id: p.id, numero: p.numero };
         try {

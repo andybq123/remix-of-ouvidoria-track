@@ -38,4 +38,13 @@ describe("agente 1Doc", () => {
     expect(u.status).toBeUndefined();
     expect(u.data_conclusao).toBeUndefined();
   });
+  it("coleta o endereço sem a parte do CEP", () => {
+    const a = analisarTexto1doc("Endereço: R. João XXIII, Brusque - SC, 88357, Brasil. . CEP: 88357 / Cidade: Brusque, Santa Catarina");
+    expect(a.endereco).toBe("R. João XXIII, Brusque - SC, 88357, Brasil");
+  });
+  it("só preenche endereço quando o protocolo não tem", () => {
+    const a = analisarTexto1doc("Endereço: Rua Azambuja, Brusque - SC");
+    expect(atualizacaoProtocolo({ status: "aberto", endereco: "" }, a).endereco).toBe("Rua Azambuja, Brusque - SC");
+    expect(atualizacaoProtocolo({ status: "aberto", endereco: "Rua X" }, a).endereco).toBeUndefined();
+  });
 });
