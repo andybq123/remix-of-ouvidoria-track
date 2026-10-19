@@ -21,20 +21,24 @@ Limite importante: entrar no 1Doc com usuário e senha exige abrir um navegador 
 - Uma ouvidoria já concluída manualmente no sistema não é alterada. O agente só registra o que encontrou no 1Doc.
 - Cada atualização entra no **histórico** da ouvidoria como "Atualizado pelo agente 1Doc".
 
-## Pontos a confirmar durante a construção
-- Na tela do 1Doc, preciso confirmar onde aparecem "baixado", "arquivado" e a data. Se puder, mande um print de uma ouvidoria arquivada. Sem isso, uso as mesmas regras do coletor atual.
+## Como o agente reconhece a baixa e o arquivamento
+Com base no exemplo enviado, o agente lê no histórico da ouvidoria:
+- **Baixa:** linha "... deu baixa manualmente ... em 17/09/2026 às 14:09:49". Guarda a data e a hora da baixa e o setor (ex.: SETA - OUV).
+- **Arquivamento:** linha "... arquivou." Usa a data e a hora acima da linha (ex.: 17/09/2026 14:16:55).
+- Se houver mais de uma baixa ou arquivamento, vale o mais recente.
+- A **data de conclusão** no sistema passa a ser a data da baixa. Se não houver baixa, usa a do arquivamento.
 - O agente abre uma ouvidoria por vez, com uma pausa curta entre elas, para não sobrecarregar o 1Doc.
 
 ## Detalhes técnicos
 - **Banco (migration nova, não destrutiva):**
   - tabela `onedoc_config`, com uma linha só: url_login, usuario, senha cifrada (chave em secret `ONEDOC_KEY`), acesso apenas para admin por RLS;
   - tabela `onedoc_jobs` (id, tipo unitario/lote, status, total, processados, erros, criado_por, timestamps);
-  - colunas novas em `protocolos`: `onedoc_situacao text`, `onedoc_arquivado_em timestamptz`, `onedoc_verificado_em timestamptz`.
+  - colunas novas em `protocolos`: `onedoc_situacao text`, `onedoc_baixado_em timestamptz`, `onedoc_arquivado_em timestamptz`, `onedoc_verificado_em timestamptz`.
   - Também espelhar em `local-docker/atualizacoes-banco/009_agente_1doc.sql`.
 - **Worker na VPS:** novo serviço `agente-1doc` no `docker-compose.prod.yml` (imagem Playwright com Node). Ele busca na fila `onedoc_jobs` os pedidos pendentes, faz login com a config, abre o `protocolos.url` de cada ouvidoria (passando por `urlValida1doc`) e reaproveita a extração de `coletor-py` (DETALHE_JS e detecção de "Arquivado ✅"/"baixad"). Depois grava o resultado com a service role. Login e sessão (cookies) são reaproveitados entre ouvidorias.
 - **App:**
   - server functions admin-only (`exigirAdmin`) para salvar a config, testar o login (cria um job do tipo teste), enfileirar um job unitário ou em lote e ler o status;
   - a UI consulta o job a cada 2 s enquanto ele roda e depois invalida as queries de protocolos (respeitando `query-policies.ts`).
 - Em ambiente sem worker (nuvem), o job fica "aguardando" e a UI mostra o aviso depois de 30 s.
-- **Testes:** regra de mapeamento "arquivado → concluido + data_conclusao = data de arquivamento"; protocolo já concluído não é sobrescrito; parsing de datas dd/mm/aaaa.
+- **Testes:** regex de "deu baixa ... em dd/mm/aaaa às hh:mm:ss" e "arquivou." com o carimbo de data anterior; arquivado → concluido com data_conclusao = data da baixa (ou do arquivamento); protocolo já concluído não é sobrescrito; parsing de datas dd/mm/aaaa.
 - Atualizar `AGENTS.md`: o agente 1Doc roda só como worker de fila na VPS, nunca dentro do servidor web.
