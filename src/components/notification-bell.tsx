@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllPaginated } from "@/lib/fetch-all";
+import { STALE } from "@/lib/query-policies";
 import { situacaoProtocolo, formatDate } from "@/lib/prazo";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 
