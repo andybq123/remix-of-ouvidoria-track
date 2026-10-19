@@ -18,6 +18,7 @@ import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { BulkConcluirDialog } from "@/components/bulk-concluir-dialog";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { CheckCheck } from "lucide-react";
+import { OnedocAgentButton } from "@/components/onedoc-agent-button";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/atrasados")({
