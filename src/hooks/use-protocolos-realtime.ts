@@ -16,6 +16,7 @@ export function invalidateProtocoloCaches(qc: ReturnType<typeof useQueryClient>)
         k.startsWith("protocolos-") ||
         k.startsWith("relatorio") ||
         k === "triagem-stats" ||
+        k === "triagem-pendentes-count" ||
         k === "atrasados" ||
         k.startsWith("dashboard") ||
         k === "protocolo"
