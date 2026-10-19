@@ -29,9 +29,11 @@ describe("agente 1Doc", () => {
     expect(u.status).toBe("concluido");
     expect(u.data_conclusao).toBe("2026-09-17");
   });
-  it("sem baixa usa a data do arquivamento", () => {
-    const u = atualizacaoProtocolo({ status: "aberto" }, analisarTexto1doc("20/09/2026 08:00:00 SETA arquivou."));
-    expect(u.data_conclusao).toBe("2026-09-20");
+  it("sem a linha 'deu baixa' continua aberto e só atualiza o endereço", () => {
+    const u = atualizacaoProtocolo({ status: "aberto", endereco: "" }, analisarTexto1doc("20/09/2026 08:00:00 SETA arquivou.\nEndereço: R. João XXIII, Brusque - SC. CEP: 88357"));
+    expect(u.status).toBeUndefined();
+    expect(u.data_conclusao).toBeUndefined();
+    expect(u.endereco).toBe("R. João XXIII, Brusque - SC");
   });
   it("não sobrescreve protocolo já concluído", () => {
     const u = atualizacaoProtocolo({ status: "concluido" }, analisarTexto1doc(EXEMPLO));
