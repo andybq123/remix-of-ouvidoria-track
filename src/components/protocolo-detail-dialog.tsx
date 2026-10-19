@@ -1,5 +1,6 @@
 import { formatarNumeroEsic } from "@/lib/esic";
 import { urlValida1doc } from "@/lib/url-1doc";
+import { OnedocAgentButton } from "@/components/onedoc-agent-button";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -495,6 +496,15 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
                   </Button>
                 </a>,
                 "Abre o protocolo no sistema 1Doc em uma nova aba"
+              )
+            )}
+            {!isLegacy && urlValida1doc(protocolo?.url) && (
+              wrapTooltip(
+                "agente-1doc",
+                <span><OnedocAgentButton tipo="unitario" protocoloId={protocolo.id} label="Atualizar pelo 1Doc" /></span>,
+                protocolo.onedoc_verificado_em
+                  ? `Última conferência: ${new Date(protocolo.onedoc_verificado_em).toLocaleString("pt-BR")} — ${protocolo.onedoc_situacao ?? ""}${protocolo.onedoc_baixado_em ? `, baixa em ${new Date(protocolo.onedoc_baixado_em).toLocaleString("pt-BR")}` : ""}${protocolo.onedoc_arquivado_em ? `, arquivada em ${new Date(protocolo.onedoc_arquivado_em).toLocaleString("pt-BR")}` : ""}`
+                  : "O agente entra no 1Doc e confere se a ouvidoria foi baixada e arquivada"
               )
             )}
             {!isLegacy && protocolo.status === "concluido" && (

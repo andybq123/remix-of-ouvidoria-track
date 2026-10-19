@@ -18,6 +18,7 @@ import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { BulkConcluirDialog } from "@/components/bulk-concluir-dialog";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { CheckCheck } from "lucide-react";
+import { OnedocAgentButton } from "@/components/onedoc-agent-button";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/atrasados")({
@@ -164,6 +165,7 @@ function AtrasadosPage() {
               <CheckCheck className="h-4 w-4 mr-1" /> Concluir em massa
             </Button>
           )}
+          {isAdmin && <OnedocAgentButton tipo="lote" label="Atualizar todas pelo 1Doc" size="default" />}
           <Button onClick={exportar} variant="outline" disabled={atrasados.length === 0}>
             <Download className="h-4 w-4 mr-1" /> Exportar Excel
           </Button>

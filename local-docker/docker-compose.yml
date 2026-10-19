@@ -32,5 +32,19 @@ services:
           echo " [$$(date '+%d/%m %H:%M')]"
         done
 
+  # Agente 1Doc: confere baixa/arquivamento das ouvidorias quando pedido no sistema
+  agente-1doc:
+    image: mcr.microsoft.com/playwright:v1.48.2-jammy
+    restart: unless-stopped
+    env_file: .env.local
+    working_dir: /agente
+    volumes:
+      - ./agente-1doc:/agente
+      - agente_node_modules:/agente/node_modules
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: sh -c "npm install --no-audit --no-fund --omit=dev >/dev/null 2>&1; exec node agente.mjs"
+
 volumes:
+  agente_node_modules:
   app_node_modules:

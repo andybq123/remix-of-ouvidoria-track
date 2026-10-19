@@ -365,6 +365,84 @@ export type Database = {
           },
         ]
       }
+      onedoc_config: {
+        Row: {
+          id: boolean
+          senha_cifrada: string | null
+          updated_at: string
+          updated_by: string | null
+          url_login: string | null
+          usuario: string | null
+        }
+        Insert: {
+          id?: boolean
+          senha_cifrada?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          url_login?: string | null
+          usuario?: string | null
+        }
+        Update: {
+          id?: boolean
+          senha_cifrada?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          url_login?: string | null
+          usuario?: string | null
+        }
+        Relationships: []
+      }
+      onedoc_jobs: {
+        Row: {
+          atualizados: number
+          created_at: string
+          criado_por: string | null
+          erros: number
+          finalizado_em: string | null
+          id: string
+          iniciado_em: string | null
+          mensagem: string | null
+          processados: number
+          protocolo_ids: string[]
+          resultados: Json
+          status: string
+          tipo: string
+          total: number
+        }
+        Insert: {
+          atualizados?: number
+          created_at?: string
+          criado_por?: string | null
+          erros?: number
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string | null
+          mensagem?: string | null
+          processados?: number
+          protocolo_ids?: string[]
+          resultados?: Json
+          status?: string
+          tipo?: string
+          total?: number
+        }
+        Update: {
+          atualizados?: number
+          created_at?: string
+          criado_por?: string | null
+          erros?: number
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string | null
+          mensagem?: string | null
+          processados?: number
+          protocolo_ids?: string[]
+          resultados?: Json
+          status?: string
+          tipo?: string
+          total?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -458,6 +536,10 @@ export type Database = {
           longitude: number | null
           numero: string
           numero_esic: string | null
+          onedoc_arquivado_em: string | null
+          onedoc_baixado_em: string | null
+          onedoc_situacao: string | null
+          onedoc_verificado_em: string | null
           origem: string | null
           prorrogado: boolean
           resolucao: string | null
@@ -499,6 +581,10 @@ export type Database = {
           longitude?: number | null
           numero: string
           numero_esic?: string | null
+          onedoc_arquivado_em?: string | null
+          onedoc_baixado_em?: string | null
+          onedoc_situacao?: string | null
+          onedoc_verificado_em?: string | null
           origem?: string | null
           prorrogado?: boolean
           resolucao?: string | null
@@ -540,6 +626,10 @@ export type Database = {
           longitude?: number | null
           numero?: string
           numero_esic?: string | null
+          onedoc_arquivado_em?: string | null
+          onedoc_baixado_em?: string | null
+          onedoc_situacao?: string | null
+          onedoc_verificado_em?: string | null
           origem?: string | null
           prorrogado?: boolean
           resolucao?: string | null
