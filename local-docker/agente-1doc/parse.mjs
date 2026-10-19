@@ -52,7 +52,16 @@ export function analisarTexto1doc(texto) {
   const marcador = /arquivado\s*\u2705/i.test(t);
 
   const situacao = arquivado_em || marcador ? "arquivada" : baixado_em ? "baixada" : "em_andamento";
-  return { situacao, baixado_em, arquivado_em, setor };
+  return { situacao, baixado_em, arquivado_em, setor, endereco: extrairEndereco(t) };
+}
+
+/** "Endereço: R. João XXIII, Brusque - SC, 88357, Brasil. . CEP: ..." -> "R. João XXIII, Brusque - SC, 88357, Brasil" */
+export function extrairEndereco(texto) {
+  const m = String(texto || "").match(/Endere[çc]o\s*:\s*([^\n]+)/i);
+  if (!m) return null;
+  let e = m[1].split(/\.?\s*\.?\s*CEP\s*:/i)[0];
+  e = e.replace(/[\s.]+$/g, "").replace(/\s{2,}/g, " ").trim();
+  return e.length >= 5 ? e.slice(0, 300) : null;
 }
 
 /** Decide o que gravar no protocolo a partir da análise. */
@@ -63,6 +72,7 @@ export function atualizacaoProtocolo(protocolo, analise) {
     onedoc_arquivado_em: analise.arquivado_em,
     onedoc_verificado_em: new Date().toISOString(),
   };
+  if (analise.endereco && !String(protocolo.endereco || "").trim()) upd.endereco = analise.endereco;
   const fim = analise.baixado_em || analise.arquivado_em;
   if (protocolo.status !== "concluido" && analise.situacao !== "em_andamento" && fim) {
     upd.status = "concluido";
