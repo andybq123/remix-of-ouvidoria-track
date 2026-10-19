@@ -166,6 +166,36 @@
   }
 }
 
+.health-unit-chart {
+  --health-chart-1: oklch(0.62 0.13 165);
+  --health-chart-2: oklch(0.60 0.14 255);
+  --health-chart-3: oklch(0.73 0.13 80);
+  --health-chart-4: oklch(0.63 0.15 25);
+  --health-chart-5: oklch(0.61 0.13 300);
+  --health-chart-6: oklch(0.67 0.13 350);
+  --health-chart-7: oklch(0.65 0.10 215);
+  --health-chart-8: oklch(0.70 0.13 50);
+  --health-chart-9: oklch(0.68 0.12 125);
+  --health-chart-10: oklch(0.55 0.09 185);
+  --health-chart-11: oklch(0.75 0.09 285);
+  --health-chart-12: oklch(0.77 0.12 95);
+}
+
+.dark .health-unit-chart {
+  --health-chart-1: oklch(0.72 0.13 165);
+  --health-chart-2: oklch(0.70 0.14 255);
+  --health-chart-3: oklch(0.80 0.13 80);
+  --health-chart-4: oklch(0.73 0.15 25);
+  --health-chart-5: oklch(0.71 0.13 300);
+  --health-chart-6: oklch(0.77 0.13 350);
+  --health-chart-7: oklch(0.75 0.10 215);
+  --health-chart-8: oklch(0.78 0.13 50);
+  --health-chart-9: oklch(0.78 0.12 125);
+  --health-chart-10: oklch(0.65 0.09 185);
+  --health-chart-11: oklch(0.82 0.09 285);
+  --health-chart-12: oklch(0.83 0.12 95);
+}
+
 /* Alternate, self-contained shell; existing routes and page components are shared. */
 .workspace-shell {
   --background: oklch(0.975 0.008 165);
