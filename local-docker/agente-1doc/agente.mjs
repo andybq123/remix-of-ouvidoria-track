@@ -33,6 +33,22 @@ function limparUrl(raw) {
   try { const p = new URL(u); return /^https?:$/.test(p.protocol) ? p.toString() : null; } catch { return null; }
 }
 
+// Endereço -> coordenadas (OpenStreetMap), restrito a Brusque/SC
+async function geocodificar(endereco) {
+  const q = /brusque/i.test(endereco) ? endereco : `${endereco}, Brusque, Santa Catarina`;
+  const p = new URLSearchParams({ q, format: "json", limit: "1", countrycodes: "br" });
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?${p}`, { headers: { "User-Agent": "OuviDesk-Agente1Doc/1.0", "Accept-Language": "pt-BR" } });
+    if (!r.ok) return null;
+    const [hit] = await r.json();
+    if (!hit) return null;
+    const lat = Number(hit.lat), lng = Number(hit.lon);
+    // caixa aproximada do município de Brusque
+    if (lat < -27.25 || lat > -26.95 || lng < -49.1 || lng > -48.75) return null;
+    return { latitude: lat, longitude: lng };
+  } catch { return null; } finally { await sleep(1100); }
+}
+
 async function visivel(page, sels) {
   for (const s of sels) { const l = page.locator(s).first(); try { if (await l.count() && await l.isVisible()) return s; } catch {} }
   return null;
@@ -75,7 +91,7 @@ async function processar(job) {
     const ids = job.protocolo_ids || [];
     for (let i = 0; i < ids.length; i += 100) {
       const lote = ids.slice(i, i + 100);
-      const prots = await rest(`protocolos?select=id,numero,status,url,endereco&id=in.(${lote.join(",")})`);
+      const prots = await rest(`protocolos?select=id,numero,status,url,endereco,latitude,longitude&id=in.(${lote.join(",")})`);
       for (const p of prots) {
         const r = { id: p.id, numero: p.numero };
         try {
@@ -87,6 +103,10 @@ async function processar(job) {
           const texto = await page.evaluate(() => document.body.innerText || "");
           const a = analisarTexto1doc(texto);
           const upd = atualizacaoProtocolo(p, a);
+          if (p.latitude == null || p.longitude == null) {
+            const end = upd.endereco || p.endereco;
+            if (end) { const c = await geocodificar(end); if (c) Object.assign(upd, c); }
+          }
           await patch("protocolos", `id=eq.${p.id}`, upd);
           if (upd.status) atualizados++;
           await rest("protocolo_historico", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({
