@@ -51,6 +51,7 @@ const POR_PREFIXO: Array<[string, number]> = [
   ["protocolos-dashboard", STALE.dashboard],
   ["triagem-stats", STALE.dashboard],
   ["triagem-pendentes-count", STALE.dashboard],
+  ["protocolos-alertas", STALE.dashboard],
   ["protocolos-open-count", STALE.dashboard],
   ["protocolos-mapa-setores", STALE.dashboard],
   ["protocolos-por-local-setores", STALE.dashboard],
