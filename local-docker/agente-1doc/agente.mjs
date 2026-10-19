@@ -2,7 +2,7 @@
 // com a configuração salva no sistema e confere baixa/arquivamento de cada ouvidoria.
 import { chromium } from "playwright";
 import { webcrypto as wc } from "node:crypto";
-import { analisarTexto1doc, atualizacaoProtocolo } from "./parse.mjs";
+import { analisarTexto1doc, atualizacaoProtocolo, precisaIA, validarRespostaIA } from "./parse.mjs";
 
 const URL_DB = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -49,6 +49,41 @@ async function geocodificar(endereco) {
   } catch { return null; } finally { await sleep(1100); }
 }
 
+// IA de reforço (Groq/Gemini configurados em Configurações → IA)
+let iaCfg = null;
+async function carregarIA() {
+  try {
+    const [c] = await rest("ai_config?select=grok_api_key,gemini_api_key,grok_model,gemini_model,priority&limit=1");
+    iaCfg = c || null;
+  } catch { iaCfg = null; }
+}
+const PROMPT = `Você lê o texto de uma ouvidoria do sistema 1Doc (prefeitura de Brusque/SC). Responda SOMENTE JSON:
+{"baixado_em": "AAAA-MM-DDTHH:MM:SS-03:00" ou null, "arquivado_em": "AAAA-MM-DDTHH:MM:SS-03:00" ou null, "endereco": "logradouro, número, bairro, cidade" ou null}
+baixado_em = quando o setor deu baixa/resposta final; arquivado_em = quando arquivou. endereco = local do problema relatado. Não invente: use null se não houver.`;
+async function chamarIA(texto) {
+  if (!iaCfg) return null;
+  const ordem = (iaCfg.priority || ["grok", "gemini"]).filter((p) => p === "grok" || p === "gemini");
+  for (const p of ordem.length ? ordem : ["grok", "gemini"]) {
+    const key = p === "grok" ? iaCfg.grok_api_key : iaCfg.gemini_api_key;
+    if (!key) continue;
+    const url = p === "grok" ? "https://api.groq.com/openai/v1/chat/completions" : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+    const model = p === "grok" ? (iaCfg.grok_model || "llama-3.3-70b-versatile") : (iaCfg.gemini_model || "gemini-2.5-flash");
+    try {
+      const r = await fetch(url, {
+        method: "POST", signal: AbortSignal.timeout(30000),
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model, response_format: { type: "json_object" }, messages: [
+          { role: "system", content: PROMPT }, { role: "user", content: texto.slice(-12000) }] }),
+      });
+      if (!r.ok) { log(`IA ${p} ${r.status}`); continue; }
+      const j = await r.json();
+      const c = j.choices?.[0]?.message?.content || "";
+      return validarRespostaIA(JSON.parse(c.replace(/^```(json)?|```$/g, "").trim()));
+    } catch (e) { log(`IA ${p} falhou: ${e?.message || e}`); }
+  }
+  return null;
+}
+
 async function visivel(page, sels) {
   for (const s of sels) { const l = page.locator(s).first(); try { if (await l.count() && await l.isVisible()) return s; } catch {} }
   return null;
@@ -77,6 +112,7 @@ async function processar(job) {
     return patch("onedoc_jobs", `id=eq.${job.id}`, { status: "erro", mensagem: "Configure link, usuário e senha do 1Doc", finalizado_em: new Date().toISOString() });
   }
   cfg.senha = await decifrar(cfg.senha_cifrada);
+  await carregarIA();
   const browser = await chromium.launch({ headless: true });
   const ctx = await browser.newContext({ locale: "pt-BR", viewport: { width: 1366, height: 900 } });
   const page = await ctx.newPage();
@@ -102,6 +138,17 @@ async function processar(job) {
           if (await visivel(page, ['input[type="password"]'])) { await login(page, cfg); await page.goto(url, { waitUntil: "domcontentloaded" }); await page.waitForTimeout(1800); }
           const texto = await page.evaluate(() => document.body.innerText || "");
           const a = analisarTexto1doc(texto);
+          let fonte = "regra";
+          if (precisaIA(texto, a, p)) {
+            const ia = await chamarIA(texto);
+            if (ia && (ia.baixado_em || ia.arquivado_em || ia.endereco)) {
+              fonte = "ia";
+              a.baixado_em ||= ia.baixado_em;
+              a.arquivado_em ||= ia.arquivado_em;
+              a.endereco ||= ia.endereco;
+              if (a.situacao === "em_andamento") a.situacao = a.arquivado_em ? "arquivada" : a.baixado_em ? "baixada" : a.situacao;
+            }
+          }
           const upd = atualizacaoProtocolo(p, a);
           if (p.latitude == null || p.longitude == null) {
             const end = upd.endereco || p.endereco;
@@ -113,7 +160,7 @@ async function processar(job) {
             protocolo_id: p.id, campo: "agente_1doc", acao: "update", autor_nome: "Agente 1Doc",
             valor_anterior: p.status, valor_novo: `${a.situacao}${a.baixado_em ? " · baixa " + a.baixado_em : ""}${a.arquivado_em ? " · arquivo " + a.arquivado_em : ""}`,
           }) }).catch(() => {});
-          Object.assign(r, { situacao: a.situacao, baixado_em: a.baixado_em, arquivado_em: a.arquivado_em, concluido: !!upd.status });
+          Object.assign(r, { fonte, situacao: a.situacao, baixado_em: a.baixado_em, arquivado_em: a.arquivado_em, concluido: !!upd.status });
         } catch (e) { erros++; r.erro = String(e?.message || e).slice(0, 200); }
         processados++;
         resultados.push(r);
@@ -123,7 +170,7 @@ async function processar(job) {
         await sleep(DELAY);
       }
     }
-    await patch("onedoc_jobs", `id=eq.${job.id}`, { status: "concluido", processados, atualizados, erros, resultados: resultados.slice(-200), finalizado_em: new Date().toISOString(), mensagem: `${processados} conferidas, ${atualizados} concluídas, ${erros} com erro` });
+    await patch("onedoc_jobs", `id=eq.${job.id}`, { status: "concluido", processados, atualizados, erros, resultados: resultados.slice(-200), finalizado_em: new Date().toISOString(), mensagem: `${processados} conferidas, ${atualizados} concluídas, ${resultados.filter((x) => x.fonte === "ia").length} com IA, ${erros} com erro` });
   } catch (e) {
     await patch("onedoc_jobs", `id=eq.${job.id}`, { status: "erro", processados, atualizados, erros, resultados: resultados.slice(-200), mensagem: String(e?.message || e).slice(0, 300), finalizado_em: new Date().toISOString() });
   } finally {
