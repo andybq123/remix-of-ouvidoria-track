@@ -17,6 +17,10 @@ describe("políticas do TanStack Query", () => {
     expect(shouldRetry(0, new Error("rede"))).toBe(true);
     expect(shouldRetry(1, new Error("rede"))).toBe(false);
   });
+  it("sino de avisos reconfere só a cada 1 hora", () => {
+    expect(qc.getQueryDefaults(["protocolos-alertas"]).staleTime).toBe(3_600_000);
+    expect(qc.getQueryDefaults(["triagem-pendentes-count"]).staleTime).toBe(3_600_000);
+  });
   it("não repete erro de permissão", () => {
     expect(shouldRetry(0, { status: 403 })).toBe(false);
     expect(shouldRetry(0, { code: "42501" })).toBe(false);

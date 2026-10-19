@@ -7,6 +7,7 @@ export const STALE = {
   detalhe: 15_000, // detalhe e histórico
   dashboard: 45_000, // indicadores
   busca: 15_000, // buscas/filtros
+  alertas: 60 * 60_000, // sino de avisos: reconfere a cada 1 hora
 } as const;
 
 /** Chaves centralizadas para código novo; inclua todos os parâmetros que mudam o resultado. */
@@ -50,8 +51,8 @@ const POR_PREFIXO: Array<[string, number]> = [
   ["historico", STALE.detalhe],
   ["protocolos-dashboard", STALE.dashboard],
   ["triagem-stats", STALE.dashboard],
-  ["triagem-pendentes-count", STALE.dashboard],
-  ["protocolos-alertas", STALE.dashboard],
+  ["triagem-pendentes-count", STALE.alertas],
+  ["protocolos-alertas", STALE.alertas],
   ["protocolos-open-count", STALE.dashboard],
   ["protocolos-mapa-setores", STALE.dashboard],
   ["protocolos-por-local-setores", STALE.dashboard],

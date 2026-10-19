@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllPaginated } from "@/lib/fetch-all";
+import { STALE } from "@/lib/query-policies";
 import { situacaoProtocolo, formatDate } from "@/lib/prazo";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 
@@ -28,7 +29,7 @@ export function NotificationBell() {
           .order("data_abertura", { ascending: false })
           .range(from, to),
       ),
-    refetchInterval: 5 * 60_000,
+    refetchInterval: STALE.alertas,
   });
 
   const { data: triagemPendentes = 0 } = useQuery({
@@ -40,7 +41,7 @@ export function NotificationBell() {
         .eq("triagem_pendente", true);
       return count ?? 0;
     },
-    refetchInterval: 5 * 60_000,
+    refetchInterval: STALE.alertas,
   });
 
   // Ao abrir um aviso, busca o registro completo para o detalhe.
