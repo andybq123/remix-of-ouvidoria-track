@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { currentMonthValue } from "@/lib/month-filter";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 import { ChartTooltipContent } from "@/components/chart-tooltip";
+import { HealthUnitChart } from "@/components/health-unit-chart";
 import { format, startOfMonth, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -209,31 +210,7 @@ function SaudePage() {
           <Card>
             <CardHeader><CardTitle className="text-base">Por unidade de saúde</CardTitle></CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={340}>
-                <PieChart>
-                  <Pie
-                    data={porUnidade}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={120}
-                    minAngle={4}
-                    paddingAngle={2}
-                    stroke="#ffffff"
-                    strokeWidth={2}
-                    labelLine={false}
-                    label={({ value }: any) => value}
-                  >
-                    {porUnidade.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<ChartTooltipContent unit="protocolo(s)" />} />
-                  <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => <span className="text-xs">{v}</span>} />
-                </PieChart>
-              </ResponsiveContainer>
+              <HealthUnitChart data={porUnidade} />
             </CardContent>
           </Card>
 
