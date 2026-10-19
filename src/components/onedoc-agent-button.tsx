@@ -18,7 +18,7 @@ export function OnedocAgentButton({ tipo, protocoloId, label, size = "sm", onDon
   const qc = useQueryClient();
   const [job, setJob] = useState<OnedocJob | null>(null);
   const [rodando, setRodando] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
 
   async function iniciar() {
