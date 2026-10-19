@@ -17,6 +17,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as InicioRouteImport } from './routes/inicio'
 import { Route as OuvidoriaRouteImport } from './routes/ouvidoria'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedAgente1docRouteImport } from './routes/_authenticated/agente-1doc'
 import { Route as AuthenticatedAssuntosRouteImport } from './routes/_authenticated/assuntos'
 import { Route as AuthenticatedAtrasadosRouteImport } from './routes/_authenticated/atrasados'
 import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated/backup'
@@ -80,6 +81,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAgente1docRoute = AuthenticatedAgente1docRouteImport.update({
+  id: '/agente-1doc',
+  path: '/agente-1doc',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAssuntosRoute = AuthenticatedAssuntosRouteImport.update({
   id: '/assuntos',
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/inicio': typeof InicioRoute
   '/ouvidoria': typeof OuvidoriaRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/agente-1doc': typeof AuthenticatedAgente1docRoute
   '/assuntos': typeof AuthenticatedAssuntosRoute
   '/atrasados': typeof AuthenticatedAtrasadosRoute
   '/backup': typeof AuthenticatedBackupRoute
@@ -251,6 +258,7 @@ export interface FileRoutesByTo {
   '/inicio': typeof InicioRoute
   '/ouvidoria': typeof OuvidoriaRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/agente-1doc': typeof AuthenticatedAgente1docRoute
   '/assuntos': typeof AuthenticatedAssuntosRoute
   '/atrasados': typeof AuthenticatedAtrasadosRoute
   '/backup': typeof AuthenticatedBackupRoute
@@ -285,6 +293,7 @@ export interface FileRoutesById {
   '/inicio': typeof InicioRoute
   '/ouvidoria': typeof OuvidoriaRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/agente-1doc': typeof AuthenticatedAgente1docRoute
   '/_authenticated/assuntos': typeof AuthenticatedAssuntosRoute
   '/_authenticated/atrasados': typeof AuthenticatedAtrasadosRoute
   '/_authenticated/backup': typeof AuthenticatedBackupRoute
@@ -320,6 +329,7 @@ export interface FileRouteTypes {
     | '/inicio'
     | '/ouvidoria'
     | '/reset-password'
+    | '/agente-1doc'
     | '/assuntos'
     | '/atrasados'
     | '/backup'
@@ -353,6 +363,7 @@ export interface FileRouteTypes {
     | '/inicio'
     | '/ouvidoria'
     | '/reset-password'
+    | '/agente-1doc'
     | '/assuntos'
     | '/atrasados'
     | '/backup'
@@ -386,6 +397,7 @@ export interface FileRouteTypes {
     | '/inicio'
     | '/ouvidoria'
     | '/reset-password'
+    | '/_authenticated/agente-1doc'
     | '/_authenticated/assuntos'
     | '/_authenticated/atrasados'
     | '/_authenticated/backup'
@@ -485,6 +497,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/agente-1doc': {
+      id: '/_authenticated/agente-1doc'
+      path: '/agente-1doc'
+      fullPath: '/agente-1doc'
+      preLoaderRoute: typeof AuthenticatedAgente1docRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/assuntos': {
       id: '/_authenticated/assuntos'
@@ -675,6 +694,7 @@ const AuthenticatedRelatoriosRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAgente1docRoute: typeof AuthenticatedAgente1docRoute
   AuthenticatedAssuntosRoute: typeof AuthenticatedAssuntosRoute
   AuthenticatedAtrasadosRoute: typeof AuthenticatedAtrasadosRoute
   AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
@@ -695,6 +715,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAgente1docRoute: AuthenticatedAgente1docRoute,
   AuthenticatedAssuntosRoute: AuthenticatedAssuntosRoute,
   AuthenticatedAtrasadosRoute: AuthenticatedAtrasadosRoute,
   AuthenticatedBackupRoute: AuthenticatedBackupRoute,
