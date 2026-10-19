@@ -21,8 +21,12 @@ Limite importante: entrar no 1Doc com usuário e senha exige abrir um navegador 
 - Uma ouvidoria já concluída manualmente no sistema não é alterada. O agente só registra o que encontrou no 1Doc.
 - Cada atualização entra no **histórico** da ouvidoria como "Atualizado pelo agente 1Doc".
 
-## Pontos a confirmar durante a construção
-- Na tela do 1Doc, preciso confirmar onde aparecem "baixado", "arquivado" e a data. Se puder, mande um print de uma ouvidoria arquivada. Sem isso, uso as mesmas regras do coletor atual.
+## Como o agente reconhece a baixa e o arquivamento
+Com base no exemplo enviado, o agente lê no histórico da ouvidoria:
+- **Baixa:** linha "... deu baixa manualmente ... em 17/09/2026 às 14:09:49". Guarda a data e a hora da baixa e o setor (ex.: SETA - OUV).
+- **Arquivamento:** linha "... arquivou." Usa a data e a hora acima da linha (ex.: 17/09/2026 14:16:55).
+- Se houver mais de uma baixa ou arquivamento, vale o mais recente.
+- A **data de conclusão** no sistema passa a ser a data da baixa. Se não houver baixa, usa a do arquivamento.
 - O agente abre uma ouvidoria por vez, com uma pausa curta entre elas, para não sobrecarregar o 1Doc.
 
 ## Detalhes técnicos
