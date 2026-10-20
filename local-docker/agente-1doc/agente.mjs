@@ -2,7 +2,7 @@
 // com a configuração salva no sistema e confere baixa/arquivamento de cada ouvidoria.
 import { chromium } from "playwright";
 import { webcrypto as wc } from "node:crypto";
-import { analisarTexto1doc, atualizacaoProtocolo, precisaIA, validarRespostaIA } from "./parse.mjs";
+import { analisarTexto1doc, atualizacaoProtocolo, precisaIA, validarRespostaIA, somenteCamposAgente, paginaDaOuvidoria } from "./parse.mjs";
 import { resultadoConferencia } from "./resultado.mjs";
 
 const URL_DB = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
@@ -128,9 +128,9 @@ async function processar(job) {
     const ids = job.protocolo_ids || [];
     for (let i = 0; i < ids.length; i += 100) {
       const lote = ids.slice(i, i + 100);
-      const prots = await rest(`protocolos?select=id,numero,status,url,endereco,latitude,longitude,secretaria_id,secretarias(nome)&id=in.(${lote.join(",")})`);
+      const prots = await rest(`protocolos?select=id,numero,assunto,status,url,endereco,latitude,longitude,secretaria_id,secretarias(nome)&id=in.(${lote.join(",")})`);
       for (const p of prots) {
-        const r = { id: p.id, numero: p.numero, secretaria_id: p.secretaria_id, secretaria_nome: p.secretarias?.nome ?? "Sem secretaria" };
+        const r = { id: p.id, numero: p.numero, assunto: p.assunto ?? null, secretaria_id: p.secretaria_id, secretaria_nome: p.secretarias?.nome ?? "Sem secretaria" };
         try {
           const url = limparUrl(p.url);
           if (!url) throw new Error("sem link válido do 1Doc");
@@ -138,6 +138,8 @@ async function processar(job) {
           await page.waitForTimeout(1800);
           if (await visivel(page, ['input[type="password"]'])) { await login(page, cfg); await page.goto(url, { waitUntil: "domcontentloaded" }); await page.waitForTimeout(1800); }
           const texto = await page.evaluate(() => document.body.innerText || "");
+          // Link quebrado ou de outra ouvidoria: não grava nada neste protocolo.
+          if (!paginaDaOuvidoria(texto, p.numero)) throw new Error("link do 1Doc quebrado ou de outra ouvidoria; nada foi alterado");
           const a = analisarTexto1doc(texto);
           let fonte = "regra";
           if (precisaIA(texto, a, p)) {
@@ -148,12 +150,12 @@ async function processar(job) {
               a.endereco ||= ia.endereco;
             }
           }
-          const upd = atualizacaoProtocolo(p, a);
+          const upd = somenteCamposAgente(atualizacaoProtocolo(p, a));
           if (p.latitude == null || p.longitude == null) {
             const end = upd.endereco || p.endereco;
             if (end) { const c = await geocodificar(end); if (c) Object.assign(upd, c); }
           }
-          await patch("protocolos", `id=eq.${p.id}`, upd);
+          await patch("protocolos", `id=eq.${p.id}`, somenteCamposAgente(upd));
           if (upd.status) atualizados++;
           await rest("protocolo_historico", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({
             protocolo_id: p.id, campo: "agente_1doc", acao: "update", autor_nome: "Agente 1Doc",

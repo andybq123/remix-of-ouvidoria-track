@@ -68,3 +68,20 @@ describe("agente 1Doc", () => {
     expect(v.endereco).toBe("Rua Azambuja, 100");
   });
 });
+
+// @ts-expect-error módulo JS compartilhado com o agente da VPS
+import { somenteCamposAgente, paginaDaOuvidoria } from "../../local-docker/agente-1doc/parse.mjs";
+describe("agente 1Doc protege a ouvidoria", () => {
+  it("nunca grava assunto nem secretaria", () => {
+    const u = somenteCamposAgente({ assunto: "Secretaria de Obras", secretaria_id: "x", endereco: "Rua A", status: "concluido" });
+    expect(u).toEqual({ endereco: "Rua A", status: "concluido" });
+  });
+  it("reconhece a página da própria ouvidoria", () => {
+    expect(paginaDaOuvidoria("Ouvidoria 2.240/2026 - Buraco", "2240/2026")).toBe(true);
+    expect(paginaDaOuvidoria("Ouvidoria 2240/2026", "2.240/2026")).toBe(true);
+  });
+  it("recusa link quebrado ou de outra ouvidoria", () => {
+    expect(paginaDaOuvidoria("Página não encontrada", "2240/2026")).toBe(false);
+    expect(paginaDaOuvidoria("Ouvidoria 1.999/2026", "2240/2026")).toBe(false);
+  });
+});

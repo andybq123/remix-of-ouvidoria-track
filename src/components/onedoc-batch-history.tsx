@@ -37,7 +37,7 @@ function Lote({ job }: { job: OnedocJob }) {
         <Table>
           <TableHeader><TableRow><TableHead>Ouvidoria</TableHead><TableHead>Secretaria</TableHead><TableHead>Conferência</TableHead><TableHead>Endereço</TableHead><TableHead>Conclusão</TableHead></TableRow></TableHeader>
           <TableBody>{resultados.slice(pagina * 25, pagina * 25 + 25).map((r) => <TableRow key={r.id}>
-            <TableCell className="whitespace-nowrap font-mono">{r.numero ?? r.id}</TableCell>
+            <TableCell className="min-w-36"><span className="whitespace-nowrap font-mono">{r.numero ?? r.id}</span>{r.assunto && <p className="text-xs text-muted-foreground break-words">{r.assunto}</p>}</TableCell>
             <TableCell className="min-w-36">{r.secretaria_nome ?? "Não registrada"}</TableCell>
             <TableCell className="min-w-36">{r.erro ? <span className="text-destructive break-words">{r.erro}</span> : "Verificada"}{r.verificado_em && <p className="text-xs text-muted-foreground">{dataHora(r.verificado_em)}</p>}</TableCell>
             <TableCell className="min-w-56 max-w-80 break-words">

@@ -1,7 +1,7 @@
 // Snapshot de alterações efetivamente salvas, independente do estado futuro do protocolo.
 export function resultadoConferencia(protocolo, atualizacao, analise, fonte, agora = new Date()) {
   return {
-    id: protocolo.id, numero: protocolo.numero,
+    id: protocolo.id, numero: protocolo.numero, assunto: protocolo.assunto ?? null,
     secretaria_id: protocolo.secretaria_id ?? null,
     secretaria_nome: protocolo.secretarias?.nome ?? "Sem secretaria",
     verificado_em: agora.toISOString(), fonte,
