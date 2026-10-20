@@ -18,6 +18,7 @@ import { RealtimeSyncProvider } from "@/hooks/realtime-sync-context";
 import { OnlineUsersProvider, useOnlineUsers } from "@/hooks/use-online-users";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { LayoutMode } from "@/hooks/use-layout-mode";
+import { OnedocBackgroundProvider } from "@/components/onedoc-background-provider";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -36,6 +37,11 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthLayout() {
+  const { user } = Route.useRouteContext();
+  return <OnedocBackgroundProvider key={user.id} userId={user.id}><AuthLayoutContent /></OnedocBackgroundProvider>;
+}
+
+function AuthLayoutContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: s => s.location.pathname });

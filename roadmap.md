@@ -1,4 +1,5 @@
 # Tarefas
+- [x] Manter conferências 1Doc em segundo plano entre páginas e avisar ao finalizar; 21 testes passaram e navegação/recuperação/aviso único foram validados com sessão real e fila simulada, sem alterar protocolos reais.
 - [x] Revisar código sincronizado e alterações relacionadas aos mapas.
 - [x] Permitir escolher e aplicar ícones independentes para Obras e Saúde.
 - [x] Validar seleção, persistência e exibição dos ícones; verificar erros existentes.
