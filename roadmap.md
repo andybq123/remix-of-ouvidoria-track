@@ -1,4 +1,5 @@
 # Tarefas
+- [x] Permitir cadastrar e alterar o link 1Doc nas ouvidorias, inclusive importadas, e mostrar ações após salvar; 13 testes passaram e cadastro/alteração/persistência/botões foram conferidos com sessão real em registro temporário importado, removido após o teste.
 - [x] Manter conferências 1Doc em segundo plano entre páginas e avisar ao finalizar; 21 testes passaram e navegação/recuperação/aviso único foram validados com sessão real e fila simulada, sem alterar protocolos reais.
 - [x] Revisar código sincronizado e alterações relacionadas aos mapas.
 - [x] Permitir escolher e aplicar ícones independentes para Obras e Saúde.

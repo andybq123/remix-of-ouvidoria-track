@@ -1,6 +1,7 @@
 import { formatarNumeroEsic } from "@/lib/esic";
 import { urlValida1doc } from "@/lib/url-1doc";
 import { OnedocAgentButton } from "@/components/onedoc-agent-button";
+import { ProtocoloOnedocLink } from "@/components/protocolo-onedoc-link";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -75,6 +76,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
   });
   const protocolo = protocoloFresh ?? protocoloProp;
   const isLegacy = protocolo?.__antigo === true;
+  const link1doc = urlValida1doc(protocolo?.url);
 
   // Tenta reservar a triagem ao abrir; libera ao fechar
   useEffect(() => {
@@ -484,10 +486,10 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
                 "Finaliza a triagem encaminhando o protocolo à secretaria/local definidos (Ctrl + Enter)"
               )
             )}
-            {urlValida1doc(protocolo?.url) && (
+            {link1doc && (
               wrapTooltip(
                 "abrir-1doc",
-                <a href={urlValida1doc(protocolo.url)!} target="_blank" rel="noopener noreferrer">
+                <a href={link1doc} target="_blank" rel="noopener noreferrer">
                   <Button
                     size="sm"
                     className="bg-sky-600 text-white hover:bg-sky-700"
@@ -498,7 +500,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
                 "Abre o protocolo no sistema 1Doc em uma nova aba"
               )
             )}
-            {!isLegacy && urlValida1doc(protocolo?.url) && (
+            {!isLegacy && link1doc && (
               wrapTooltip(
                 "agente-1doc",
                 <span><OnedocAgentButton tipo="unitario" protocoloId={protocolo.id} label="Atualizar pelo 1Doc" /></span>,
@@ -577,9 +579,9 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
             )}
           </div>
         </div>}
-        {!isAdmin && urlValida1doc(protocolo?.url) && (
+        {!isAdmin && link1doc && (
           <div className="border-y py-3">
-            <a href={urlValida1doc(protocolo.url)!} target="_blank" rel="noopener noreferrer">
+            <a href={link1doc} target="_blank" rel="noopener noreferrer">
               <Button size="sm" className="bg-sky-600 text-white hover:bg-sky-700">
                 <ExternalLink className="h-4 w-4 mr-1" /> Abrir no 1Doc
               </Button>
@@ -595,6 +597,10 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
             </TabsTrigger>
           </TabsList>
           <TabsContent value="detalhes" className="space-y-4">
+        {isAdmin && !isLegacy && (
+          <ProtocoloOnedocLink key={protocolo.id} protocoloId={protocolo.id}
+            url={protocolo.url ?? null} disabled={lockBloqueia || update.isPending} />
+        )}
         {!editing ? (
           <div className="space-y-4">
             <div>
@@ -813,7 +819,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
             protocolo?.__antigo === true ||
             protocolo?.detalhes?.legacy === true ||
             (typeof protocolo?.origem === "string" && protocolo.origem.startsWith("antigo:"));
-          if (!urlValida1doc(protocolo?.url) && isLegacyFooter) {
+          if (!link1doc && isLegacyFooter && isLegacy) {
             return (
               <DialogFooter className="border-t pt-3">
                 <div className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">

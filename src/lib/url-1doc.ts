@@ -1,3 +1,14 @@
+// Validação estrita para links cadastrados manualmente, sem alterar links legados.
+export function link1docParaSalvar(raw: string): string | null {
+  if (!raw.trim()) return null;
+  const link = urlValida1doc(raw);
+  if (link) {
+    const host = new URL(link).hostname.toLowerCase();
+    if (host === "1doc.com.br" || host.endsWith(".1doc.com.br")) return link;
+  }
+  throw new Error("Informe um link válido do 1Doc (1doc.com.br).");
+}
+
 // Limpa e valida links do 1doc (entidades HTML, quoted-printable, redirecionadores).
 export function urlValida1doc(raw: string | null | undefined): string | null {
   if (!raw) return null;
