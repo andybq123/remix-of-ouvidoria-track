@@ -20,6 +20,9 @@ import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { mapDepartmentOf } from "@/lib/map-departments";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { MapPointPicker } from "@/components/map-point-picker";
+import { OnedocAgentButton } from "@/components/onedoc-agent-button";
+import { idsOuvidorias1doc } from "@/lib/onedoc-batch";
+import { useIsAdmin } from "@/hooks/use-is-admin";
 
 export const Route = createFileRoute("/_authenticated/tarefas")({
   head: () => ({ meta: [
@@ -139,6 +142,8 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
   const [soSemLocal, setSoSemLocal] = useState(true);
   const [busca, setBusca] = useState("");
   const [editando, setEditando] = useState<string | null>(null);
+  const isAdmin = useIsAdmin();
+  const qc = useQueryClient();
   const todas = sec === "todas";
   const { data: rows = [], isFetching } = useQuery({
     queryKey: ["atrasadas-localizacao", sec],
@@ -155,7 +160,7 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
       return all
         .map((p: any) => ({ p, r: resumoPrazoMapa(p) }))
         .filter((x) => x.r?.atrasado)
-        .sort((a, b) => (b.r!.diasAtraso - a.r!.diasAtraso));
+        .sort((a, b) => ((b.r?.diasAtraso ?? 0) - (a.r?.diasAtraso ?? 0)));
     },
   });
   const semLocal = (p: any) => p.latitude == null || p.longitude == null;
@@ -163,6 +168,8 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
   const lista = rows
     .filter((x) => !soSemLocal || semLocal(x.p))
     .filter((x) => matchProtocolo(x.p, termos));
+  const ids1doc = idsOuvidorias1doc(rows.map((x) => x.p));
+  const secretariaNome = secretarias.find((x) => x.id === sec)?.nome ?? "";
 
   return (
     <>
@@ -187,6 +194,16 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
             {secretarias.map((x) => <SelectItem key={x.id} value={x.id}>{x.nome}</SelectItem>)}
           </SelectContent>
         </Select>
+        {isAdmin && sec && !todas && (
+          <OnedocAgentButton
+            tipo="lote"
+            protocoloIds={ids1doc}
+            label={`Conferir atrasadas pelo 1Doc (${ids1doc.length})`}
+            disabled={isFetching || ids1doc.length === 0}
+            confirmacao={`Conferir as ${ids1doc.length} ouvidorias atrasadas com link 1Doc de ${secretariaNome}? Inclui as que já têm localização. Endereços existentes serão preservados; só serão concluídas as que tiverem a linha de baixa no 1Doc.`}
+            onDone={() => { qc.invalidateQueries({ queryKey: ["atrasadas-localizacao"] }); }}
+          />
+        )}
         <Input placeholder="Buscar nº, assunto, solicitante, endereço…" value={busca}
           onChange={(e) => setBusca(e.target.value)} className="w-[300px]" disabled={!sec} />
         <label className="flex items-center gap-2 text-sm cursor-pointer">

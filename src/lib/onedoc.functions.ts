@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { exigirAdmin } from "@/lib/admin-guard.server";
+import { onedocInputSchema } from "@/lib/onedoc-batch";
 
 export type OnedocJob = {
   id: string; tipo: string; status: string; total: number; processados: number;
@@ -48,7 +49,7 @@ export const salvarOnedocConfig = createServerFn({ method: "POST" })
 
 export const enfileirarOnedoc = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { tipo: "teste" | "unitario" | "lote"; protocoloId?: string }) => d)
+  .inputValidator((d: { tipo: "teste" | "unitario" | "lote"; protocoloId?: string; protocoloIds?: string[] }) => onedocInputSchema.parse(d))
   .handler(async ({ data, context }) => {
     await exigirAdmin(context);
     let ids: string[] = [];
@@ -56,9 +57,11 @@ export const enfileirarOnedoc = createServerFn({ method: "POST" })
       if (!data.protocoloId) throw new Error("Protocolo não informado");
       ids = [data.protocoloId];
     } else if (data.tipo === "lote") {
-      const { data: rows, error } = await context.supabase.from("protocolos")
-        .select("id").neq("status", "concluido").ilike("url", "%1doc%").limit(5000);
-      if (error) throw new Error(error.message);
+      let query = context.supabase.from("protocolos")
+        .select("id").neq("status", "concluido").ilike("url", "%1doc%");
+      if (data.protocoloIds) query = query.in("id", data.protocoloIds).eq("tipo", "ouvidoria");
+      const { fetchAllPaginated } = await import("@/lib/fetch-all");
+      const rows = await fetchAllPaginated((from, to) => query.order("id").range(from, Math.min(to, 4999)));
       ids = (rows ?? []).map((r: any) => r.id);
       if (!ids.length) throw new Error("Nenhuma ouvidoria em aberto com link do 1Doc");
     }
