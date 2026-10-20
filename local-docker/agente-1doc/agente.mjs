@@ -2,7 +2,7 @@
 // com a configuração salva no sistema e confere baixa/arquivamento de cada ouvidoria.
 import { chromium } from "playwright";
 import { webcrypto as wc } from "node:crypto";
-import { analisarTexto1doc, atualizacaoProtocolo, precisaIA, validarRespostaIA, somenteCamposAgente, paginaDaOuvidoria } from "./parse.mjs";
+import { analisarTexto1doc, atualizacaoProtocolo, precisaIA, validarRespostaIA, somenteCamposAgente, paginaDaOuvidoria, assuntoDoCatalogo } from "./parse.mjs";
 import { resultadoConferencia } from "./resultado.mjs";
 
 const URL_DB = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
@@ -125,6 +125,7 @@ async function processar(job) {
     if (job.tipo === "teste") {
       return await patch("onedoc_jobs", `id=eq.${job.id}`, { status: "concluido", mensagem: "Login no 1Doc funcionou", finalizado_em: new Date().toISOString() });
     }
+    const catalogo = (await rest("assuntos?select=nome&ativo=eq.true")).map((x) => x.nome);
     const ids = job.protocolo_ids || [];
     for (let i = 0; i < ids.length; i += 100) {
       const lote = ids.slice(i, i + 100);
@@ -151,6 +152,8 @@ async function processar(job) {
             }
           }
           const upd = somenteCamposAgente(atualizacaoProtocolo(p, a));
+          const assunto = assuntoDoCatalogo(texto, catalogo);
+          if (assunto && assunto !== p.assunto) upd.assunto = assunto;
           if (p.latitude == null || p.longitude == null) {
             const end = upd.endereco || p.endereco;
             if (end) { const c = await geocodificar(end); if (c) Object.assign(upd, c); }

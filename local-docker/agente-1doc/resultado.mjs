@@ -12,6 +12,9 @@ export function resultadoConferencia(protocolo, atualizacao, analise, fonte, ago
     endereco_novo: atualizacao.endereco ?? protocolo.endereco ?? null,
     concluido: atualizacao.status === "concluido" && protocolo.status !== "concluido",
     data_conclusao: atualizacao.data_conclusao ?? null,
+    assunto_atualizado: typeof atualizacao.assunto === "string" && atualizacao.assunto !== protocolo.assunto,
+    assunto_anterior: protocolo.assunto ?? null,
+    assunto_novo: atualizacao.assunto ?? protocolo.assunto ?? null,
     localizacao_atualizada: atualizacao.latitude != null && atualizacao.longitude != null,
   };
 }
