@@ -3,6 +3,7 @@ export type OnedocResultado = {
   verificado_em?: string; erro?: string; concluido?: boolean; data_conclusao?: string | null;
   endereco_atualizado?: boolean; endereco_anterior?: string | null; endereco_novo?: string | null;
   localizacao_atualizada?: boolean;
+  situacao?: string;
 };
 export type OnedocContexto = {
   escopo?: string; secretarias?: { id: string | null; nome: string }[];
