@@ -395,6 +395,7 @@ export type Database = {
       onedoc_jobs: {
         Row: {
           atualizados: number
+          contexto: Json
           created_at: string
           criado_por: string | null
           erros: number
@@ -411,6 +412,7 @@ export type Database = {
         }
         Insert: {
           atualizados?: number
+          contexto?: Json
           created_at?: string
           criado_por?: string | null
           erros?: number
@@ -427,6 +429,7 @@ export type Database = {
         }
         Update: {
           atualizados?: number
+          contexto?: Json
           created_at?: string
           criado_por?: string | null
           erros?: number

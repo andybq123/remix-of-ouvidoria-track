@@ -1,0 +1,2 @@
+ALTER TABLE public.onedoc_jobs ADD COLUMN IF NOT EXISTS contexto jsonb NOT NULL DEFAULT '{}'::jsonb;
+COMMENT ON COLUMN public.onedoc_jobs.contexto IS 'Snapshot das secretarias e do escopo no momento da conferência 1Doc.';

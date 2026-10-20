@@ -9,8 +9,8 @@ import { invalidateProtocoloCaches } from "@/hooks/use-protocolos-realtime";
 
 const SITUACAO: Record<string, string> = { arquivada: "arquivada", baixada: "baixada", em_andamento: "ainda em andamento" };
 
-export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, confirmacao, disabled = false, label, size = "sm", onDone }: {
-  tipo: "teste" | "unitario" | "lote"; protocoloId?: string; protocoloIds?: string[]; confirmacao?: string; disabled?: boolean; label: string;
+export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, secretariaId, confirmacao, disabled = false, label, size = "sm", onDone }: {
+  tipo: "teste" | "unitario" | "lote"; protocoloId?: string; protocoloIds?: string[]; secretariaId?: string; confirmacao?: string; disabled?: boolean; label: string;
   size?: "sm" | "default"; onDone?: (job: OnedocJob) => void;
 }) {
   const enfileirar = useServerFn(enfileirarOnedoc);
@@ -26,7 +26,8 @@ export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, confirmacao
     setRodando(true);
     setJob(null);
     try {
-      const { id } = await enfileirar({ data: { tipo, protocoloId, protocoloIds } });
+      const { id } = await enfileirar({ data: { tipo, protocoloId, protocoloIds, secretariaId } });
+      qc.invalidateQueries({ queryKey: ["onedoc-historico"] });
       const inicio = Date.now();
       let avisou = false;
       const tick = async () => {
@@ -40,11 +41,12 @@ export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, confirmacao
           setRodando(false);
           invalidateProtocoloCaches(qc);
           qc.invalidateQueries({ queryKey: ["onedoc-config"] });
+          qc.invalidateQueries({ queryKey: ["onedoc-historico"] });
           if (j.status === "erro") toast.error(j.mensagem || "Falha no agente 1Doc");
           else if (tipo === "unitario") {
             const r = (j.resultados || [])[0];
             if (r?.erro) toast.error(`1Doc: ${r.erro}`);
-            else toast.success(`1Doc: ${SITUACAO[r?.situacao] ?? "conferida"}${r?.concluido ? " — marcada como concluída" : ""}`);
+            else toast.success(`1Doc: ${(r?.situacao ? SITUACAO[r.situacao] : undefined) ?? "conferida"}${r?.concluido ? " — marcada como concluída" : ""}`);
           } else toast.success(j.mensagem || "Concluído");
           onDone?.(j);
           return;

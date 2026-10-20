@@ -23,6 +23,7 @@ import { MapPointPicker } from "@/components/map-point-picker";
 import { OnedocAgentButton } from "@/components/onedoc-agent-button";
 import { idsOuvidorias1doc } from "@/lib/onedoc-batch";
 import { useIsAdmin } from "@/hooks/use-is-admin";
+import { OnedocBatchHistory } from "@/components/onedoc-batch-history";
 
 export const Route = createFileRoute("/_authenticated/tarefas")({
   head: () => ({ meta: [
@@ -198,6 +199,7 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
           <OnedocAgentButton
             tipo="lote"
             protocoloIds={ids1doc}
+            secretariaId={sec}
             label={`Conferir atrasadas pelo 1Doc (${ids1doc.length})`}
             disabled={isFetching || ids1doc.length === 0}
             confirmacao={`Conferir as ${ids1doc.length} ouvidorias atrasadas com link 1Doc de ${secretariaNome}? Inclui as que já têm localização. Endereços existentes serão preservados; só serão concluídas as que tiverem a linha de baixa no 1Doc.`}
@@ -255,6 +257,7 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
           ))}
         </div>
       )}
+      {isAdmin && <OnedocBatchHistory key={sec} secretariaId={sec && !todas ? sec : undefined} />}
     </>
   );
 }

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { getOnedocConfig, salvarOnedocConfig } from "@/lib/onedoc.functions";
 import { OnedocAgentButton } from "@/components/onedoc-agent-button";
+import { OnedocBatchHistory } from "@/components/onedoc-batch-history";
 
 export const Route = createFileRoute("/_authenticated/agente-1doc")({
   head: () => ({
@@ -107,6 +108,7 @@ function AgentePage() {
           )}
         </CardContent>
       </Card>
+      <OnedocBatchHistory />
     </div>
   );
 }
