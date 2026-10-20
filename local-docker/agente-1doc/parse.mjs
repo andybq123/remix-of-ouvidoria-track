@@ -112,8 +112,8 @@ export function validarRespostaIA(json, agora = new Date()) {
   return out;
 }
 
-/** Campos que o agente pode gravar no protocolo. Assunto, secretaria e demais dados nunca mudam. */
-const CAMPOS_AGENTE = ["onedoc_situacao", "onedoc_baixado_em", "onedoc_arquivado_em", "onedoc_verificado_em", "endereco", "latitude", "longitude", "status", "data_conclusao"];
+/** Campos que o agente pode gravar. Assunto só com nome do catálogo; secretaria e demais dados nunca mudam. */
+const CAMPOS_AGENTE = ["onedoc_situacao", "onedoc_baixado_em", "onedoc_arquivado_em", "onedoc_verificado_em", "endereco", "latitude", "longitude", "status", "data_conclusao", "assunto"];
 export function somenteCamposAgente(upd) {
   return Object.fromEntries(Object.entries(upd || {}).filter(([k]) => CAMPOS_AGENTE.includes(k)));
 }
@@ -126,4 +126,17 @@ export function paginaDaOuvidoria(texto, numero) {
   const t = String(texto || "").replace(/(\d)\.(?=\d{3}\b)/g, "$1");
   const re = new RegExp(`(^|\\D)0*${dig}${ano ? `\\s*/\\s*${ano.replace(/\D/g, "")}` : ""}(\\D|$)`);
   return re.test(t);
+}
+
+const norm = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+/** Procura no texto do 1Doc um assunto do catálogo (palavra inteira; o nome mais longo vence). */
+export function assuntoDoCatalogo(texto, nomes) {
+  const t = ` ${norm(texto).replace(/[^a-z0-9]+/g, " ")} `;
+  let melhor = null;
+  for (const nome of nomes || []) {
+    const n = norm(nome).replace(/[^a-z0-9]+/g, " ").trim();
+    if (n.length < 3 || !t.includes(` ${n} `)) continue;
+    if (!melhor || n.length > norm(melhor).length) melhor = nome;
+  }
+  return melhor;
 }

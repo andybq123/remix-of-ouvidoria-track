@@ -70,11 +70,20 @@ describe("agente 1Doc", () => {
 });
 
 // @ts-expect-error módulo JS compartilhado com o agente da VPS
-import { somenteCamposAgente, paginaDaOuvidoria } from "../../local-docker/agente-1doc/parse.mjs";
+import { somenteCamposAgente, paginaDaOuvidoria, assuntoDoCatalogo } from "../../local-docker/agente-1doc/parse.mjs";
 describe("agente 1Doc protege a ouvidoria", () => {
-  it("nunca grava assunto nem secretaria", () => {
-    const u = somenteCamposAgente({ assunto: "Secretaria de Obras", secretaria_id: "x", endereco: "Rua A", status: "concluido" });
+  it("nunca grava secretaria", () => {
+    const u = somenteCamposAgente({ secretaria_id: "x", endereco: "Rua A", status: "concluido" });
     expect(u).toEqual({ endereco: "Rua A", status: "concluido" });
+  });
+  it("lê o assunto pelo catálogo, o nome mais longo vence", () => {
+    const cat = ["Buraco", "Buraco na via", "Iluminação pública"];
+    expect(assuntoDoCatalogo("Ouvidoria 2.240/2026 - BURACO NA VIA rua X", cat)).toBe("Buraco na via");
+    expect(assuntoDoCatalogo("Assunto: iluminacao publica", cat)).toBe("Iluminação pública");
+  });
+  it("sem assunto do catálogo na página não troca", () => {
+    expect(assuntoDoCatalogo("Página não encontrada", ["Buraco"])).toBeNull();
+    expect(assuntoDoCatalogo("Buracos diversos", ["Buraco"])).toBeNull();
   });
   it("reconhece a página da própria ouvidoria", () => {
     expect(paginaDaOuvidoria("Ouvidoria 2.240/2026 - Buraco", "2240/2026")).toBe(true);
