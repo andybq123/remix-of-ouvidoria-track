@@ -61,7 +61,7 @@ export const enfileirarOnedoc = createServerFn({ method: "POST" })
         .select("id").neq("status", "concluido").ilike("url", "%1doc%");
       if (data.protocoloIds) query = query.in("id", data.protocoloIds).eq("tipo", "ouvidoria");
       const { fetchAllPaginated } = await import("@/lib/fetch-all");
-      const rows = await fetchAllPaginated((from, to) => query.order("id").range(from, Math.min(to, 4999)));
+      const rows = await fetchAllPaginated((from, to) => query.order("id").range(from, to));
       ids = (rows ?? []).map((r: any) => r.id);
       if (!ids.length) throw new Error("Nenhuma ouvidoria em aberto com link do 1Doc");
     }
