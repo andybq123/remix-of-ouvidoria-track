@@ -49,6 +49,7 @@ const POR_PREFIXO: Array<[string, number]> = [
   ["atrasadas-localizacao", STALE.lista],
   ["protocolo", STALE.detalhe],
   ["historico", STALE.detalhe],
+  ["onedoc-historico", STALE.detalhe],
   ["protocolos-dashboard", STALE.dashboard],
   ["triagem-stats", STALE.dashboard],
   ["triagem-pendentes-count", STALE.alertas],

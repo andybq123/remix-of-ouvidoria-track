@@ -46,7 +46,7 @@ export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, secretariaI
           else if (tipo === "unitario") {
             const r = (j.resultados || [])[0];
             if (r?.erro) toast.error(`1Doc: ${r.erro}`);
-            else toast.success(`1Doc: ${SITUACAO[r?.situacao] ?? "conferida"}${r?.concluido ? " — marcada como concluída" : ""}`);
+            else toast.success(`1Doc: ${(r?.situacao ? SITUACAO[r.situacao] : undefined) ?? "conferida"}${r?.concluido ? " — marcada como concluída" : ""}`);
           } else toast.success(j.mensagem || "Concluído");
           onDone?.(j);
           return;
