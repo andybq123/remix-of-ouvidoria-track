@@ -5,3 +5,4 @@
 - Department-scoped 1Doc batches pass explicit protocol IDs through the shared queue endpoint, which rechecks open status and 1Doc links before enqueueing, so a scoped action never falls back to a global batch.
 - 1Doc history persists department snapshots in job context and full per-protocol outcome snapshots only after successful writes; shared paginated history reads remain admin-only so later edits cannot rewrite audit results.
 - Track browser-started 1Doc jobs in a user-scoped authenticated-layout provider with session storage recovery; page buttons only enqueue, so navigation cannot cancel completion notifications or cache refreshes.
+- Edit manual 1Doc links through a focused control in the shared protocol detail dialog using the existing protocol URL field; save only the link and refresh detail/list caches so imported rows follow the same flow without completing triage or changing other fields.
