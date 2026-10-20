@@ -111,3 +111,19 @@ export function validarRespostaIA(json, agora = new Date()) {
   }
   return out;
 }
+
+/** Campos que o agente pode gravar no protocolo. Assunto, secretaria e demais dados nunca mudam. */
+const CAMPOS_AGENTE = ["onedoc_situacao", "onedoc_baixado_em", "onedoc_arquivado_em", "onedoc_verificado_em", "endereco", "latitude", "longitude", "status", "data_conclusao"];
+export function somenteCamposAgente(upd) {
+  return Object.fromEntries(Object.entries(upd || {}).filter(([k]) => CAMPOS_AGENTE.includes(k)));
+}
+
+/** Confere se a página aberta é mesmo da ouvidoria (o número aparece no texto). */
+export function paginaDaOuvidoria(texto, numero) {
+  const [n, ano] = String(numero || "").split("/");
+  const dig = String(n || "").replace(/\D/g, "").replace(/^0+/, "");
+  if (!dig) return false;
+  const t = String(texto || "").replace(/(\d)\.(?=\d{3}\b)/g, "$1");
+  const re = new RegExp(`(^|\\D)0*${dig}${ano ? `\\s*/\\s*${ano.replace(/\D/g, "")}` : ""}(\\D|$)`);
+  return re.test(t);
+}

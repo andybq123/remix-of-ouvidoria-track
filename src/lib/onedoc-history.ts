@@ -1,5 +1,5 @@
 export type OnedocResultado = {
-  id: string; numero?: string; secretaria_id?: string | null; secretaria_nome?: string;
+  id: string; numero?: string; assunto?: string | null; secretaria_id?: string | null; secretaria_nome?: string;
   verificado_em?: string; erro?: string; concluido?: boolean; data_conclusao?: string | null;
   endereco_atualizado?: boolean; endereco_anterior?: string | null; endereco_novo?: string | null;
   localizacao_atualizada?: boolean;
