@@ -19,6 +19,7 @@ import { Route as OuvidoriaRouteImport } from './routes/ouvidoria'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAgente1docRouteImport } from './routes/_authenticated/agente-1doc'
 import { Route as AuthenticatedAssuntosRouteImport } from './routes/_authenticated/assuntos'
+import { Route as AuthenticatedAssuntosAlteradosRouteImport } from './routes/_authenticated/assuntos-alterados'
 import { Route as AuthenticatedAtrasadosRouteImport } from './routes/_authenticated/atrasados'
 import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated/backup'
 import { Route as AuthenticatedColetorRouteImport } from './routes/_authenticated/coletor'
@@ -92,6 +93,12 @@ const AuthenticatedAssuntosRoute = AuthenticatedAssuntosRouteImport.update({
   path: '/assuntos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAssuntosAlteradosRoute =
+  AuthenticatedAssuntosAlteradosRouteImport.update({
+    id: '/assuntos-alterados',
+    path: '/assuntos-alterados',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAtrasadosRoute = AuthenticatedAtrasadosRouteImport.update({
   id: '/atrasados',
   path: '/atrasados',
@@ -226,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/agente-1doc': typeof AuthenticatedAgente1docRoute
   '/assuntos': typeof AuthenticatedAssuntosRoute
+  '/assuntos-alterados': typeof AuthenticatedAssuntosAlteradosRoute
   '/atrasados': typeof AuthenticatedAtrasadosRoute
   '/backup': typeof AuthenticatedBackupRoute
   '/coletor': typeof AuthenticatedColetorRoute
@@ -260,6 +268,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/agente-1doc': typeof AuthenticatedAgente1docRoute
   '/assuntos': typeof AuthenticatedAssuntosRoute
+  '/assuntos-alterados': typeof AuthenticatedAssuntosAlteradosRoute
   '/atrasados': typeof AuthenticatedAtrasadosRoute
   '/backup': typeof AuthenticatedBackupRoute
   '/coletor': typeof AuthenticatedColetorRoute
@@ -295,6 +304,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/agente-1doc': typeof AuthenticatedAgente1docRoute
   '/_authenticated/assuntos': typeof AuthenticatedAssuntosRoute
+  '/_authenticated/assuntos-alterados': typeof AuthenticatedAssuntosAlteradosRoute
   '/_authenticated/atrasados': typeof AuthenticatedAtrasadosRoute
   '/_authenticated/backup': typeof AuthenticatedBackupRoute
   '/_authenticated/coletor': typeof AuthenticatedColetorRoute
@@ -331,6 +341,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/agente-1doc'
     | '/assuntos'
+    | '/assuntos-alterados'
     | '/atrasados'
     | '/backup'
     | '/coletor'
@@ -365,6 +376,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/agente-1doc'
     | '/assuntos'
+    | '/assuntos-alterados'
     | '/atrasados'
     | '/backup'
     | '/coletor'
@@ -399,6 +411,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/agente-1doc'
     | '/_authenticated/assuntos'
+    | '/_authenticated/assuntos-alterados'
     | '/_authenticated/atrasados'
     | '/_authenticated/backup'
     | '/_authenticated/coletor'
@@ -510,6 +523,13 @@ declare module '@tanstack/react-router' {
       path: '/assuntos'
       fullPath: '/assuntos'
       preLoaderRoute: typeof AuthenticatedAssuntosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/assuntos-alterados': {
+      id: '/_authenticated/assuntos-alterados'
+      path: '/assuntos-alterados'
+      fullPath: '/assuntos-alterados'
+      preLoaderRoute: typeof AuthenticatedAssuntosAlteradosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/atrasados': {
@@ -696,6 +716,7 @@ const AuthenticatedRelatoriosRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgente1docRoute: typeof AuthenticatedAgente1docRoute
   AuthenticatedAssuntosRoute: typeof AuthenticatedAssuntosRoute
+  AuthenticatedAssuntosAlteradosRoute: typeof AuthenticatedAssuntosAlteradosRoute
   AuthenticatedAtrasadosRoute: typeof AuthenticatedAtrasadosRoute
   AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
   AuthenticatedColetorRoute: typeof AuthenticatedColetorRoute
@@ -717,6 +738,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgente1docRoute: AuthenticatedAgente1docRoute,
   AuthenticatedAssuntosRoute: AuthenticatedAssuntosRoute,
+  AuthenticatedAssuntosAlteradosRoute: AuthenticatedAssuntosAlteradosRoute,
   AuthenticatedAtrasadosRoute: AuthenticatedAtrasadosRoute,
   AuthenticatedBackupRoute: AuthenticatedBackupRoute,
   AuthenticatedColetorRoute: AuthenticatedColetorRoute,
