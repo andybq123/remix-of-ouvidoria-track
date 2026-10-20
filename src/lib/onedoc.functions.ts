@@ -2,11 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { exigirAdmin } from "@/lib/admin-guard.server";
 import { onedocInputSchema } from "@/lib/onedoc-batch";
+import type { OnedocContexto, OnedocResultado } from "@/lib/onedoc-history";
 
 export type OnedocJob = {
   id: string; tipo: string; status: string; total: number; processados: number;
   atualizados: number; erros: number; mensagem: string | null; created_at: string;
-  iniciado_em: string | null; finalizado_em: string | null; resultados: any;
+  iniciado_em: string | null; finalizado_em: string | null; resultados: OnedocResultado[];
+  contexto?: OnedocContexto;
 };
 
 export const getOnedocConfig = createServerFn({ method: "GET" })
@@ -49,24 +51,29 @@ export const salvarOnedocConfig = createServerFn({ method: "POST" })
 
 export const enfileirarOnedoc = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { tipo: "teste" | "unitario" | "lote"; protocoloId?: string; protocoloIds?: string[] }) => onedocInputSchema.parse(d))
+  .inputValidator((d: { tipo: "teste" | "unitario" | "lote"; protocoloId?: string; protocoloIds?: string[]; secretariaId?: string }) => onedocInputSchema.parse(d))
   .handler(async ({ data, context }) => {
     await exigirAdmin(context);
     let ids: string[] = [];
+    let contexto: OnedocContexto = {};
     if (data.tipo === "unitario") {
       if (!data.protocoloId) throw new Error("Protocolo não informado");
       ids = [data.protocoloId];
     } else if (data.tipo === "lote") {
       let query = context.supabase.from("protocolos")
-        .select("id").neq("status", "concluido").ilike("url", "%1doc%");
+        .select("id, secretaria_id, secretarias(nome)").neq("status", "concluido").ilike("url", "%1doc%");
       if (data.protocoloIds) query = query.in("id", data.protocoloIds).eq("tipo", "ouvidoria");
+      if (data.secretariaId) query = query.eq("secretaria_id", data.secretariaId);
       const { fetchAllPaginated } = await import("@/lib/fetch-all");
       const rows = await fetchAllPaginated((from, to) => query.order("id").range(from, to));
       ids = (rows ?? []).map((r: any) => r.id);
+      const secretarias = new Map<string | null, { id: string | null; nome: string }>();
+      for (const r of rows) secretarias.set(r.secretaria_id, { id: r.secretaria_id, nome: r.secretarias?.nome ?? "Sem secretaria" });
+      contexto = { escopo: data.protocoloIds ? "selecionadas" : "todas", secretarias: [...secretarias.values()] };
       if (!ids.length) throw new Error("Nenhuma ouvidoria em aberto com link do 1Doc");
     }
     const { data: job, error } = await context.supabase.from("onedoc_jobs")
-      .insert({ tipo: data.tipo, protocolo_ids: ids, total: ids.length, criado_por: context.userId })
+      .insert({ tipo: data.tipo, protocolo_ids: ids, total: ids.length, criado_por: context.userId, contexto })
       .select("id").single();
     if (error) throw new Error(error.message);
     return { id: job.id as string, total: ids.length };
@@ -82,4 +89,21 @@ export const statusOnedocJob = createServerFn({ method: "GET" })
       .eq("id", data.id).single();
     if (error) throw new Error(error.message);
     return job as OnedocJob;
+  });
+
+export const getOnedocHistorico = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { pagina: number; secretariaId?: string }) => {
+    if (!Number.isInteger(d.pagina) || d.pagina < 0) throw new Error("Página inválida");
+    return { pagina: d.pagina, secretariaId: d.secretariaId };
+  })
+  .handler(async ({ data, context }) => {
+    await exigirAdmin(context);
+    let query = context.supabase.from("onedoc_jobs")
+      .select("id,tipo,status,total,processados,atualizados,erros,mensagem,created_at,iniciado_em,finalizado_em,resultados,contexto", { count: "exact" })
+      .eq("tipo", "lote");
+    if (data.secretariaId) query = query.contains("contexto", { secretarias: [{ id: data.secretariaId }] });
+    const { data: jobs, error, count } = await query.order("created_at", { ascending: false }).order("id").range(data.pagina * 20, data.pagina * 20 + 19);
+    if (error) throw new Error(error.message);
+    return { jobs: (jobs ?? []) as unknown as OnedocJob[], total: count ?? 0 };
   });

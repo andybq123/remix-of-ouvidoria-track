@@ -3,6 +3,7 @@
 import { chromium } from "playwright";
 import { webcrypto as wc } from "node:crypto";
 import { analisarTexto1doc, atualizacaoProtocolo, precisaIA, validarRespostaIA } from "./parse.mjs";
+import { resultadoConferencia } from "./resultado.mjs";
 
 const URL_DB = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -127,9 +128,9 @@ async function processar(job) {
     const ids = job.protocolo_ids || [];
     for (let i = 0; i < ids.length; i += 100) {
       const lote = ids.slice(i, i + 100);
-      const prots = await rest(`protocolos?select=id,numero,status,url,endereco,latitude,longitude&id=in.(${lote.join(",")})`);
+      const prots = await rest(`protocolos?select=id,numero,status,url,endereco,latitude,longitude,secretaria_id,secretarias(nome)&id=in.(${lote.join(",")})`);
       for (const p of prots) {
-        const r = { id: p.id, numero: p.numero };
+        const r = { id: p.id, numero: p.numero, secretaria_id: p.secretaria_id, secretaria_nome: p.secretarias?.nome ?? "Sem secretaria" };
         try {
           const url = limparUrl(p.url);
           if (!url) throw new Error("sem link válido do 1Doc");
@@ -158,19 +159,19 @@ async function processar(job) {
             protocolo_id: p.id, campo: "agente_1doc", acao: "update", autor_nome: "Agente 1Doc",
             valor_anterior: p.status, valor_novo: `${a.situacao}${a.baixado_em ? " · baixa " + a.baixado_em : ""}${a.arquivado_em ? " · arquivo " + a.arquivado_em : ""}`,
           }) }).catch(() => {});
-          Object.assign(r, { fonte, situacao: a.situacao, baixado_em: a.baixado_em, arquivado_em: a.arquivado_em, concluido: !!upd.status });
-        } catch (e) { erros++; r.erro = String(e?.message || e).slice(0, 200); }
+          Object.assign(r, resultadoConferencia(p, upd, a, fonte));
+        } catch (e) { erros++; r.verificado_em = new Date().toISOString(); r.erro = String(e?.message || e).slice(0, 200); }
         processados++;
         resultados.push(r);
         if (processados % 5 === 0 || processados === job.total) {
-          await patch("onedoc_jobs", `id=eq.${job.id}`, { processados, atualizados, erros, resultados: resultados.slice(-200) });
+          await patch("onedoc_jobs", `id=eq.${job.id}`, { processados, atualizados, erros, resultados });
         }
         await sleep(DELAY);
       }
     }
-    await patch("onedoc_jobs", `id=eq.${job.id}`, { status: "concluido", processados, atualizados, erros, resultados: resultados.slice(-200), finalizado_em: new Date().toISOString(), mensagem: `${processados} conferidas, ${atualizados} concluídas, ${resultados.filter((x) => x.fonte === "ia").length} com IA, ${erros} com erro` });
+    await patch("onedoc_jobs", `id=eq.${job.id}`, { status: "concluido", processados, atualizados, erros, resultados, finalizado_em: new Date().toISOString(), mensagem: `${processados} conferidas, ${resultados.filter((x) => x.endereco_atualizado).length} endereços atualizados, ${atualizados} concluídas, ${resultados.filter((x) => x.fonte === "ia").length} com IA, ${erros} com erro` });
   } catch (e) {
-    await patch("onedoc_jobs", `id=eq.${job.id}`, { status: "erro", processados, atualizados, erros, resultados: resultados.slice(-200), mensagem: String(e?.message || e).slice(0, 300), finalizado_em: new Date().toISOString() });
+    await patch("onedoc_jobs", `id=eq.${job.id}`, { status: "erro", processados, atualizados, erros, resultados, mensagem: String(e?.message || e).slice(0, 300), finalizado_em: new Date().toISOString() });
   } finally {
     await ctx.close().catch(() => {}); await browser.close().catch(() => {});
   }
