@@ -140,3 +140,9 @@ export function assuntoDoCatalogo(texto, nomes) {
   }
   return melhor;
 }
+
+/** O assunto só pode ser trocado quando hoje está igual ao nome de uma secretaria. */
+export function assuntoComNomeDeSecretaria(assunto, secretarias) {
+  const a = norm(assunto);
+  return !!a && (secretarias || []).some((n) => norm(n) === a);
+}

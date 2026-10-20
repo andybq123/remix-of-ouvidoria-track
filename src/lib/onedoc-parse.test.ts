@@ -70,7 +70,7 @@ describe("agente 1Doc", () => {
 });
 
 // @ts-expect-error módulo JS compartilhado com o agente da VPS
-import { somenteCamposAgente, paginaDaOuvidoria, assuntoDoCatalogo } from "../../local-docker/agente-1doc/parse.mjs";
+import { somenteCamposAgente, paginaDaOuvidoria, assuntoDoCatalogo, assuntoComNomeDeSecretaria } from "../../local-docker/agente-1doc/parse.mjs";
 describe("agente 1Doc protege a ouvidoria", () => {
   it("nunca grava secretaria", () => {
     const u = somenteCamposAgente({ secretaria_id: "x", endereco: "Rua A", status: "concluido" });
@@ -92,5 +92,11 @@ describe("agente 1Doc protege a ouvidoria", () => {
   it("recusa link quebrado ou de outra ouvidoria", () => {
     expect(paginaDaOuvidoria("Página não encontrada", "2240/2026")).toBe(false);
     expect(paginaDaOuvidoria("Ouvidoria 1.999/2026", "2240/2026")).toBe(false);
+  });
+  it("só troca assunto que está com nome de secretaria", () => {
+    const sec = ["Secretaria de Obras"];
+    expect(assuntoComNomeDeSecretaria("secretaria de obras", sec)).toBe(true);
+    expect(assuntoComNomeDeSecretaria("Buraco", sec)).toBe(false);
+    expect(assuntoComNomeDeSecretaria("", sec)).toBe(false);
   });
 });
