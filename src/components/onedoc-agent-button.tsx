@@ -9,8 +9,8 @@ import { invalidateProtocoloCaches } from "@/hooks/use-protocolos-realtime";
 
 const SITUACAO: Record<string, string> = { arquivada: "arquivada", baixada: "baixada", em_andamento: "ainda em andamento" };
 
-export function OnedocAgentButton({ tipo, protocoloId, label, size = "sm", onDone }: {
-  tipo: "teste" | "unitario" | "lote"; protocoloId?: string; label: string;
+export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, confirmacao, disabled = false, label, size = "sm", onDone }: {
+  tipo: "teste" | "unitario" | "lote"; protocoloId?: string; protocoloIds?: string[]; confirmacao?: string; disabled?: boolean; label: string;
   size?: "sm" | "default"; onDone?: (job: OnedocJob) => void;
 }) {
   const enfileirar = useServerFn(enfileirarOnedoc);
@@ -22,10 +22,11 @@ export function OnedocAgentButton({ tipo, protocoloId, label, size = "sm", onDon
   useEffect(() => () => clearTimeout(timer.current), []);
 
   async function iniciar() {
-    if (tipo === "lote" && !confirm("Conferir no 1Doc todas as ouvidorias em aberto com link? Isso roda em segundo plano.")) return;
+    if (tipo === "lote" && !confirm(confirmacao ?? "Conferir no 1Doc todas as ouvidorias em aberto com link? Isso roda em segundo plano.")) return;
     setRodando(true);
+    setJob(null);
     try {
-      const { id } = await enfileirar({ data: { tipo, protocoloId } });
+      const { id } = await enfileirar({ data: { tipo, protocoloId, protocoloIds } });
       const inicio = Date.now();
       let avisou = false;
       const tick = async () => {
@@ -59,7 +60,7 @@ export function OnedocAgentButton({ tipo, protocoloId, label, size = "sm", onDon
 
   const prog = rodando && job && job.total > 1 ? ` ${job.processados}/${job.total}` : "";
   return (
-    <Button size={size} variant="outline" onClick={iniciar} disabled={rodando}>
+    <Button size={size} variant="outline" onClick={iniciar} disabled={rodando || disabled}>
       {rodando ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Bot className="h-4 w-4 mr-1" />}
       {rodando ? (job?.status === "pendente" ? "Aguardando agente…" : `Conferindo…${prog}`) : label}
     </Button>
