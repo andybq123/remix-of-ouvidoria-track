@@ -297,8 +297,10 @@ function CompactDonut({ data }: { data: { nome: string; rotulo?: string; total: 
           <li key={item.nome} className="flex items-start gap-2 text-xs" title={item.nome}>
             <svg width="8" height="8" className="mt-1 shrink-0" aria-hidden><rect width="8" height="8" rx="2" fill={DISTRIBUTION_COLORS[i % DISTRIBUTION_COLORS.length]} /></svg>
             <span className="min-w-0 flex-1 break-words">{item.rotulo || item.nome}</span>
-            <strong className="shrink-0 tabular-nums">{item.total}</strong>
-            <span className="w-11 shrink-0 text-right tabular-nums text-muted-foreground">{(item.total / total * 100).toFixed(1)}%</span>
+            <span className="shrink-0 tabular-nums text-muted-foreground">
+              {((item.total / total) * 100).toFixed(2)}%
+            </span>
+            <span className="w-10 shrink-0 text-right tabular-nums">({item.total})</span>
           </li>
         ))}
       </ul>
