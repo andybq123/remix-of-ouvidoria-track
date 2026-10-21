@@ -16,6 +16,12 @@
    - Mostrar o estado real da compilação no GitHub: "na fila", "compilando", "falhou". Se falhar, avisar na hora e oferecer compilar na VPS.
    - Quando só mudaram scripts/banco (sem compilação nova), reaproveitar a versão já instalada e reiniciar direto — atualização em segundos.
 3. **Novo atalho opcional**: `./atualizar.sh --rapido` que aplica só banco + reinício, sem esperar compilação (para quando a mudança foi só no banco).
+4. **Visual caprichado no terminal**
+   - Cabeçalho "OuviDesk" com versão atual → nova versão e a mensagem da alteração.
+   - Etapas numeradas e coloridas (1/5 Baixando, 2/5 Compilação, 3/5 Banco, 4/5 Trocando versão, 5/5 Conferindo) com ✔ verde, ✖ vermelho, girador animado.
+   - Barra de progresso real no download e estado da compilação do GitHub ao vivo.
+   - Resumo final: tempo total, versão no ar, endereço do sistema; em caso de erro, motivo claro e o que fazer.
+   - Mensagens técnicas do banco escondidas (guardadas em arquivo de registro).
 
 ## Resultado esperado
 - Alterações comuns: de ~5 min para ~1–2 min.
