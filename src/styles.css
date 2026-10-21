@@ -457,3 +457,17 @@
     height: 34px;
   }
 }
+
+/* Popup do mapa do painel de BI: caixa escura com texto claro */
+.bi-popup .mapboxgl-popup-content {
+  background: var(--card, #1e293b);
+  color: var(--card-foreground, #f1f5f9);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.15));
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  font: 12px/1.4 system-ui, sans-serif;
+}
+.bi-popup .mapboxgl-popup-tip {
+  border-top-color: var(--card, #1e293b);
+}
