@@ -18,6 +18,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -37,6 +38,9 @@ type BiStats = {
   por_secretaria: { nome: string; sigla: string | null; total: number; concluidas: number }[];
   por_mes: { mes: string; total: number; concluidas: number }[];
   por_local: { nome: string; total: number }[];
+  por_bairro: { nome: string; total: number }[];
+  sem_bairro: number;
+  por_mes_bairro: { mes: string; bairro: string; total: number }[];
 };
 
 const biStatsOptions = queryOptions({
@@ -203,6 +207,25 @@ function BiPage() {
     ...t,
     nome: TIPO_LABEL[t.tipo] ?? t.tipo,
   }));
+
+  const BAIRRO_COLORS = [
+    "var(--chart-1)",
+    "var(--chart-2)",
+    "var(--chart-3)",
+    "var(--chart-4)",
+    "var(--chart-5)",
+    "var(--brusque-gold)",
+  ];
+  const bairrosTop = [...new Set(stats.por_mes_bairro.map((b) => b.bairro))];
+  const mesesBairro = [...new Set(stats.por_mes_bairro.map((b) => b.mes))].sort();
+  const bairrosPorMes = mesesBairro.map((mes) => {
+    const row: Record<string, string | number> = { rotulo: rotuloMes(mes) };
+    for (const b of bairrosTop) row[b] = 0;
+    for (const item of stats.por_mes_bairro) {
+      if (item.mes === mes) row[item.bairro] = item.total;
+    }
+    return row;
+  });
 
   const STATUS_COLORS: Record<string, string> = {
     Abertas: "var(--brusque-red)",
