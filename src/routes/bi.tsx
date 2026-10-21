@@ -171,13 +171,15 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-lg border border-border bg-card/80 p-4 shadow-lg shadow-black/20">
+    <div className="relative overflow-hidden rounded-lg border border-border bg-card/80 px-3 py-2.5 shadow-lg shadow-black/20">
       <span className={`absolute left-0 top-0 h-full w-1 ${accent}`} aria-hidden />
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+      <p className="truncate text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
         {label}
       </p>
-      <p className="mt-1 text-3xl font-bold tabular-nums text-foreground">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
+      <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
+        <p className="text-2xl font-bold tabular-nums text-foreground">{value}</p>
+        {sub && <p className="truncate text-[11px] text-muted-foreground">{sub}</p>}
+      </div>
     </div>
   );
 }
@@ -200,7 +202,7 @@ function Gauge({
   const semicircle = Math.PI * 60;
   return (
     <div className="flex flex-col items-center">
-      <svg viewBox="0 0 140 82" className="w-full max-w-[190px]">
+      <svg viewBox="0 0 140 82" className="w-full max-w-[150px]">
         <path
           d="M 10 76 A 60 60 0 0 1 130 76"
           fill="none"
@@ -387,14 +389,14 @@ function BiPage() {
   return (
     <div className="dark min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-[1400px] space-y-4 px-4 py-6">
-        <header className="flex flex-wrap items-center gap-4 rounded-lg border border-border bg-card/80 px-5 py-4 shadow-lg shadow-black/20">
+        <header className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card/80 px-4 py-3 shadow-lg shadow-black/20">
           <img
             src="/logo-brusque.png"
             alt="Prefeitura de Brusque"
-            className="h-14 w-auto object-contain"
+            className="h-10 w-auto object-contain"
           />
           <div className="min-w-0">
-            <h1 className="text-xl font-bold tracking-tight">
+            <h1 className="text-lg font-bold tracking-tight">
               Painel Analítico da Ouvidoria
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -434,7 +436,7 @@ function BiPage() {
           </div>
         </header>
 
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
           <StatCard
             label="Total de manifestações"
             value={stats.totais.total}
@@ -478,7 +480,7 @@ function BiPage() {
               <EmptyState />
             ) : (
               <>
-                <BiMap points={obrasPoints} height={430} />
+                <BiMap points={obrasPoints} />
                 <p className="pt-2 text-[11px] text-muted-foreground">
                   Círculos proporcionais ao volume; contorno vermelho marca o bairro com
                   mais ouvidorias atrasadas.
@@ -491,27 +493,27 @@ function BiPage() {
 
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="rounded-lg border border-border bg-card/80 p-4 shadow-lg shadow-black/20">
-                <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+              <div className="rounded-lg border border-border bg-card/80 px-3 py-2.5 shadow-lg shadow-black/20">
+                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   <Flame className="h-3.5 w-3.5 text-brusque-gold" />
-                  Bairro com mais manifestações (Obras)
+                  Mais manifestações (Obras)
                 </p>
-                <p className="mt-1 text-lg font-bold">
+                <p className="mt-0.5 truncate text-base font-bold">
                   {topObrasTotal ? topObrasTotal.bairro : "—"}
                 </p>
-                <p className="text-sm tabular-nums text-muted-foreground">
+                <p className="text-xs tabular-nums text-muted-foreground">
                   {topObrasTotal ? `${topObrasTotal.total} manifestações` : "sem dados"}
                 </p>
               </div>
-              <div className="rounded-lg border border-border bg-card/80 p-4 shadow-lg shadow-black/20">
-                <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+              <div className="rounded-lg border border-border bg-card/80 px-3 py-2.5 shadow-lg shadow-black/20">
+                <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   <AlertTriangle className="h-3.5 w-3.5 text-brusque-red" />
-                  Bairro com mais atrasadas (Obras)
+                  Mais atrasadas (Obras)
                 </p>
-                <p className="mt-1 text-lg font-bold">
+                <p className="mt-0.5 truncate text-base font-bold">
                   {temAtrasadaObras ? topObrasAtrasadas?.bairro : "—"}
                 </p>
-                <p className="text-sm tabular-nums text-muted-foreground">
+                <p className="text-xs tabular-nums text-muted-foreground">
                   {temAtrasadaObras
                     ? `${topObrasAtrasadas?.atrasadas} atrasadas`
                     : "nenhuma atrasada"}
@@ -548,7 +550,7 @@ function BiPage() {
               <EmptyState />
             ) : (
               <>
-                <BiMap points={saudePoints} height={430} />
+                <BiMap points={saudePoints} />
                 <p className="pt-2 text-[11px] text-muted-foreground">
                   Círculos proporcionais ao volume de manifestações de cada unidade.
                   {stats.saude_sem_ponto > 0 &&
