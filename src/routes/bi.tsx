@@ -33,6 +33,8 @@ import { BiMap, type BiMapPoint } from "@/components/bi-map";
 import { ChartTooltipCard } from "@/components/chart-tooltip";
 import { secretariasComManifestacoes } from "@/lib/bi-visualization";
 import { supabase } from "@/integrations/supabase/client";
+import brasaoBrusque from "@/assets/brasao-brusque.png.asset.json";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type BiStats = {
   gerado_em: string;
@@ -390,7 +392,7 @@ function BiPage() {
       <div className="mx-auto max-w-[1400px] space-y-4 px-4 py-6">
         <header className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card/80 px-4 py-3 shadow-lg shadow-black/20">
           <img
-            src="/logo-brusque.png"
+            src={brasaoBrusque.url}
             alt="Prefeitura de Brusque"
             className="h-10 w-auto object-contain"
           />
@@ -404,22 +406,18 @@ function BiPage() {
             </p>
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2">
-              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-              <select
-                value={mes ?? ""}
-                onChange={(e) => setMes(e.target.value || null)}
-                className="bg-transparent text-xs font-semibold uppercase tracking-wide outline-none"
-                aria-label="Filtrar por mês"
-              >
-                <option value="">Todos os meses</option>
+            <Select value={mes ?? "todos"} onValueChange={(value) => setMes(value === "todos" ? null : value)}>
+              <SelectTrigger aria-label="Filtrar por mês" className="w-[190px] gap-2 border-border bg-muted text-xs font-semibold">
+                <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="dark border-border bg-popover text-popover-foreground">
+                <SelectItem value="todos">Todos os meses</SelectItem>
                 {mesesOpcoes.map((m) => (
-                  <option key={m} value={m}>
-                    {rotuloMes(m)}
-                  </option>
+                  <SelectItem key={m} value={m}>{rotuloMes(m)}</SelectItem>
                 ))}
-              </select>
-            </label>
+              </SelectContent>
+            </Select>
             <span className="hidden text-xs tabular-nums text-muted-foreground sm:block">
               Atualizado em {new Date(stats.gerado_em).toLocaleString("pt-BR")}
             </span>
