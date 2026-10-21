@@ -60,6 +60,14 @@ INSTALADA="$(cat .output/VERSION 2>/dev/null || true)"
 IGNORAR_BUILD=(':(exclude)local-docker' ':(exclude,glob)**/*.md' ':(exclude)drizzle' ':(exclude)supabase' ':(exclude)tests' ':(exclude).lovable' ':(exclude,glob)*.sh')
 ALVO="$(git log -1 --format=%H HEAD -- . "${IGNORAR_BUILD[@]}")"
 [ -n "$ALVO" ] || ALVO="$SHA"
+# Um pacote serve se foi compilado a partir do ALVO ou de um commit mais novo da main.
+# (Um envio com vários commits compila só o último, que pode ser posterior ao ALVO.)
+serve() {
+  local v="${1:-}"
+  [ -n "$v" ] && git cat-file -e "${v}^{commit}" 2>/dev/null \
+    && git merge-base --is-ancestor "$ALVO" "$v" 2>/dev/null \
+    && git merge-base --is-ancestor "$v" "$SHA" 2>/dev/null
+}
 
 ORIGEM="$(git config --get remote.origin.url)"
 TOKEN="$(printf '%s' "$ORIGEM" | sed -nE 's#https://([^@:]+:)?([^@]+)@.*#\2#p')"
@@ -94,45 +102,46 @@ if [ "$MODO" = "rapido" ]; then
   info "Modo rápido: mantendo a versão já instalada."
 elif [ "$MODO" = "dev" ]; then
   info "Modo desenvolvimento: compila dentro da VPS."
-elif [ -n "$INSTALADA" ] && [ "$INSTALADA" = "$ALVO" ]; then
+elif serve "$INSTALADA"; then
   ok "A versão instalada já está atualizada — só scripts/banco mudaram."
 else
   NOVO_DIR=/tmp/seta-build
   baixar() {
     rm -rf "$NOVO_DIR" && mkdir -p "$NOVO_DIR"
     limpa
-    curl -fL --progress-bar "$REPO_URL/releases/download/vps-latest/vps-build.tar.gz" -o "$NOVO_DIR/b.tgz" \
+    curl -fsSL --max-time 300 "$REPO_URL/releases/download/vps-latest/vps-build.tar.gz" -o "$NOVO_DIR/b.tgz" \
       && tar -xzf "$NOVO_DIR/b.tgz" -C "$NOVO_DIR" \
-      && [ "$(cat "$NOVO_DIR/.output/VERSION" 2>/dev/null)" = "$ALVO" ]
+      && serve "$(cat "$NOVO_DIR/.output/VERSION" 2>/dev/null)"
   }
-  LIMITE=$(( $(date +%s) + 600 )); ULTIMO_API=0; ESTADO="consultando"; TENTOU_SEM_API=0
+  LIMITE=$(( $(date +%s) + 600 )); ULTIMO_API=0; ULTIMO_DL=0; ESTADO="consultando"
   while [ "$(date +%s)" -lt "$LIMITE" ]; do
     AGORA=$(date +%s)
     if [ $((AGORA - ULTIMO_API)) -ge 8 ]; then
       ULTIMO_API=$AGORA
       REL="$(api releases/tags/vps-latest || true)"
       REL_SHA="$(printf '%s' "$REL" | rel_sha)"
-      if [ "$REL_SHA" = "$ALVO" ]; then
-        printf "\r      ${C_G}✔${C_0} %-60s\n" "Compilação pronta no GitHub. Baixando..."
+      if [ -n "$REL_SHA" ]; then
+        if serve "$REL_SHA"; then
+          girar "Compilação pronta no GitHub. Baixando..."
+          if baixar; then PRONTO=1; break; fi
+          aviso "Pacote baixado não confere; tentando de novo."
+        fi
+        RUN="$(api "actions/runs?branch=main&event=push&per_page=5" || true)"
+        ST="$(printf '%s' "$RUN" | run_status)"
+        case "$ST" in
+          queued*|waiting*|pending*|requested*) ESTADO="na fila do GitHub" ;;
+          in_progress*) ESTADO="compilando no GitHub" ;;
+          completed\|success) ESTADO="publicando pacote" ;;
+          completed\|cancelled) ESTADO="aguardando nova compilação" ;;
+          completed\|*) limpa; aviso "A compilação no GitHub ${C_R}falhou${C_0} (${ST#completed|})."; break ;;
+          *) ESTADO="aguardando compilação" ;;
+        esac
+      elif [ $((AGORA - ULTIMO_DL)) -ge 45 ]; then
+        # Sem acesso à API: confere o pacote direto, no máximo a cada 45 s.
+        ULTIMO_DL=$AGORA; ESTADO="aguardando compilação"
+        girar "Conferindo pacote do GitHub..."
         if baixar; then PRONTO=1; break; fi
-        aviso "Pacote baixado não confere; tentando de novo."
       fi
-      RUN="$(api "actions/runs?head_sha=$ALVO&per_page=5" || true)"
-      ST="$(printf '%s' "$RUN" | run_status)"
-      case "$ST" in
-        queued*|waiting*|pending*|requested*) ESTADO="na fila do GitHub" ;;
-        in_progress*) ESTADO="compilando no GitHub" ;;
-        completed\|success) ESTADO="publicando pacote" ;;
-        completed\|*) limpa; aviso "A compilação no GitHub ${C_R}falhou${C_0} (${ST#completed|})."; break ;;
-        *)
-          if [ -z "$REL" ] && [ "$TENTOU_SEM_API" = 0 ]; then
-            # Sem acesso à API: confere o pacote diretamente (como antes)
-            TENTOU_SEM_API=1; ESTADO="aguardando compilação"
-            if baixar; then PRONTO=1; break; fi
-          fi
-          [ -z "$REL" ] && { TENTOU_SEM_API=0; ULTIMO_API=$((AGORA + 2)); }
-          ESTADO="aguardando compilação" ;;
-      esac
     fi
     RESTA=$(( LIMITE - $(date +%s) ))
     girar "${ESTADO}... $(tempo) ${C_D}(desiste em $((RESTA/60))m)${C_0}"
