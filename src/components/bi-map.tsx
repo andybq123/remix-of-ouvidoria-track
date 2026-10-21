@@ -21,7 +21,13 @@ function escapeHtml(s: string) {
 }
 
 /** Mapa escuro do painel de BI: círculos proporcionais ao volume de manifestações. */
-export function BiMap({ points, height = 420 }: { points: BiMapPoint[]; height?: number }) {
+export function BiMap({
+  points,
+  className = "h-[300px] sm:h-[380px] lg:h-[440px]",
+}: {
+  points: BiMapPoint[];
+  className?: string;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const pointsKey = JSON.stringify(points);
 
@@ -60,10 +66,16 @@ export function BiMap({ points, height = 420 }: { points: BiMapPoint[]; height?:
           p.destaque ? "outline:3px solid var(--brusque-red, #dc2626);outline-offset:3px" : "",
         ].join(";");
         el.title = `${p.nome}: ${p.total}`;
-        const popup = new mapboxgl.Popup({ offset: size / 2 + 6, closeButton: false }).setHTML(
-          `<div style="font:12px system-ui"><strong>${escapeHtml(p.nome)}</strong><br/>${p.total} manifestações${
-            p.extra ? `<br/>${escapeHtml(p.extra)}` : ""
-          }</div>`,
+        const popup = new mapboxgl.Popup({
+          offset: size / 2 + 6,
+          closeButton: false,
+          className: "bi-popup",
+          maxWidth: "240px",
+        }).setHTML(
+          `<div><strong style="font-size:13px">${escapeHtml(p.nome)}</strong><br/>` +
+            `<span style="opacity:.85">${p.total} manifestações</span>` +
+            (p.extra ? `<br/><span style="opacity:.85">${escapeHtml(p.extra)}</span>` : "") +
+            `</div>`,
         );
         markers.push(
           new mapboxgl.Marker({ element: el }).setLngLat([p.lng, p.lat]).setPopup(popup).addTo(map),
@@ -87,8 +99,7 @@ export function BiMap({ points, height = 420 }: { points: BiMapPoint[]; height?:
   return (
     <div
       ref={containerRef}
-      style={{ height }}
-      className="w-full overflow-hidden rounded-md border border-border"
+      className={`w-full overflow-hidden rounded-md border border-border ${className}`}
     />
   );
 }
