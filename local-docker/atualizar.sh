@@ -25,7 +25,7 @@ else
 fi
 INICIO=$(date +%s)
 ETAPA=0; ETAPAS=5
-LOG="/tmp/ouvidesk-atualizar.log"
+LOG="/tmp/ouvidesk-atualizar-$(id -u).log"
 etapa()  { ETAPA=$((ETAPA+1)); printf "\n${C_B}${C_BOLD}[%d/%d]${C_0} ${C_BOLD}%s${C_0}\n" "$ETAPA" "$ETAPAS" "$1"; }
 ok()     { printf "      ${C_G}✔${C_0} %s\n" "$1"; }
 info()   { printf "      ${C_D}•${C_0} %s\n" "$1"; }
@@ -105,7 +105,7 @@ elif [ "$MODO" = "dev" ]; then
 elif serve "$INSTALADA"; then
   ok "A versão instalada já está atualizada — só scripts/banco mudaram."
 else
-  NOVO_DIR=/tmp/seta-build
+  NOVO_DIR="/tmp/seta-build-$(id -u)"
   baixar() {
     rm -rf "$NOVO_DIR" && mkdir -p "$NOVO_DIR"
     limpa
@@ -192,7 +192,7 @@ etapa "Trocando a versão e reiniciando"
 if [ "$PRONTO" = "1" ]; then
   rm -rf ../.output.antiga
   [ -d ../.output ] && mv ../.output ../.output.antiga
-  mv /tmp/seta-build/.output ../.output
+  mv "/tmp/seta-build-$(id -u)/.output" ../.output
   info "Versão anterior guardada em .output.antiga"
 fi
 COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.prod.yml)
