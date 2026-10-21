@@ -111,14 +111,14 @@ else
     if [ $((AGORA - ULTIMO_API)) -ge 8 ]; then
       ULTIMO_API=$AGORA
       REL="$(api releases/tags/vps-latest || true)"
-      REL_SHA="$(printf '%s' "$REL" | json 'o.body||o.target_commitish')"
+      REL_SHA="$(printf '%s' "$REL" | rel_sha)"
       if [ "$REL_SHA" = "$ALVO" ]; then
         printf "\r      ${C_G}✔${C_0} %-60s\n" "Compilação pronta no GitHub. Baixando..."
         if baixar; then PRONTO=1; break; fi
         aviso "Pacote baixado não confere; tentando de novo."
       fi
       RUN="$(api "actions/runs?head_sha=$ALVO&per_page=5" || true)"
-      ST="$(printf '%s' "$RUN" | json '(o.workflow_runs||[]).filter(r=>r.name==="Compilar versão da VPS").map(r=>r.status+"|"+(r.conclusion||""))[0]')"
+      ST="$(printf '%s' "$RUN" | run_status)"
       case "$ST" in
         queued*|waiting*|pending*|requested*) ESTADO="na fila do GitHub" ;;
         in_progress*) ESTADO="compilando no GitHub" ;;
@@ -153,7 +153,7 @@ else
     done
     grep -rqF "$CLOUD_URL" "$NOVO" 2>/dev/null && falha "Não consegui apontar o sistema para o banco local."
     # Arquivos mudaram de tamanho: atualiza o mapa interno do servidor (evita tela em branco).
-    node ./corrigir-tamanhos.mjs "$NOVO" >>"$LOG" 2>&1 || falha "Não consegui ajustar os tamanhos dos arquivos."
+    rodar_node ./corrigir-tamanhos.mjs "$NOVO" >>"$LOG" 2>&1 || falha "Não consegui ajustar os tamanhos dos arquivos."
     ok "Versão $(printf '%s' "$ALVO" | cut -c1-7) baixada e apontada para o banco local."
   else
     aviso "Compilação do GitHub indisponível; compilando na VPS (pode levar ~10 min)."
