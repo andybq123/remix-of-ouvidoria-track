@@ -78,6 +78,13 @@
       "when": 1792582917753,
       "tag": "0010_bi_bairro_formatos",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792583061354,
+      "tag": "0011_bi_bairro_sem_regex_escape",
+      "breakpoints": true
     }
   ]
 }
