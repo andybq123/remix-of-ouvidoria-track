@@ -60,13 +60,13 @@ export const Route = createFileRoute("/bi")({
       {
         name: "description",
         content:
-          "Indicadores públicos e agregados da Ouvidoria de Brusque: volume por secretaria, situação, região e evolução mensal.",
+          "Indicadores públicos e agregados da Ouvidoria de Brusque: volume por secretaria, situação, bairro e evolução mensal.",
       },
       { property: "og:title", content: "Painel Analítico | Ouvidoria de Brusque" },
       {
         property: "og:description",
         content:
-          "Indicadores públicos e agregados da Ouvidoria de Brusque: volume por secretaria, situação, região e evolução mensal.",
+          "Indicadores públicos e agregados da Ouvidoria de Brusque: volume por secretaria, situação, bairro e evolução mensal.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -547,6 +547,95 @@ function BiPage() {
                   </li>
                 ))}
               </ol>
+            )}
+          </Panel>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Panel
+            title="Bairros por mês"
+            icon={<BarChart3 className="h-4 w-4" />}
+            className="lg:col-span-2 min-h-[360px]"
+          >
+            {bairrosPorMes.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={bairrosPorMes} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                  <XAxis
+                    dataKey="rotulo"
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
+                    axisLine={{ stroke: "var(--border)" }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip {...tooltipProps} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  {bairrosTop.map((b, i) => (
+                    <Bar
+                      key={b}
+                      dataKey={b}
+                      stackId="bairros"
+                      fill={BAIRRO_COLORS[i % BAIRRO_COLORS.length]}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </Panel>
+
+          <Panel
+            title="Bairros com mais manifestações"
+            icon={<MapPin className="h-4 w-4" />}
+            className="min-h-[360px]"
+          >
+            {stats.por_bairro.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <div className="h-full flex flex-col">
+                <div className="flex-1 min-h-0">
+                  <ResponsiveContainer
+                    width="100%"
+                    height={Math.max(220, stats.por_bairro.length * 30)}
+                  >
+                    <BarChart
+                      data={stats.por_bairro}
+                      layout="vertical"
+                      margin={{ top: 4, right: 24, left: 8, bottom: 0 }}
+                    >
+                      <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" horizontal={false} />
+                      <XAxis
+                        type="number"
+                        allowDecimals={false}
+                        tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="nome"
+                        width={110}
+                        tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip {...tooltipProps} />
+                      <Bar dataKey="total" name="Manifestações" fill="var(--chart-3)" radius={[0, 4, 4, 0]} barSize={14} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                {stats.sem_bairro > 0 && (
+                  <p className="pt-2 text-[11px] text-muted-foreground">
+                    {stats.sem_bairro} manifestações sem bairro identificado no endereço
+                  </p>
+                )}
+              </div>
             )}
           </Panel>
         </div>
