@@ -33,7 +33,6 @@ import { BiMap, type BiMapPoint } from "@/components/bi-map";
 import { ChartTooltipCard } from "@/components/chart-tooltip";
 import { secretariasComManifestacoes } from "@/lib/bi-visualization";
 import { supabase } from "@/integrations/supabase/client";
-import brasaoBrusque from "@/assets/brasao-brusque.png.asset.json";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type BiStats = {
@@ -392,7 +391,7 @@ function BiPage() {
       <div className="mx-auto max-w-[1400px] space-y-4 px-4 py-6">
         <header className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card/80 px-4 py-3 shadow-lg shadow-black/20">
           <img
-            src={brasaoBrusque.url}
+            src="/brasao-brusque.png"
             alt="Prefeitura de Brusque"
             className="h-10 w-auto object-contain"
           />
