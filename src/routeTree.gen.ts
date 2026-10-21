@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BiRouteImport } from './routes/bi'
 import { Route as ConsultaRouteImport } from './routes/consulta'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as InicioRouteImport } from './routes/inicio'
@@ -56,6 +57,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BiRoute = BiRouteImport.update({
+  id: '/bi',
+  path: '/bi',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConsultaRoute = ConsultaRouteImport.update({
@@ -226,6 +232,7 @@ const ApiPublicInboundEmailTokenRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/bi': typeof BiRoute
   '/consulta': typeof ConsultaRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/inicio': typeof InicioRoute
@@ -261,6 +268,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/bi': typeof BiRoute
   '/consulta': typeof ConsultaRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/inicio': typeof InicioRoute
@@ -297,6 +305,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/bi': typeof BiRoute
   '/consulta': typeof ConsultaRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/inicio': typeof InicioRoute
@@ -334,6 +343,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/bi'
     | '/consulta'
     | '/forgot-password'
     | '/inicio'
@@ -369,6 +379,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/bi'
     | '/consulta'
     | '/forgot-password'
     | '/inicio'
@@ -404,6 +415,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/bi'
     | '/consulta'
     | '/forgot-password'
     | '/inicio'
@@ -441,6 +453,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  BiRoute: typeof BiRoute
   ConsultaRoute: typeof ConsultaRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   InicioRoute: typeof InicioRoute
@@ -474,6 +487,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bi': {
+      id: '/bi'
+      path: '/bi'
+      fullPath: '/bi'
+      preLoaderRoute: typeof BiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/consulta': {
@@ -766,6 +786,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  BiRoute: BiRoute,
   ConsultaRoute: ConsultaRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   InicioRoute: InicioRoute,
