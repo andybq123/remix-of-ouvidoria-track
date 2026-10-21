@@ -842,6 +842,7 @@ export type Database = {
         Returns: number
       }
       backup_importar_usuarios: { Args: { p: Json }; Returns: Json }
+      bi_estatisticas: { Args: never; Returns: Json }
       concluir_triagem: {
         Args: { p_id: string; p_local: string; p_secretaria: string }
         Returns: Json

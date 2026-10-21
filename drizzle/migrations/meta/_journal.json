@@ -43,6 +43,13 @@
       "when": 1792469809318,
       "tag": "0005_onedoc_historico_contexto",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792581038819,
+      "tag": "0006_bi_estatisticas_publicas",
+      "breakpoints": true
     }
   ]
 }
