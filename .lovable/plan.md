@@ -22,6 +22,11 @@
 - Alterações só de banco/scripts: menos de 30 segundos.
 - Nunca mais fica "aguardando" em silêncio quando a compilação falhou.
 
+## Sobre o registro enviado
+- A VPS esperou os 6 minutos e caiu na compilação local (lenta, ~10–15 min). Ou a compilação no GitHub falhou, ou demorou mais que 6 min — hoje o script não consegue dizer qual. Com a mudança, ele mostra o motivo na hora.
+- As várias mensagens "already exists, skipping" do banco são normais (nada errado); vamos escondê-las para o registro ficar limpo.
+- Enquanto isso, a atualização atual deve terminar sozinha; basta aguardar.
+
 ## Detalhes técnicos
 - `.github/workflows/build-vps.yml`: `actions/cache` para `~/.bun/install/cache` e `node_modules/.vite`; `bun install --frozen-lockfile`; `paths-ignore` para `local-docker/**`, `*.md`, `drizzle/**`, `supabase/**`; gravar SHA no corpo/título da release.
 - `local-docker/atualizar.sh`: poll via `https://api.github.com/repos/<repo>/releases/tags/vps-latest` (lê `target_commitish`) e `actions/runs?head_sha=<SHA>` para status; se o último commit que muda código já está em `.output/VERSION`, pula o download; flag `--rapido`.
