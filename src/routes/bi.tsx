@@ -21,7 +21,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -32,6 +31,7 @@ import {
 
 import { BiMap, type BiMapPoint } from "@/components/bi-map";
 import { ChartTooltipCard } from "@/components/chart-tooltip";
+import { secretariasComManifestacoes } from "@/lib/bi-visualization";
 import { supabase } from "@/integrations/supabase/client";
 
 type BiStats = {
@@ -120,12 +120,6 @@ function rotuloMes(mes: string) {
   const [ano, m] = mes.split("-");
   return `${MESES[Number(m) - 1]}/${ano.slice(2)}`;
 }
-
-const STATUS_LABEL: Record<string, string> = {
-  aberto: "Abertas",
-  em_andamento: "Em andamento",
-  concluido: "Concluídas",
-};
 
 const TIPO_LABEL: Record<string, string> = {
   ouvidoria: "Ouvidoria",
@@ -276,6 +270,41 @@ function EmptyState() {
   );
 }
 
+const DISTRIBUTION_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--brusque-gold)", "var(--chart-4)", "var(--chart-5)", "var(--brusque-green)", "var(--brusque-red)"];
+
+function CompactDonut({ data }: { data: { nome: string; rotulo?: string; total: number }[] }) {
+  const total = data.reduce((sum, item) => sum + item.total, 0);
+  if (total === 0) return <EmptyState />;
+  return (
+    <div className="flex h-[248px] flex-col gap-2">
+      <div className="relative h-[144px] shrink-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={data} dataKey="total" nameKey="nome" innerRadius={46} outerRadius={66} paddingAngle={2} stroke="var(--card)">
+              {data.map((item, i) => <Cell key={item.nome} fill={DISTRIBUTION_COLORS[i % DISTRIBUTION_COLORS.length]} />)}
+            </Pie>
+            <Tooltip content={<PieTooltip />} />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <strong className="text-xl tabular-nums">{total}</strong>
+          <span className="text-[10px] text-muted-foreground">Total</span>
+        </div>
+      </div>
+      <ul className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1">
+        {data.map((item, i) => (
+          <li key={item.nome} className="flex items-start gap-2 text-xs" title={item.nome}>
+            <svg width="8" height="8" className="mt-1 shrink-0" aria-hidden><rect width="8" height="8" rx="2" fill={DISTRIBUTION_COLORS[i % DISTRIBUTION_COLORS.length]} /></svg>
+            <span className="min-w-0 flex-1 break-words">{item.rotulo || item.nome}</span>
+            <strong className="shrink-0 tabular-nums">{item.total}</strong>
+            <span className="w-11 shrink-0 text-right tabular-nums text-muted-foreground">{(item.total / total * 100).toFixed(1)}%</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function BiPage() {
   const queryClient = useQueryClient();
   const [mes, setMes] = useState<string | null>(null);
@@ -298,7 +327,7 @@ function BiPage() {
       ? Math.round((stats.totais.concluidas / stats.totais.total) * 100)
       : 0;
 
-  const secretarias = stats.por_secretaria.map((s) => ({
+  const secretarias = secretariasComManifestacoes(stats.por_secretaria).map((s) => ({
     ...s,
     rotulo: s.sigla || s.nome,
   }));
@@ -307,10 +336,6 @@ function BiPage() {
     .sort((a, b) => b.reclamacoes - a.reclamacoes)
     .slice(0, 8);
   const meses = stats.por_mes.map((m) => ({ ...m, rotulo: rotuloMes(m.mes) }));
-  const status = stats.por_status.map((s) => ({
-    ...s,
-    nome: STATUS_LABEL[s.status] ?? s.status,
-  }));
   const tipos = stats.por_tipo.map((t) => ({
     ...t,
     nome: TIPO_LABEL[t.tipo] ?? t.tipo,
@@ -350,32 +375,6 @@ function BiPage() {
     extra: l.atrasadas > 0 ? `${l.atrasadas} atrasadas` : undefined,
     destaque: l.nome === topSaude?.nome && l.total > 0,
   }));
-
-  const BAIRRO_COLORS = [
-    "var(--chart-1)",
-    "var(--chart-2)",
-    "var(--chart-3)",
-    "var(--chart-4)",
-    "var(--chart-5)",
-    "var(--brusque-gold)",
-  ];
-  const bairrosTop = [...new Set(stats.por_mes_bairro.map((b) => b.bairro))];
-  const mesesBairro = [...new Set(stats.por_mes_bairro.map((b) => b.mes))].sort();
-  const bairrosPorMes = mesesBairro.map((m) => {
-    const row: Record<string, string | number> = { rotulo: rotuloMes(m) };
-    for (const b of bairrosTop) row[b] = 0;
-    for (const item of stats.por_mes_bairro) {
-      if (item.mes === m) row[item.bairro] = item.total;
-    }
-    return row;
-  });
-
-  const STATUS_COLORS: Record<string, string> = {
-    Abertas: "var(--brusque-red)",
-    "Em andamento": "var(--brusque-gold)",
-    Concluídas: "var(--brusque-green)",
-  };
-  const TIPO_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)"];
 
   async function atualizar() {
     setAtualizando(true);
@@ -606,11 +605,11 @@ function BiPage() {
           </Panel>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel
             title="Evolução mensal"
             icon={<TrendingUp className="h-4 w-4" />}
-            className="h-[320px] lg:col-span-2"
+            className="h-[320px]"
           >
             {meses.length === 0 ? (
               <EmptyState />
@@ -663,243 +662,9 @@ function BiPage() {
           </Panel>
 
           <Panel
-            title="Situação geral"
-            icon={<PieChartIcon className="h-4 w-4" />}
-            className="h-[320px]"
-          >
-            {status.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <div className="flex h-full flex-col">
-                <div className="min-h-0 flex-1">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={status}
-                        dataKey="total"
-                        nameKey="nome"
-                        innerRadius="55%"
-                        outerRadius="85%"
-                        paddingAngle={3}
-                        stroke="var(--card)"
-                        strokeWidth={2}
-                      >
-                        {status.map((s) => (
-                          <Cell key={s.nome} fill={STATUS_COLORS[s.nome] ?? "var(--chart-4)"} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<PieTooltip />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-2">
-                  {status.map((s) => (
-                    <span key={s.nome} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <span
-                        className="h-2.5 w-2.5 rounded-sm"
-                        style={{ background: STATUS_COLORS[s.nome] ?? "var(--chart-4)" }}
-                      />
-                      {s.nome}: <strong className="tabular-nums text-foreground">{s.total}</strong>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </Panel>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <Panel
-            title="Manifestações por secretaria"
-            icon={<BarChart3 className="h-4 w-4" />}
-            className="min-h-[360px] lg:col-span-2"
-          >
-            {secretarias.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <ResponsiveContainer width="100%" height={Math.max(220, secretarias.length * 42)}>
-                <BarChart
-                  data={secretarias}
-                  layout="vertical"
-                  margin={{ top: 4, right: 24, left: 8, bottom: 0 }}
-                >
-                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" horizontal={false} />
-                  <XAxis
-                    type="number"
-                    allowDecimals={false}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="rotulo"
-                    width={110}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip {...tooltipProps} />
-                  <Bar dataKey="total" name="Manifestações" fill="var(--chart-1)" radius={[0, 4, 4, 0]} barSize={18} />
-                  <Bar dataKey="concluidas" name="Concluídas" fill="var(--brusque-green)" radius={[0, 4, 4, 0]} barSize={18} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </Panel>
-
-          <Panel
-            title="Secretarias com mais reclamações"
-            icon={<Flame className="h-4 w-4" />}
-            className="min-h-[360px]"
-          >
-            {rankingReclamacoes.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <ol className="flex h-full flex-col justify-center gap-2.5">
-                {rankingReclamacoes.map((s, i) => (
-                  <li key={s.nome} className="flex items-center gap-3">
-                    <span
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold tabular-nums ${
-                        i === 0
-                          ? "bg-brusque-red/20 text-brusque-red"
-                          : i < 3
-                            ? "bg-brusque-gold/20 text-brusque-gold"
-                            : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {i + 1}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-sm">{s.nome}</span>
-                    <span className="text-sm font-bold tabular-nums">
-                      {s.reclamacoes}
-                      <span className="ml-1 text-xs font-normal text-muted-foreground">
-                        de {s.total}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </Panel>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <Panel
-            title="Regiões com mais manifestações"
-            icon={<MapPin className="h-4 w-4" />}
-            className="min-h-[320px] lg:col-span-2"
-          >
-            {stats.por_local.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <ResponsiveContainer
-                width="100%"
-                height={Math.max(220, stats.por_local.length * 36)}
-              >
-                <BarChart
-                  data={stats.por_local}
-                  layout="vertical"
-                  margin={{ top: 4, right: 24, left: 8, bottom: 0 }}
-                >
-                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" horizontal={false} />
-                  <XAxis
-                    type="number"
-                    allowDecimals={false}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="nome"
-                    width={150}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip {...tooltipProps} />
-                  <Bar dataKey="total" name="Manifestações" fill="var(--chart-2)" radius={[0, 4, 4, 0]} barSize={16} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </Panel>
-
-          <Panel
-            title="Por tipo de manifestação"
-            icon={<Activity className="h-4 w-4" />}
-            className="min-h-[320px]"
-          >
-            {tipos.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <div className="flex h-full flex-col justify-center gap-4">
-                {tipos.map((t, i) => {
-                  const pct = stats.totais.total > 0 ? (t.total / stats.totais.total) * 100 : 0;
-                  return (
-                    <div key={t.tipo}>
-                      <div className="mb-1 flex items-baseline justify-between">
-                        <span className="text-sm font-medium">{t.nome}</span>
-                        <span className="text-sm tabular-nums text-muted-foreground">
-                          <strong className="text-foreground">{t.total}</strong> ({pct.toFixed(0)}%)
-                        </span>
-                      </div>
-                      <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full"
-                          style={{ width: `${pct}%`, background: TIPO_COLORS[i % TIPO_COLORS.length] }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </Panel>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <Panel
-            title="Bairros por mês"
-            icon={<BarChart3 className="h-4 w-4" />}
-            className="min-h-[360px] lg:col-span-2"
-          >
-            {bairrosPorMes.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={bairrosPorMes} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="rotulo"
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                    axisLine={{ stroke: "var(--border)" }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    allowDecimals={false}
-                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip {...tooltipProps} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  {bairrosTop.map((b, i) => (
-                    <Bar
-                      key={b}
-                      dataKey={b}
-                      stackId="bairros"
-                      fill={BAIRRO_COLORS[i % BAIRRO_COLORS.length]}
-                    />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </Panel>
-
-          <Panel
             title="Bairros com mais manifestações"
             icon={<Clock className="h-4 w-4" />}
-            className="min-h-[360px]"
+            className="h-[320px]"
           >
             {stats.por_bairro.length === 0 ? (
               <EmptyState />
@@ -908,7 +673,7 @@ function BiPage() {
                 <div className="min-h-0 flex-1">
                   <ResponsiveContainer
                     width="100%"
-                    height={Math.max(220, stats.por_bairro.length * 30)}
+                    height={230}
                   >
                     <BarChart
                       data={stats.por_bairro}
@@ -943,6 +708,42 @@ function BiPage() {
                 )}
               </div>
             )}
+          </Panel>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <Panel
+            title="Manifestações por secretaria"
+            icon={<PieChartIcon className="h-4 w-4" />}
+          >
+            <CompactDonut data={secretarias.map((s) => ({ nome: s.nome, rotulo: s.rotulo, total: s.total }))} />
+          </Panel>
+          <Panel
+            title="Secretarias com mais reclamações"
+            icon={<Flame className="h-4 w-4" />}
+          >
+            {rankingReclamacoes.length === 0 ? <EmptyState /> : (
+              <ol className="h-[248px] space-y-3 overflow-y-auto pr-1">
+                {rankingReclamacoes.map((s, i) => (
+                  <li key={s.nome}>
+                    <div className="mb-1 flex items-start gap-2 text-xs">
+                      <span className="w-4 shrink-0 tabular-nums text-muted-foreground">{i + 1}</span>
+                      <span className="min-w-0 flex-1 break-words">{s.nome}</span>
+                      <strong className="shrink-0 tabular-nums">{s.reclamacoes}</strong>
+                    </div>
+                    <div className="ml-6 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-brusque-red" style={{ width: `${s.reclamacoes / rankingReclamacoes[0].reclamacoes * 100}%` }} />
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Panel>
+          <Panel
+            title="Por tipo de manifestação"
+            icon={<Activity className="h-4 w-4" />}
+          >
+            <CompactDonut data={tipos.map((t) => ({ nome: t.nome, total: t.total }))} />
           </Panel>
         </div>
 
