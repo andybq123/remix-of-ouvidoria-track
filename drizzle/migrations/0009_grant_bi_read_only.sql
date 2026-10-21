@@ -1,0 +1,1 @@
+grant execute on function public.bi_estatisticas(text) to supabase_read_only_user;
