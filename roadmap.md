@@ -9,4 +9,5 @@
 - [x] Mostrar data-limite e dias de atraso no popup do mapa (painel e página Mapa).
 - [x] Adicionar conferência 1Doc das atrasadas da secretaria escolhida na triagem; seleção e regras de baixa/endereço passaram nos testes, botão conferido com sessão real.
 - [ ] Validar execução real do lote e seus resultados no histórico na VPS — depende do agente atualizado e ligado e de ouvidorias com link 1Doc; não existem lotes no ambiente acessível.
-- [x] Registrar e exibir histórico de lotes 1Doc com secretaria, data, ouvidorias e alterações de endereço/conclusão; testes passaram e leitura autenticada conferida nas duas telas, sem lotes reais disponíveis.
+- [x] Registrar e exibir histórico de lotes 1Doc com secretaria, data, ouvidorias e alterações de endereço/conclusão; testes passaram e leitura autenticada conferida nas duas telas, sem lotes reais disponíveis.- [x] Acelerar e embelezar o `./atualizar.sh` (cache na compilação do GitHub, estado da compilação ao vivo, pula download quando só scripts/banco mudam, modo `--rapido`).
+- [ ] Conferir o novo atualizador rodando na VPS — depende de rodar `./atualizar.sh` lá.

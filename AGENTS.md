@@ -7,3 +7,4 @@
 - 1Doc history persists department snapshots in job context and full per-protocol outcome snapshots only after successful writes; shared paginated history reads remain admin-only so later edits cannot rewrite audit results.
 - Track browser-started 1Doc jobs in a user-scoped authenticated-layout provider with session storage recovery; page buttons only enqueue, so navigation cannot cancel completion notifications or cache refreshes.
 - Edit manual 1Doc links through a focused control in the shared protocol detail dialog using the existing protocol URL field; save only the link and refresh detail/list caches so imported rows follow the same flow without completing triage or changing other fields.
+- VPS updates: build-vps.yml paths-ignore must match IGNORAR_BUILD in local-docker/atualizar.sh, so the VPS knows when no new build will be published.
