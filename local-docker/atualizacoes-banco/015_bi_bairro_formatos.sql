@@ -27,11 +27,11 @@ as $$
                  select nullif(trim(cand.parte), '')
                  from unnest(string_to_array(p.endereco, ',')) with ordinality as cand(parte, ord)
                  where trim(cand.parte) ~ '^[A-Za-zÀ-ÿ'' ]+$'
-                   and trim(cand.parte) !~* '^(r\.?|rua|av\.?|avenida|rod\.?|rodovia|estr\.?|estrada|trav\.?|travessa|praca|pca|al\.?|alameda)\b'
+                   and trim(cand.parte) !~* '^(r[.]?|rua|av[.]?|avenida|rod[.]?|rodovia|estr[.]?|estrada|trav[.]?|travessa|praca|pca|al[.]?|alameda)( .*)?$'
                    and exists (
                      select 1
                      from unnest(string_to_array(p.endereco, ',')) with ordinality as prox(parte, ord)
-                     where trim(prox.parte) ~* '^brusque\b' and prox.ord = cand.ord + 1
+                     where prox.ord = cand.ord + 1 and (lower(trim(prox.parte)) = 'brusque' or lower(trim(prox.parte)) like 'brusque %')
                    )
                  order by cand.ord desc
                  limit 1
