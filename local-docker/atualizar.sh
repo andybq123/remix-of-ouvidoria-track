@@ -70,7 +70,20 @@ api() {
   [ -n "$TOKEN" ] && h+=(-H "Authorization: Bearer $TOKEN")
   curl -fsS --max-time 10 "${h[@]}" "https://api.github.com/repos/$REPO/$1" 2>/dev/null
 }
-json() { node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{const o=JSON.parse(d);console.log(eval(process.argv[1])??"")}catch{console.log("")}})' "$1"; }
+# Leitura do JSON só com ferramentas do sistema (a VPS não tem node fora do Docker).
+rel_sha() { tr -d '\n' | grep -oE '"(body|target_commitish)": *"[0-9a-f]{40}' | head -1 | grep -oE '[0-9a-f]{40}$' || true; }
+run_status() {
+  local seg; seg="$(tr -d '\n' | grep -oE '"name": *"Compilar vers[^"]*VPS"[^{}]*' | head -1 || true)"
+  [ -n "$seg" ] || return 0
+  local st co
+  st="$(printf '%s' "$seg" | grep -oE '"status": *"[a-z_]+"' | head -1 | sed -E 's/.*"([a-z_]+)"$/\1/' || true)"
+  co="$(printf '%s' "$seg" | grep -oE '"conclusion": *"[a-z_]+"' | head -1 | sed -E 's/.*"([a-z_]+)"$/\1/' || true)"
+  printf '%s|%s' "$st" "$co"
+}
+rodar_node() {
+  if command -v node >/dev/null 2>&1; then node "$@"
+  else docker run --rm -v "$PWD:$PWD" -w "$PWD" node:22-alpine node "$@"; fi
+}
 
 cd local-docker
 PRONTO=0; LOCAL_BUILD=0; TOTAL=120
