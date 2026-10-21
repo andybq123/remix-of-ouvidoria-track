@@ -50,6 +50,13 @@
       "when": 1792581038819,
       "tag": "0006_bi_estatisticas_publicas",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792581460433,
+      "tag": "0007_bi_bairros_por_mes",
+      "breakpoints": true
     }
   ]
 }
