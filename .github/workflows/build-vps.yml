@@ -3,6 +3,16 @@ name: Compilar versão da VPS
 on:
   push:
     branches: [main]
+    # Mudanças que não alteram o sistema compilado não precisam de nova compilação.
+    # Mantenha esta lista igual a IGNORAR_BUILD em local-docker/atualizar.sh.
+    paths-ignore:
+      - "local-docker/**"
+      - "**/*.md"
+      - "drizzle/**"
+      - "supabase/**"
+      - "tests/**"
+      - ".lovable/**"
+      - "*.sh"
   workflow_dispatch:
 
 permissions:
@@ -23,7 +33,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: rm -f package-lock.json && bun install
+      - name: Cache de dependências
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - name: Cache da compilação
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.vite
+          key: vite-${{ runner.os }}-${{ github.sha }}
+          restore-keys: vite-${{ runner.os }}-
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile || bun install
       - name: Build (Node server)
         env:
           NITRO_PRESET: node-server
@@ -38,4 +63,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release delete vps-latest -y --cleanup-tag || true
-          gh release create vps-latest vps-build.tar.gz --title "VPS build ${GITHUB_SHA::7}" --notes "Compilação automática para a VPS" --target "${GITHUB_SHA}"
+          gh release create vps-latest vps-build.tar.gz --title "VPS build ${GITHUB_SHA::7}" --notes "${GITHUB_SHA}" --target "${GITHUB_SHA}"
