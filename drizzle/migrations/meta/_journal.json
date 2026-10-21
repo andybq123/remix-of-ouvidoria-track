@@ -57,6 +57,20 @@
       "when": 1792581460433,
       "tag": "0007_bi_bairros_por_mes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792582174348,
+      "tag": "0008_bi_mapas_e_filtro_mes",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792582306013,
+      "tag": "0009_grant_bi_read_only",
+      "breakpoints": true
     }
   ]
 }
