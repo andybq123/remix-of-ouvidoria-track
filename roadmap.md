@@ -14,3 +14,6 @@
 - [x] Esconder da tela "Sem link 1Doc" as ouvidorias com /2025 (outro sistema); regra em src/lib/sem-link-1doc.ts com teste, lista conferida na tela com duas ouvidorias temporárias (só a /2026 apareceu) e removidas depois.
 - [ ] Conferir o novo atualizador rodando na VPS — depende de rodar `./atualizar.sh` lá.
 - [x] Esconder da tela "Sem link 1Doc" as ouvidorias até 570/2026, inclusive (outro sistema); regra e teste em src/lib/sem-link-1doc.ts, contagem do título passou a usar a lista filtrada.
+- [x] Elevar o corte da tela "Sem link 1Doc" para 583/2026 inclusive; 6 testes passaram.
+- [x] Botão "Atualizar sistema agora" em Configurações → Atualização: enfileira em atualizacao_jobs, barra de progresso por etapa e histórico; tela testada com sessão admin (pedido entrou na fila e foi removido).
+- [ ] Instalar o serviço na VPS (`sudo local-docker/agente-atualizacao/instalar.sh`) e validar uma atualização real disparada pela tela — depende de acesso à VPS; sem o serviço, o pedido fica "Na fila".
