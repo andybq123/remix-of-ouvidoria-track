@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { getOnedocHistorico, type OnedocJob } from "@/lib/onedoc.functions";
 import { resumoResultados } from "@/lib/onedoc-history";
+import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 
 const estados: Record<string, string> = { pendente: "Aguardando agente", executando: "Conferindo", concluido: "Finalizado", erro: "Falha" };
 const dataHora = (data: string) => new Date(data).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
@@ -14,6 +15,7 @@ const dataHora = (data: string) => new Date(data).toLocaleString("pt-BR", { time
 function Lote({ job }: { job: OnedocJob }) {
   const [aberto, setAberto] = useState(false);
   const [pagina, setPagina] = useState(0);
+  const [detalhe, setDetalhe] = useState<{ id: string } | null>(null);
   const resultados = Array.isArray(job.resultados) ? job.resultados : [];
   const resumo = resumoResultados(resultados);
   const secretarias = job.contexto?.secretarias?.map((s) => s.nome).join(", ") || "Secretaria não registrada";
@@ -35,11 +37,16 @@ function Lote({ job }: { job: OnedocJob }) {
       {resultados.length < job.processados && <p className="text-sm text-muted-foreground">Este lote antigo não preservou todos os resultados individuais.</p>}
       {!resultados.length ? <p className="text-sm text-muted-foreground">Nenhuma conferência registrada neste lote.</p> : <>
         <Table>
-          <TableHeader><TableRow><TableHead>Ouvidoria</TableHead><TableHead>Secretaria</TableHead><TableHead>Conferência</TableHead><TableHead>Endereço</TableHead><TableHead>Conclusão</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Ouvidoria</TableHead><TableHead>Secretaria</TableHead><TableHead>Conferência</TableHead><TableHead>Assunto / Categoria</TableHead><TableHead>Endereço</TableHead><TableHead>Conclusão</TableHead></TableRow></TableHeader>
           <TableBody>{resultados.slice(pagina * 25, pagina * 25 + 25).map((r) => <TableRow key={r.id}>
-            <TableCell className="min-w-36"><span className="whitespace-nowrap font-mono">{r.numero ?? r.id}</span>{r.assunto && <p className="text-xs text-muted-foreground break-words">{r.assunto}</p>}</TableCell>
+            <TableCell className="min-w-36"><Button variant="link" size="sm" onClick={() => setDetalhe({ id: r.id })}>{r.numero ?? r.id}</Button>{r.assunto && <p className="text-xs text-muted-foreground break-words">{r.assunto}</p>}</TableCell>
             <TableCell className="min-w-36">{r.secretaria_nome ?? "Não registrada"}</TableCell>
             <TableCell className="min-w-36">{r.erro ? <span className="text-destructive break-words">{r.erro}</span> : "Verificada"}{r.verificado_em && <p className="text-xs text-muted-foreground">{dataHora(r.verificado_em)}</p>}</TableCell>
+            <TableCell className="min-w-56 max-w-80 break-words">
+              {r.assunto_atualizado && <div><Badge variant="secondary">Assunto atualizado</Badge><p>{r.assunto_novo}</p><p className="text-xs text-muted-foreground">Anterior: {r.assunto_anterior ?? "—"}</p></div>}
+              {r.categoria_atualizada && <div className="mt-1"><Badge variant="secondary">Categoria atualizada</Badge><p>{r.categoria_nova}</p><p className="text-xs text-muted-foreground">Anterior: {r.categoria_anterior ?? "—"}</p></div>}
+              {!r.assunto_atualizado && !r.categoria_atualizada && "Sem alteração"}
+            </TableCell>
             <TableCell className="min-w-56 max-w-80 break-words">
               {r.endereco_atualizado ? <><Badge variant="secondary">Atualizado</Badge><p className="mt-1">{r.endereco_novo}</p>{r.endereco_anterior && <p className="text-xs text-muted-foreground">Anterior: {r.endereco_anterior}</p>}</> : r.endereco_atualizado === false ? "Sem alteração" : "Não registrado"}
               {r.localizacao_atualizada && <p className="text-xs text-muted-foreground">Ponto no mapa atualizado</p>}
@@ -50,6 +57,7 @@ function Lote({ job }: { job: OnedocJob }) {
         {resultados.length > 25 && <div className="flex items-center justify-end gap-2"><Button size="sm" variant="outline" disabled={pagina === 0} onClick={() => setPagina(pagina - 1)}>Anteriores</Button><span className="text-xs">{pagina + 1}/{Math.ceil(resultados.length / 25)}</span><Button size="sm" variant="outline" disabled={(pagina + 1) * 25 >= resultados.length} onClick={() => setPagina(pagina + 1)}>Próximas</Button></div>}
       </>}
     </div>}
+    <ProtocoloDetailDialog protocolo={detalhe} open={!!detalhe} onOpenChange={(v) => !v && setDetalhe(null)} />
   </div>;
 }
 

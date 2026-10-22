@@ -52,7 +52,7 @@ export function analisarTexto1doc(texto) {
   const marcador = /arquivado\s*\u2705/i.test(t);
 
   const situacao = arquivado_em || marcador ? "arquivada" : baixado_em ? "baixada" : "em_andamento";
-  return { situacao, baixado_em, arquivado_em, setor, endereco: extrairEndereco(t) };
+  return { situacao, baixado_em, arquivado_em, setor, endereco: extrairEndereco(t), categoria: categoria1doc(t) };
 }
 
 /** "Endereço: R. João XXIII, Brusque - SC, 88357, Brasil. . CEP: ..." -> "R. João XXIII, Brusque - SC, 88357, Brasil" */
@@ -72,7 +72,8 @@ export function atualizacaoProtocolo(protocolo, analise) {
     onedoc_arquivado_em: analise.arquivado_em,
     onedoc_verificado_em: new Date().toISOString(),
   };
-  if (analise.endereco && !String(protocolo.endereco || "").trim()) upd.endereco = analise.endereco;
+  if (analise.endereco && analise.endereco !== protocolo.endereco) upd.endereco = analise.endereco;
+  if (analise.categoria && analise.categoria !== protocolo.categoria) upd.categoria = analise.categoria;
   // Só conclui com a linha "deu baixa ... em dd/mm/aaaa" lida na página.
   // Sem ela, o protocolo continua aberto (apenas o endereço é atualizado).
   const fim = analise.baixado_em;
@@ -89,7 +90,7 @@ export function precisaIA(texto, analise, protocolo = {}) {
   const t = String(texto || "");
   const encerrada = /deu baixa|arquivou|arquivad|finaliz/i.test(t);
   const semData = encerrada && !analise.baixado_em && !analise.arquivado_em;
-  const semEndereco = !String(protocolo.endereco || "").trim() && !analise.endereco
+  const semEndereco = !analise.endereco
     && /endere[çc]o|\b(rua|r\.|av\.|avenida|travessa|servid[aã]o)\s+\S/i.test(t);
   return semData || semEndereco;
 }
@@ -113,7 +114,7 @@ export function validarRespostaIA(json, agora = new Date()) {
 }
 
 /** Campos que o agente pode gravar. Assunto só com nome do catálogo; secretaria e demais dados nunca mudam. */
-const CAMPOS_AGENTE = ["onedoc_situacao", "onedoc_baixado_em", "onedoc_arquivado_em", "onedoc_verificado_em", "endereco", "latitude", "longitude", "status", "data_conclusao", "assunto"];
+const CAMPOS_AGENTE = ["onedoc_situacao", "onedoc_baixado_em", "onedoc_arquivado_em", "onedoc_verificado_em", "endereco", "latitude", "longitude", "status", "data_conclusao", "assunto", "categoria"];
 export function somenteCamposAgente(upd) {
   return Object.fromEntries(Object.entries(upd || {}).filter(([k]) => CAMPOS_AGENTE.includes(k)));
 }
@@ -131,14 +132,24 @@ export function paginaDaOuvidoria(texto, numero) {
 const norm = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
 /** Procura no texto do 1Doc um assunto do catálogo (palavra inteira; o nome mais longo vence). */
 export function assuntoDoCatalogo(texto, nomes) {
-  const t = ` ${norm(texto).replace(/[^a-z0-9]+/g, " ")} `;
+  // Apenas o campo Assunto; não confundir textos de despachos com a classificação.
+  const valor = String(texto || "").match(/(?:^|\n)\s*Assunto\s*\*?\s*:\s*\n?\s*([^\n]+)/i)?.[1];
+  if (!valor) return null;
+  const t = norm(valor).replace(/[^a-z0-9]+/g, " ").trim();
   let melhor = null;
   for (const nome of nomes || []) {
     const n = norm(nome).replace(/[^a-z0-9]+/g, " ").trim();
-    if (n.length < 3 || !t.includes(` ${n} `)) continue;
+    if (n.length < 3 || t !== n) continue;
     if (!melhor || n.length > norm(melhor).length) melhor = nome;
   }
   return melhor;
+}
+
+/** Finalidade explícita, sem inferir categoria pelo relato ou pelo assunto. */
+export function categoria1doc(texto) {
+  const valor = String(texto || "").match(/(?:^|\n)\s*Finalidade\s*\*?\s*:\s*\n?\s*([^\n]+)/i)?.[1];
+  const categorias = { reclamacao: "reclamacao", informacao: "pedido_informacao", "pedido de informacao": "pedido_informacao", "pedido informacao": "pedido_informacao", sugestao: "sugestao", elogio: "elogio", solicitacao: "solicitacao", denuncia: "denuncia" };
+  return categorias[norm(valor).replace(/[.*]+$/g, "").trim()] ?? null;
 }
 
 /** O assunto só pode ser trocado quando hoje está igual ao nome de uma secretaria. */

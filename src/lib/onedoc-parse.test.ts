@@ -44,10 +44,10 @@ describe("agente 1Doc", () => {
     const a = analisarTexto1doc("Endereço: R. João XXIII, Brusque - SC, 88357, Brasil. . CEP: 88357 / Cidade: Brusque, Santa Catarina");
     expect(a.endereco).toBe("R. João XXIII, Brusque - SC, 88357, Brasil");
   });
-  it("só preenche endereço quando o protocolo não tem", () => {
+  it("substitui endereço existente pelo endereço do 1Doc", () => {
     const a = analisarTexto1doc("Endereço: Rua Azambuja, Brusque - SC");
     expect(atualizacaoProtocolo({ status: "aberto", endereco: "" }, a).endereco).toBe("Rua Azambuja, Brusque - SC");
-    expect(atualizacaoProtocolo({ status: "aberto", endereco: "Rua X" }, a).endereco).toBeUndefined();
+    expect(atualizacaoProtocolo({ status: "aberto", endereco: "Rua X" }, a).endereco).toBe("Rua Azambuja, Brusque - SC");
   });
   it("IA quando encerrada sem data", () => {
     const tx = "SETA deu baixa na solicitação";
@@ -56,9 +56,9 @@ describe("agente 1Doc", () => {
   it("sem IA quando a regra leu a data", () => {
     expect(precisaIA(EXEMPLO, analisarTexto1doc(EXEMPLO), { endereco: "Rua X" })).toBe(false);
   });
-  it("sem IA para endereço quando o protocolo já tem", () => {
+  it("IA pode ler endereço mesmo quando já preenchido", () => {
     const tx = "Local: Rua Azambuja 100";
-    expect(precisaIA(tx, analisarTexto1doc(tx), { endereco: "Rua X" })).toBe(false);
+    expect(precisaIA(tx, analisarTexto1doc(tx), { endereco: "Rua X" })).toBe(true);
     expect(precisaIA(tx, analisarTexto1doc(tx), { endereco: "" })).toBe(true);
   });
   it("descarta data inválida da IA", () => {
@@ -78,12 +78,29 @@ describe("agente 1Doc protege a ouvidoria", () => {
   });
   it("lê o assunto pelo catálogo, o nome mais longo vence", () => {
     const cat = ["Buraco", "Buraco na via", "Iluminação pública"];
-    expect(assuntoDoCatalogo("Ouvidoria 2.240/2026 - BURACO NA VIA rua X", cat)).toBe("Buraco na via");
+    expect(assuntoDoCatalogo("Assunto: BURACO NA VIA", cat)).toBe("Buraco na via");
     expect(assuntoDoCatalogo("Assunto: iluminacao publica", cat)).toBe("Iluminação pública");
   });
   it("sem assunto do catálogo na página não troca", () => {
     expect(assuntoDoCatalogo("Página não encontrada", ["Buraco"])).toBeNull();
     expect(assuntoDoCatalogo("Buracos diversos", ["Buraco"])).toBeNull();
+    expect(assuntoDoCatalogo("Assunto: Não catalogado\nDespacho: Buraco", ["Buraco"])).toBeNull();
+  });
+  it("usa o assunto do catálogo mesmo com assunto normal existente", () => {
+    expect(assuntoDoCatalogo("Assunto: Demora em marcar consulta / procedimento", ["Buraco", "Demora em marcar consulta / procedimento"])).toBe("Demora em marcar consulta / procedimento");
+  });
+  it.each([["Reclamação", "reclamacao"], ["Informação", "pedido_informacao"], ["Sugestão", "sugestao"], ["Elogio", "elogio"], ["Solicitação", "solicitacao"], ["Denúncia", "denuncia"]])("mapeia Finalidade %s e substitui categoria existente", (finalidade, categoria) => {
+    const a = analisarTexto1doc(`Finalidade*: ${finalidade}`);
+    expect(atualizacaoProtocolo({ categoria: "outros" }, a).categoria).toBe(categoria);
+  });
+  it("não infere Finalidade ausente ou desconhecida", () => {
+    expect(analisarTexto1doc("Relato: reclamação").categoria).toBeNull();
+    expect(analisarTexto1doc("Finalidade: desconhecida").categoria).toBeNull();
+  });
+  it("lê endereço e baixa fornecidos pelo usuário", () => {
+    const a = analisarTexto1doc("Endereço: R. Pedro Gracher - São Luiz, Brusque - SC, 88351-470, Brasil. . CEP: 88351-470 / Cidade: Brusque, Santa Catarina\nSETA - OUV deu baixa manualmente no prazo Resposta final em 03/08/2026 às 17:08:41.");
+    expect(a.endereco).toBe("R. Pedro Gracher - São Luiz, Brusque - SC, 88351-470, Brasil");
+    expect(atualizacaoProtocolo({ status: "aberto" }, a).data_conclusao).toBe("2026-08-03");
   });
   it("reconhece a página da própria ouvidoria", () => {
     expect(paginaDaOuvidoria("Ouvidoria 2.240/2026 - Buraco", "2240/2026")).toBe(true);

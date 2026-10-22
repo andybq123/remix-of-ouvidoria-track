@@ -476,6 +476,7 @@ export type Database = {
           autor_id: string | null
           autor_nome: string | null
           campo: string
+          contexto: Json
           created_at: string
           id: string
           protocolo_id: string
@@ -487,6 +488,7 @@ export type Database = {
           autor_id?: string | null
           autor_nome?: string | null
           campo: string
+          contexto?: Json
           created_at?: string
           id?: string
           protocolo_id: string
@@ -498,6 +500,7 @@ export type Database = {
           autor_id?: string | null
           autor_nome?: string | null
           campo?: string
+          contexto?: Json
           created_at?: string
           id?: string
           protocolo_id?: string
@@ -836,6 +839,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aplicar_conferencia_1doc: {
+        Args: { p_anterior: Json; p_id: string; p_patch: Json }
+        Returns: undefined
+      }
       backup_exportar_usuarios: { Args: never; Returns: Json }
       backup_importar: {
         Args: { p_rows: Json; p_tabela: string }
@@ -898,6 +905,10 @@ export type Database = {
       }
       reservar_triagem: { Args: { p_id: string }; Returns: Json }
       reservar_triagem_admin: { Args: { p_id: string }; Returns: Json }
+      reverter_alteracao_1doc: {
+        Args: { p_historico_id: string }
+        Returns: undefined
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }

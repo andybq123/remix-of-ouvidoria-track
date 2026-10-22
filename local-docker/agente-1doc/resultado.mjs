@@ -15,6 +15,9 @@ export function resultadoConferencia(protocolo, atualizacao, analise, fonte, ago
     assunto_atualizado: typeof atualizacao.assunto === "string" && atualizacao.assunto !== protocolo.assunto,
     assunto_anterior: protocolo.assunto ?? null,
     assunto_novo: atualizacao.assunto ?? protocolo.assunto ?? null,
+    categoria_atualizada: typeof atualizacao.categoria === "string" && atualizacao.categoria !== protocolo.categoria,
+    categoria_anterior: protocolo.categoria ?? null,
+    categoria_nova: atualizacao.categoria ?? protocolo.categoria ?? null,
     localizacao_atualizada: atualizacao.latitude != null && atualizacao.longitude != null,
   };
 }

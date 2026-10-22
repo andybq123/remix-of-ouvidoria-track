@@ -8,9 +8,10 @@ import { enfileirarOnedoc, type OnedocJob } from "@/lib/onedoc.functions";
 import { useOnedocBackground } from "@/components/onedoc-background-provider";
 import { onedocScope } from "@/lib/onedoc-monitor";
 
-export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, secretariaId, confirmacao, disabled = false, label, size = "sm", onDone }: {
+export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, secretariaId, incluirConcluidos, escopo, confirmacao, disabled = false, label, size = "sm", onDone }: {
   tipo: "teste" | "unitario" | "lote"; protocoloId?: string; protocoloIds?: string[]; secretariaId?: string; confirmacao?: string; disabled?: boolean; label: string;
   size?: "sm" | "default"; onDone?: (job: OnedocJob) => void;
+  incluirConcluidos?: boolean; escopo?: string;
 }) {
   const enfileirar = useServerFn(enfileirarOnedoc);
   const qc = useQueryClient();
@@ -18,7 +19,7 @@ export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, secretariaI
   const [iniciando, setIniciando] = useState(false);
   const [startedId, setStartedId] = useState<string>();
   const delivered = useRef<string | undefined>(undefined);
-  const scope = onedocScope(tipo, protocoloId, secretariaId);
+  const scope = escopo ?? onedocScope(tipo, protocoloId, secretariaId);
   const active = tracked.find((j) => j.scope === scope);
   const job = jobs[active?.id ?? startedId ?? ""];
   const rodando = iniciando || !!active;
@@ -32,7 +33,7 @@ export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, secretariaI
     if (tipo === "lote" && !confirm(confirmacao ?? "Conferir no 1Doc todas as ouvidorias em aberto com link? Isso roda em segundo plano.")) return;
     setIniciando(true);
     try {
-      const { id } = await enfileirar({ data: { tipo, protocoloId, protocoloIds, secretariaId } });
+      const { id } = await enfileirar({ data: { tipo, protocoloId, protocoloIds, secretariaId, incluirConcluidos } });
       setStartedId(id);
       track({ id, tipo, scope, startedAt: Date.now() });
       qc.invalidateQueries({ queryKey: ["onedoc-historico"] });
