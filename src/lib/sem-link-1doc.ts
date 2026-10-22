@@ -4,7 +4,7 @@ export const ANOS_DE_OUTRO_SISTEMA = ["2025"] as const;
 
 // Regra: no ano do 1Doc atual, as ouvidorias com número até o limite (inclusive)
 // também pertencem a outro sistema — não têm link do 1Doc, então não entram na lista.
-export const MAX_DE_OUTRO_SISTEMA_POR_ANO: Record<string, number> = { "2026": 570 };
+export const MAX_DE_OUTRO_SISTEMA_POR_ANO: Record<string, number> = { "2026": 583 };
 
 // Número antes da barra: "3.565" vale 3565, "12" vale 12. Sem dígitos, retorna null.
 export function valorDoNumero(numero: string): number | null {

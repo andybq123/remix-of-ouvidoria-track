@@ -10,13 +10,14 @@ describe("lista de ouvidorias sem link 1doc", () => {
     expect(deveConstarSemLink1doc("3.565/2025")).toBe(false);
     expect(deveConstarSemLink1doc("12/2025")).toBe(false);
   });
-  it("esconde ouvidorias até 570/2026, que são de outro sistema", () => {
+  it("esconde ouvidorias até 583/2026, que são de outro sistema", () => {
     expect(deveConstarSemLink1doc("12/2026")).toBe(false);
     expect(deveConstarSemLink1doc("500/2026")).toBe(false);
     expect(deveConstarSemLink1doc("570/2026")).toBe(false);
+    expect(deveConstarSemLink1doc("583/2026")).toBe(false);
   });
   it("mantém ouvidorias do 1Doc atual", () => {
-    expect(deveConstarSemLink1doc("571/2026")).toBe(true);
+    expect(deveConstarSemLink1doc("584/2026")).toBe(true);
     expect(deveConstarSemLink1doc("3.565/2026")).toBe(true);
     expect(deveConstarSemLink1doc("9.001/2026")).toBe(true);
     expect(deveConstarSemLink1doc(null)).toBe(true);
