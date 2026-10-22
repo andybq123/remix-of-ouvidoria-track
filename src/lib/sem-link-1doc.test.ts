@@ -20,6 +20,6 @@ describe("lista de ouvidorias sem link 1Doc", () => {
       },
     };
     semLinkDeOutroSistema(query);
-    expect(filtros).toEqual(["numero like %/2025"]);
+    expect(filtros).toEqual(["numero like %/2025%"]);
   });
 });
