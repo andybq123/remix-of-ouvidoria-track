@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -12,20 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-
-export const Route = createFileRoute("/_authenticated/assuntos-alterados")({
-  head: () => ({
-    meta: [
-      { title: "Assuntos alterados — OuviDesk" },
-      { name: "description", content: "Ouvidorias com o assunto trocado automaticamente, para correção individual." },
-      { property: "og:title", content: "Assuntos alterados — OuviDesk" },
-      { property: "og:description", content: "Corrija o assunto das ouvidorias afetadas." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
-  component: Pagina,
-});
 
 const dataHora = (d: string | null) => d ? new Date(d).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—";
 
@@ -55,7 +40,7 @@ function Linha({ s, onSalvo }: { s: Suspeito; onSalvo: () => void }) {
   </TableRow>;
 }
 
-function Pagina() {
+export function AssuntosAlteradosPanel() {
   const isAdmin = useIsAdmin();
   const qc = useQueryClient();
   const { data = [], isLoading, isFetching, refetch, error } = useQuery({
@@ -72,7 +57,7 @@ function Pagina() {
   });
   if (!isAdmin) return <p className="p-6 text-muted-foreground">Acesso restrito a administradores.</p>;
   const atualizar = () => { qc.invalidateQueries({ queryKey: ["assuntos-alterados"] }); qc.invalidateQueries({ queryKey: ["protocolos"] }); };
-  return <div className="space-y-6 max-w-6xl">
+  return <div className="space-y-6">
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-4">
         <div>
