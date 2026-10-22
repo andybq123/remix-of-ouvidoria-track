@@ -19,6 +19,7 @@ import { OnlineUsersProvider, useOnlineUsers } from "@/hooks/use-online-users";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { LayoutMode } from "@/hooks/use-layout-mode";
 import { OnedocBackgroundProvider } from "@/components/onedoc-background-provider";
+import { AtualizacaoOverlay } from "@/components/atualizacao-overlay";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -38,7 +39,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthLayout() {
   const { user } = Route.useRouteContext();
-  return <OnedocBackgroundProvider key={user.id} userId={user.id}><AuthLayoutContent /></OnedocBackgroundProvider>;
+  return <OnedocBackgroundProvider key={user.id} userId={user.id}><AuthLayoutContent /><AtualizacaoOverlay /></OnedocBackgroundProvider>;
 }
 
 function AuthLayoutContent() {
