@@ -1,5 +1,5 @@
 # Tarefas
-- [ ] Adicionar conferência 1Doc por indicador de local, atualizar assunto/categoria/endereço e permitir reversão individual no histórico.
+- [x] Adicionar conferência 1Doc por indicador de local, atualizar assunto/categoria/endereço e permitir reversão individual no histórico; 47 testes passaram, lote enfileirado com sessão real e reversão de endereço conferida na tela sem alterar categoria, com registro de autoria e coordenadas restauradas; registros temporários removidos.
 - [x] Corrigir o contraste da lista de meses do BI e substituir a logo pelo brasão enviado; lista escura, seleção e imagem carregada conferidas no navegador.
 - [x] Compactar o BI, remover os três quadros solicitados e validar filtro de secretarias sem ouvidorias; teste passou, seleção mensal e telas sem transbordamento conferidas, gráficos validados com dados simulados porque o ambiente está sem demandas.
 - [x] Permitir cadastrar e alterar o link 1Doc nas ouvidorias, inclusive importadas, e mostrar ações após salvar; 13 testes passaram e cadastro/alteração/persistência/botões foram conferidos com sessão real em registro temporário importado, removido após o teste.
