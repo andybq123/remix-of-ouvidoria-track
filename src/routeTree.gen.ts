@@ -20,10 +20,8 @@ import { Route as OuvidoriaRouteImport } from './routes/ouvidoria'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAgente1docRouteImport } from './routes/_authenticated/agente-1doc'
 import { Route as AuthenticatedAssuntosRouteImport } from './routes/_authenticated/assuntos'
-import { Route as AuthenticatedAssuntosAlteradosRouteImport } from './routes/_authenticated/assuntos-alterados'
 import { Route as AuthenticatedAtrasadosRouteImport } from './routes/_authenticated/atrasados'
 import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated/backup'
-import { Route as AuthenticatedColetorRouteImport } from './routes/_authenticated/coletor'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDebugRouteImport } from './routes/_authenticated/debug'
 import { Route as AuthenticatedEmailInboxRouteImport } from './routes/_authenticated/email-inbox'
@@ -99,12 +97,6 @@ const AuthenticatedAssuntosRoute = AuthenticatedAssuntosRouteImport.update({
   path: '/assuntos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAssuntosAlteradosRoute =
-  AuthenticatedAssuntosAlteradosRouteImport.update({
-    id: '/assuntos-alterados',
-    path: '/assuntos-alterados',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedAtrasadosRoute = AuthenticatedAtrasadosRouteImport.update({
   id: '/atrasados',
   path: '/atrasados',
@@ -113,11 +105,6 @@ const AuthenticatedAtrasadosRoute = AuthenticatedAtrasadosRouteImport.update({
 const AuthenticatedBackupRoute = AuthenticatedBackupRouteImport.update({
   id: '/backup',
   path: '/backup',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedColetorRoute = AuthenticatedColetorRouteImport.update({
-  id: '/coletor',
-  path: '/coletor',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -240,10 +227,8 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/agente-1doc': typeof AuthenticatedAgente1docRoute
   '/assuntos': typeof AuthenticatedAssuntosRoute
-  '/assuntos-alterados': typeof AuthenticatedAssuntosAlteradosRoute
   '/atrasados': typeof AuthenticatedAtrasadosRoute
   '/backup': typeof AuthenticatedBackupRoute
-  '/coletor': typeof AuthenticatedColetorRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
   '/email-inbox': typeof AuthenticatedEmailInboxRoute
@@ -276,10 +261,8 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/agente-1doc': typeof AuthenticatedAgente1docRoute
   '/assuntos': typeof AuthenticatedAssuntosRoute
-  '/assuntos-alterados': typeof AuthenticatedAssuntosAlteradosRoute
   '/atrasados': typeof AuthenticatedAtrasadosRoute
   '/backup': typeof AuthenticatedBackupRoute
-  '/coletor': typeof AuthenticatedColetorRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
   '/email-inbox': typeof AuthenticatedEmailInboxRoute
@@ -313,10 +296,8 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/agente-1doc': typeof AuthenticatedAgente1docRoute
   '/_authenticated/assuntos': typeof AuthenticatedAssuntosRoute
-  '/_authenticated/assuntos-alterados': typeof AuthenticatedAssuntosAlteradosRoute
   '/_authenticated/atrasados': typeof AuthenticatedAtrasadosRoute
   '/_authenticated/backup': typeof AuthenticatedBackupRoute
-  '/_authenticated/coletor': typeof AuthenticatedColetorRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/debug': typeof AuthenticatedDebugRoute
   '/_authenticated/email-inbox': typeof AuthenticatedEmailInboxRoute
@@ -351,10 +332,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/agente-1doc'
     | '/assuntos'
-    | '/assuntos-alterados'
     | '/atrasados'
     | '/backup'
-    | '/coletor'
     | '/dashboard'
     | '/debug'
     | '/email-inbox'
@@ -387,10 +366,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/agente-1doc'
     | '/assuntos'
-    | '/assuntos-alterados'
     | '/atrasados'
     | '/backup'
-    | '/coletor'
     | '/dashboard'
     | '/debug'
     | '/email-inbox'
@@ -423,10 +400,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/agente-1doc'
     | '/_authenticated/assuntos'
-    | '/_authenticated/assuntos-alterados'
     | '/_authenticated/atrasados'
     | '/_authenticated/backup'
-    | '/_authenticated/coletor'
     | '/_authenticated/dashboard'
     | '/_authenticated/debug'
     | '/_authenticated/email-inbox'
@@ -545,13 +520,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAssuntosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/assuntos-alterados': {
-      id: '/_authenticated/assuntos-alterados'
-      path: '/assuntos-alterados'
-      fullPath: '/assuntos-alterados'
-      preLoaderRoute: typeof AuthenticatedAssuntosAlteradosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/atrasados': {
       id: '/_authenticated/atrasados'
       path: '/atrasados'
@@ -564,13 +532,6 @@ declare module '@tanstack/react-router' {
       path: '/backup'
       fullPath: '/backup'
       preLoaderRoute: typeof AuthenticatedBackupRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/coletor': {
-      id: '/_authenticated/coletor'
-      path: '/coletor'
-      fullPath: '/coletor'
-      preLoaderRoute: typeof AuthenticatedColetorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -736,10 +697,8 @@ const AuthenticatedRelatoriosRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgente1docRoute: typeof AuthenticatedAgente1docRoute
   AuthenticatedAssuntosRoute: typeof AuthenticatedAssuntosRoute
-  AuthenticatedAssuntosAlteradosRoute: typeof AuthenticatedAssuntosAlteradosRoute
   AuthenticatedAtrasadosRoute: typeof AuthenticatedAtrasadosRoute
   AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
-  AuthenticatedColetorRoute: typeof AuthenticatedColetorRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDebugRoute: typeof AuthenticatedDebugRoute
   AuthenticatedEmailInboxRoute: typeof AuthenticatedEmailInboxRoute
@@ -758,10 +717,8 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgente1docRoute: AuthenticatedAgente1docRoute,
   AuthenticatedAssuntosRoute: AuthenticatedAssuntosRoute,
-  AuthenticatedAssuntosAlteradosRoute: AuthenticatedAssuntosAlteradosRoute,
   AuthenticatedAtrasadosRoute: AuthenticatedAtrasadosRoute,
   AuthenticatedBackupRoute: AuthenticatedBackupRoute,
-  AuthenticatedColetorRoute: AuthenticatedColetorRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDebugRoute: AuthenticatedDebugRoute,
   AuthenticatedEmailInboxRoute: AuthenticatedEmailInboxRoute,
