@@ -13,4 +13,4 @@
 - [x] Registrar e exibir histórico de lotes 1Doc com secretaria, data, ouvidorias e alterações de endereço/conclusão; testes passaram e leitura autenticada conferida nas duas telas, sem lotes reais disponíveis.- [x] Acelerar e embelezar o `./atualizar.sh` (cache na compilação do GitHub, estado da compilação ao vivo, pula download quando só scripts/banco mudam, modo `--rapido`).
 - [x] Esconder da tela "Sem link 1Doc" as ouvidorias com /2025 (outro sistema); regra em src/lib/sem-link-1doc.ts com teste, lista conferida na tela com duas ouvidorias temporárias (só a /2026 apareceu) e removidas depois.
 - [ ] Conferir o novo atualizador rodando na VPS — depende de rodar `./atualizar.sh` lá.
-- [x] Esconder da tela "Sem link 1Doc" as ouvidorias abaixo de 500/2026 (outro sistema); regra e teste em src/lib/sem-link-1doc.ts, contagem do título passou a usar a lista filtrada.
+- [x] Esconder da tela "Sem link 1Doc" as ouvidorias até 570/2026, inclusive (outro sistema); regra e teste em src/lib/sem-link-1doc.ts, contagem do título passou a usar a lista filtrada.
