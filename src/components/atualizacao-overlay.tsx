@@ -1,19 +1,21 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 
 export const ATUALIZACAO_ATUAL_KEY = ["atualizacao-atual"];
 const NOMES = ["Baixando alterações", "Preparando a versão", "Atualizando o banco", "Trocando a versão", "Conferindo o sistema"];
 
-type JobAtual = { id: string; status: string; etapa: number; etapas_total: number; mensagem: string | null; created_at: string };
+type JobAtual = { id: string; status: string; etapa: number; etapas_total: number; mensagem: string | null; created_at: string; updated_at: string };
 
 /** Acompanha a atualização da VPS em segundo plano em qualquer tela e recarrega ao concluir. */
 export function AtualizacaoOverlay() {
   const isAdmin = useIsAdmin();
   const acompanhando = useRef<string | null>(null);
+  const [fechado, setFechado] = useState<string | null>(null);
   const { data: job } = useQuery({
     queryKey: ATUALIZACAO_ATUAL_KEY,
     enabled: isAdmin,
@@ -22,7 +24,7 @@ export function AtualizacaoOverlay() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("atualizacao_jobs")
-        .select("id, status, etapa, etapas_total, mensagem, created_at")
+        .select("id, status, etapa, etapas_total, mensagem, created_at, updated_at")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -44,7 +46,9 @@ export function AtualizacaoOverlay() {
   const concluindo = job?.status === "concluido" && acompanhando.current === job.id;
   if (!job || (!ativo && !concluindo)) return null;
   // Pedido na fila há muito tempo sem o serviço responder: não bloqueia a tela.
-  if (job.status === "pendente" && Date.now() - new Date(job.created_at).getTime() > 120_000) return null;
+  if (fechado === job.id && !concluindo) return null;
+  // Sem notícia da VPS há mais de 3 min: considera travado e não bloqueia a tela.
+  if (!concluindo && Date.now() - new Date(job.updated_at).getTime() > 180_000) return null;
 
   const pct = concluindo ? 100 : Math.max(5, (job.etapa / job.etapas_total) * 100);
   return (
@@ -62,6 +66,9 @@ export function AtualizacaoOverlay() {
         <Progress value={pct} />
         {job.mensagem && !concluindo && <p className="truncate text-xs text-muted-foreground">{job.mensagem}</p>}
         <p className="text-xs text-muted-foreground">A página recarrega sozinha quando terminar.</p>
+        {!concluindo && (
+          <Button variant="outline" size="sm" onClick={() => setFechado(job.id)}>Continuar usando o sistema</Button>
+        )}
       </div>
     </div>
   );
