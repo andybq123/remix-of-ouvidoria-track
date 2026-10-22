@@ -20,7 +20,7 @@ main() {
   flock -n 9 || { echo "Já há um agente de atualização rodando."; exit 0; }
 
   dbc() { docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | head -1; }
-  sql() { docker exec -i "$(dbc)" psql -tA -U postgres -d postgres -v ON_ERROR_STOP=1 -c "$1"; }
+  sql() { docker exec -i "$(dbc)" psql -qtA -U postgres -d postgres -v ON_ERROR_STOP=1 -c "$1"; }
   esc() { printf '%s' "$1" | sed "s/'/''/g"; }
   limpo() { sed 's/\x1b\[[0-9;]*m//g' | tr '\r' '\n' | grep -av '^[[:space:]]*$'; }
 
@@ -30,6 +30,7 @@ main() {
 
   while true; do
     ID="$(sql "update atualizacao_jobs set status='rodando', etapa=0, mensagem='Iniciando a atualização', updated_at=now() where id = (select id from atualizacao_jobs where status='pendente' order by created_at limit 1 for update skip locked) returning id" 2>/dev/null | head -1 || true)"
+    ID="$(printf "%s" "$ID" | grep -oE "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" || true)"
     if [ -n "$ID" ]; then
       echo "Atualização $ID iniciada."
       LOGF="/tmp/ouvidesk-update-$ID.log"
