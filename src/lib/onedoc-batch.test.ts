@@ -14,6 +14,12 @@ describe("lote 1Doc da secretaria selecionada", () => {
   it("não aceita seleção vazia para evitar conferir todas por engano", () => {
     expect(onedocInputSchema.safeParse({ tipo: "lote", protocoloIds: [] }).success).toBe(false);
   });
+  it("inclui concluídas somente na lista explícita do local", () => {
+    const rows = [{ id: "local-concluida", tipo: "ouvidoria", status: "concluido", url: "https://brusque.1doc.com.br/2" }];
+    expect(idsOuvidorias1doc(rows, true)).toEqual(["local-concluida"]);
+    expect(onedocInputSchema.safeParse({ tipo: "lote", incluirConcluidos: true }).success).toBe(false);
+    expect(onedocInputSchema.safeParse({ tipo: "lote", incluirConcluidos: true, protocoloIds: ["c247febe-5801-4a01-8835-21da7a132a27"] }).success).toBe(true);
+  });
   it("preserva os IDs explícitos sem incluir outros protocolos", () => {
     const id = "c247febe-5801-4a01-8835-21da7a132a27";
     expect(onedocInputSchema.parse({ tipo: "lote", protocoloIds: [id] }).protocoloIds).toEqual([id]);
