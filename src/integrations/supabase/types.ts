@@ -130,6 +130,42 @@ export type Database = {
           },
         ]
       }
+      atualizacao_jobs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          etapa: number
+          etapas_total: number
+          id: string
+          log: string | null
+          mensagem: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          etapa?: number
+          etapas_total?: number
+          id?: string
+          log?: string | null
+          mensagem?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          etapa?: number
+          etapas_total?: number
+          id?: string
+          log?: string | null
+          mensagem?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coletas: {
         Row: {
           atualizados: number
