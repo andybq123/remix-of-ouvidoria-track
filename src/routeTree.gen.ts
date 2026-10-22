@@ -21,6 +21,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAgente1docRouteImport } from './routes/_authenticated/agente-1doc'
 import { Route as AuthenticatedAssuntosRouteImport } from './routes/_authenticated/assuntos'
 import { Route as AuthenticatedAtrasadosRouteImport } from './routes/_authenticated/atrasados'
+import { Route as AuthenticatedAtualizacaoRouteImport } from './routes/_authenticated/atualizacao'
 import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated/backup'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDebugRouteImport } from './routes/_authenticated/debug'
@@ -103,6 +104,12 @@ const AuthenticatedAtrasadosRoute = AuthenticatedAtrasadosRouteImport.update({
   path: '/atrasados',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAtualizacaoRoute =
+  AuthenticatedAtualizacaoRouteImport.update({
+    id: '/atualizacao',
+    path: '/atualizacao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedBackupRoute = AuthenticatedBackupRouteImport.update({
   id: '/backup',
   path: '/backup',
@@ -235,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/agente-1doc': typeof AuthenticatedAgente1docRoute
   '/assuntos': typeof AuthenticatedAssuntosRoute
   '/atrasados': typeof AuthenticatedAtrasadosRoute
+  '/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/backup': typeof AuthenticatedBackupRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
@@ -270,6 +278,7 @@ export interface FileRoutesByTo {
   '/agente-1doc': typeof AuthenticatedAgente1docRoute
   '/assuntos': typeof AuthenticatedAssuntosRoute
   '/atrasados': typeof AuthenticatedAtrasadosRoute
+  '/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/backup': typeof AuthenticatedBackupRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
@@ -306,6 +315,7 @@ export interface FileRoutesById {
   '/_authenticated/agente-1doc': typeof AuthenticatedAgente1docRoute
   '/_authenticated/assuntos': typeof AuthenticatedAssuntosRoute
   '/_authenticated/atrasados': typeof AuthenticatedAtrasadosRoute
+  '/_authenticated/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/_authenticated/backup': typeof AuthenticatedBackupRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/debug': typeof AuthenticatedDebugRoute
@@ -343,6 +353,7 @@ export interface FileRouteTypes {
     | '/agente-1doc'
     | '/assuntos'
     | '/atrasados'
+    | '/atualizacao'
     | '/backup'
     | '/dashboard'
     | '/debug'
@@ -378,6 +389,7 @@ export interface FileRouteTypes {
     | '/agente-1doc'
     | '/assuntos'
     | '/atrasados'
+    | '/atualizacao'
     | '/backup'
     | '/dashboard'
     | '/debug'
@@ -413,6 +425,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agente-1doc'
     | '/_authenticated/assuntos'
     | '/_authenticated/atrasados'
+    | '/_authenticated/atualizacao'
     | '/_authenticated/backup'
     | '/_authenticated/dashboard'
     | '/_authenticated/debug'
@@ -538,6 +551,13 @@ declare module '@tanstack/react-router' {
       path: '/atrasados'
       fullPath: '/atrasados'
       preLoaderRoute: typeof AuthenticatedAtrasadosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/atualizacao': {
+      id: '/_authenticated/atualizacao'
+      path: '/atualizacao'
+      fullPath: '/atualizacao'
+      preLoaderRoute: typeof AuthenticatedAtualizacaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/backup': {
@@ -718,6 +738,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgente1docRoute: typeof AuthenticatedAgente1docRoute
   AuthenticatedAssuntosRoute: typeof AuthenticatedAssuntosRoute
   AuthenticatedAtrasadosRoute: typeof AuthenticatedAtrasadosRoute
+  AuthenticatedAtualizacaoRoute: typeof AuthenticatedAtualizacaoRoute
   AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDebugRoute: typeof AuthenticatedDebugRoute
@@ -739,6 +760,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgente1docRoute: AuthenticatedAgente1docRoute,
   AuthenticatedAssuntosRoute: AuthenticatedAssuntosRoute,
   AuthenticatedAtrasadosRoute: AuthenticatedAtrasadosRoute,
+  AuthenticatedAtualizacaoRoute: AuthenticatedAtualizacaoRoute,
   AuthenticatedBackupRoute: AuthenticatedBackupRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDebugRoute: AuthenticatedDebugRoute,
