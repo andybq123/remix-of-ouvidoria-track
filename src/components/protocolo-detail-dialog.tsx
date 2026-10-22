@@ -261,7 +261,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
       return;
     }
     const patch: any = {
-      numero: form.numero,
+      numero: form.tipo === "esic" ? formatarNumeroEsic(form.numero_esic) : form.numero,
       numero_esic: form.tipo === "esic" ? formatarNumeroEsic(form.numero_esic) : null,
       ...(form.tipo === "esic" ? { esic_prorrogacao_justificativa: String(form.esic_prorrogacao_justificativa ?? "").trim() || null } : {}),
       tipo: form.tipo,
@@ -371,6 +371,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
         tipo: form.tipo,
         categoria: categoriaPersistida(form.tipo as TipoProtocolo, form.categoria as CategoriaProtocolo),
         numero_esic: form.tipo === "esic" ? formatarNumeroEsic(form.numero_esic) : null,
+        ...(form.tipo === "esic" ? { numero: formatarNumeroEsic(form.numero_esic) } : {}),
         ...(form.tipo === "esic" ? { esic_prorrogacao_justificativa: String(form.esic_prorrogacao_justificativa ?? "").trim() || null } : {}),
         assunto: form.assunto,
         endereco: String(form.endereco ?? "").trim() || null,

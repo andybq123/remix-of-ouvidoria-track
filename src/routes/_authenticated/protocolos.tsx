@@ -451,7 +451,7 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
         }
       }
       const { error } = await supabase.from("protocolos").insert({
-        numero: numero || gerarNumeroProtocolo(tipo),
+        numero: tipo === "esic" ? formatarNumeroEsic(numeroEsic) : (numero || gerarNumeroProtocolo(tipo)),
         numero_esic: tipo === "esic" ? (formatarNumeroEsic(numeroEsic) || null) : null,
         tipo, categoria: categoriaPersistida(tipo, categoria), assunto, descricao: descricao || null,
         secretaria_id: secretariaId || null,
@@ -583,8 +583,8 @@ function NovoProtocoloDialog({ secretarias, locais }: { secretarias: any[]; loca
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Número interno (auto se vazio)</Label>
-            <Input value={numero} onChange={e => setNumero(e.target.value)} placeholder={gerarNumeroProtocolo(tipo)} />
+            <Label>{tipo === "esic" ? "Número interno" : "Número interno (auto se vazio)"}</Label>
+            <Input value={tipo === "esic" ? formatarNumeroEsic(numeroEsic) : numero} readOnly={tipo === "esic"} onChange={e => setNumero(e.target.value)} placeholder={tipo === "esic" ? "Ex.: 0.026/2026" : gerarNumeroProtocolo(tipo)} />
           </div>
           {tipo === "esic" && (
             <div className="space-y-1.5">

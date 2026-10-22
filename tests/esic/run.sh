@@ -60,3 +60,7 @@ wait "$FIRST"
 grep -q 'Já existe um pedido e-SIC' "$TEMP/concorrente-b.log"
 "${PSQL[@]}" -c "DO \$\$ BEGIN ASSERT (SELECT count(*) = 1 FROM public.protocolo_esic_por_numero('99/2026')), 'Concorrência criou duplicata'; END \$\$;"
 echo 'Prevenção de duplicata concorrente: OK'
+"${PSQL[@]}" -f "$ROOT/local-docker/atualizacoes-banco/018_esic_numero_interno.sql"
+"${PSQL[@]}" -f "$ROOT/tests/esic/numero-interno.sql"
+"${PSQL[@]}" -f "$ROOT/local-docker/atualizacoes-banco/018_esic_numero_interno.sql"
+echo 'Número interno e-SIC: igualdade, edição, conversão, legados, conflitos e idempotência OK'

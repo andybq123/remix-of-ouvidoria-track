@@ -504,22 +504,12 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
       }
     }
 
-    // e-SIC mantém o número externo em campo próprio; numero continua sendo
-    // o identificador interno, único e compatível com o restante do sistema.
+    // e-SIC usa o próprio número oficial também como número interno.
     let numero: string;
     let numeroGerado = false;
     if (emailEhEsic) {
-      numero = "";
-      for (let tentativa = 0; tentativa < 20 && !numero; tentativa++) {
-        const candidato = gerarNumeroProtocolo("esic");
-        const { data: existeNumero, error } = await supabaseAdmin
-          .from("protocolos").select("id")
-          .in("numero", normalizarNumero(candidato)).maybeSingle();
-        if (error) throw error;
-        if (!existeNumero) numero = candidato;
-      }
-      if (!numero) throw new Error("Não foi possível gerar um número interno único para o pedido e-SIC.");
-      numeroGerado = true;
+      if (!numeroEsic) throw new Error("Número do pedido e-SIC não identificado; revise o e-mail antes de reprocessar.");
+      numero = numeroEsic;
     } else if (numeroDoAssunto) {
       numero = numeroDoAssunto;
     } else if (extr.numero) {
@@ -541,7 +531,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
         .in("numero", variantes)
         .maybeSingle();
       if (jaExiste) {
-        if (emailEhEsic || jaExiste.tipo === "esic") throw new Error("Número interno em uso; reprocessar para gerar outro identificador.");
+        if (emailEhEsic || jaExiste.tipo === "esic") throw new Error("Número já utilizado por outro protocolo; revise o conflito de numeração antes de reprocessar.");
         await supabaseAdmin.from("email_inbox_log").update({
           status: "processado",
           protocolo_id: jaExiste.id,
@@ -1224,6 +1214,7 @@ export async function backfillUrl1DocViaGmail(dias = 180): Promise<{
           const { data: proto } = await supabaseAdmin
             .from("protocolos")
             .select("id, url")
+            .neq("tipo", "esic")
             .in("numero", variantes)
             .limit(1)
             .maybeSingle();

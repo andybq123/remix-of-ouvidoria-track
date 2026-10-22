@@ -921,6 +921,7 @@ export type Database = {
           updated_at: string
         }[]
       }
+      formatar_numero_esic: { Args: { p_numero: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
