@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/use-is-admin";
+import { ATUALIZACAO_ATUAL_KEY } from "@/components/atualizacao-overlay";
 
 export const Route = createFileRoute("/_authenticated/atualizacao")({
   head: () => ({
@@ -66,6 +67,7 @@ function AtualizacaoPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEY });
+      qc.invalidateQueries({ queryKey: ATUALIZACAO_ATUAL_KEY });
       toast.success("Atualização solicitada. A VPS vai começar em instantes.");
     },
     onError: () => toast.error("Não foi possível solicitar a atualização"),
@@ -102,7 +104,7 @@ function AtualizacaoPage() {
               {atual.mensagem && <p className="text-xs text-muted-foreground">{atual.mensagem}</p>}
               {atual.status === "pendente" && Date.now() - new Date(atual.created_at).getTime() > 120_000 && (
                 <p className="text-xs text-amber-600">
-                  O serviço de atualização não respondeu. Confira na VPS: <code>systemctl status ouvidesk-atualizador</code>
+                  O serviço de atualização não respondeu. Confira na VPS: <code>bash /home/ubuntu/controle-seta/local-docker/agente-atualizacao/instalar.sh</code>
                 </p>
               )}
             </div>

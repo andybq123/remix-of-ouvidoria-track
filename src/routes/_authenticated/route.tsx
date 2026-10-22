@@ -19,8 +19,7 @@ import { OnlineUsersProvider, useOnlineUsers } from "@/hooks/use-online-users";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { LayoutMode } from "@/hooks/use-layout-mode";
 import { OnedocBackgroundProvider } from "@/components/onedoc-background-provider";
-import { AtualizacaoOverlay, ATUALIZACAO_ATUAL_KEY } from "@/components/atualizacao-overlay";
-void ATUALIZACAO_ATUAL_KEY;
+import { AtualizacaoOverlay } from "@/components/atualizacao-overlay";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
