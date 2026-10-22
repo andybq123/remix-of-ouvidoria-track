@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, redirect, Link, useRouter, useRouterState } fr
 import { useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, FileText, Building2, LogOut, AlertTriangle, BarChart3, Mail, Users, HeartPulse, Map as MapIcon, Settings, ChevronDown, PanelLeft, PanelTop, Tag, Inbox, Sparkles, DatabaseBackup, Bug, Bot, Check, Link2Off, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, FileText, Building2, LogOut, AlertTriangle, BarChart3, Mail, Users, HeartPulse, Map as MapIcon, Settings, ChevronDown, PanelLeft, PanelTop, Tag, Inbox, Sparkles, DatabaseBackup, Bug, Bot, Check, Link2Off, RefreshCw, type LucideIcon } from "lucide-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -87,6 +87,7 @@ function AuthLayoutContent() {
     { to: "/email-inbox", label: "E-mails", icon: Mail },
     { to: "/agente-1doc", label: "Agente 1Doc", icon: Bot },
     { to: "/sem-link-1doc", label: "Sem link 1Doc", icon: Link2Off },
+    { to: "/atualizacao", label: "Atualização", icon: RefreshCw },
     { to: "/users", label: "Usuários", icon: Users },
     { to: "/ia-config", label: "IA", icon: Sparkles },
     { to: "/backup", label: "Backup", icon: DatabaseBackup },
