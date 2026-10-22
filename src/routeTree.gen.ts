@@ -31,6 +31,7 @@ import { Route as AuthenticatedProtocolosRouteImport } from './routes/_authentic
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedSaudeRouteImport } from './routes/_authenticated/saude'
 import { Route as AuthenticatedSecretariasRouteImport } from './routes/_authenticated/secretarias'
+import { Route as AuthenticatedSemLink1docRouteImport } from './routes/_authenticated/sem-link-1doc'
 import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticated/tarefas'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedProtocolosAntigosIndexRouteImport } from './routes/_authenticated/protocolos-antigos.index'
@@ -153,6 +154,12 @@ const AuthenticatedSecretariasRoute =
     path: '/secretarias',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSemLink1docRoute =
+  AuthenticatedSemLink1docRouteImport.update({
+    id: '/sem-link-1doc',
+    path: '/sem-link-1doc',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTarefasRoute = AuthenticatedTarefasRouteImport.update({
   id: '/tarefas',
   path: '/tarefas',
@@ -238,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/relatorios': typeof AuthenticatedRelatoriosRouteWithChildren
   '/saude': typeof AuthenticatedSaudeRoute
   '/secretarias': typeof AuthenticatedSecretariasRoute
+  '/sem-link-1doc': typeof AuthenticatedSemLink1docRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
   '/users': typeof AuthenticatedUsersRoute
   '/api/public/check-protocolos': typeof ApiPublicCheckProtocolosRoute
@@ -271,6 +279,7 @@ export interface FileRoutesByTo {
   '/protocolos': typeof AuthenticatedProtocolosRoute
   '/saude': typeof AuthenticatedSaudeRoute
   '/secretarias': typeof AuthenticatedSecretariasRoute
+  '/sem-link-1doc': typeof AuthenticatedSemLink1docRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
   '/users': typeof AuthenticatedUsersRoute
   '/api/public/check-protocolos': typeof ApiPublicCheckProtocolosRoute
@@ -307,6 +316,7 @@ export interface FileRoutesById {
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRouteWithChildren
   '/_authenticated/saude': typeof AuthenticatedSaudeRoute
   '/_authenticated/secretarias': typeof AuthenticatedSecretariasRoute
+  '/_authenticated/sem-link-1doc': typeof AuthenticatedSemLink1docRoute
   '/_authenticated/tarefas': typeof AuthenticatedTarefasRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/api/public/check-protocolos': typeof ApiPublicCheckProtocolosRoute
@@ -343,6 +353,7 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/saude'
     | '/secretarias'
+    | '/sem-link-1doc'
     | '/tarefas'
     | '/users'
     | '/api/public/check-protocolos'
@@ -376,6 +387,7 @@ export interface FileRouteTypes {
     | '/protocolos'
     | '/saude'
     | '/secretarias'
+    | '/sem-link-1doc'
     | '/tarefas'
     | '/users'
     | '/api/public/check-protocolos'
@@ -411,6 +423,7 @@ export interface FileRouteTypes {
     | '/_authenticated/relatorios'
     | '/_authenticated/saude'
     | '/_authenticated/secretarias'
+    | '/_authenticated/sem-link-1doc'
     | '/_authenticated/tarefas'
     | '/_authenticated/users'
     | '/api/public/check-protocolos'
@@ -597,6 +610,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSecretariasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sem-link-1doc': {
+      id: '/_authenticated/sem-link-1doc'
+      path: '/sem-link-1doc'
+      fullPath: '/sem-link-1doc'
+      preLoaderRoute: typeof AuthenticatedSemLink1docRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tarefas': {
       id: '/_authenticated/tarefas'
       path: '/tarefas'
@@ -708,6 +728,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRouteWithChildren
   AuthenticatedSaudeRoute: typeof AuthenticatedSaudeRoute
   AuthenticatedSecretariasRoute: typeof AuthenticatedSecretariasRoute
+  AuthenticatedSemLink1docRoute: typeof AuthenticatedSemLink1docRoute
   AuthenticatedTarefasRoute: typeof AuthenticatedTarefasRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedProtocolosAntigosIndexRoute: typeof AuthenticatedProtocolosAntigosIndexRoute
@@ -728,6 +749,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRouteWithChildren,
   AuthenticatedSaudeRoute: AuthenticatedSaudeRoute,
   AuthenticatedSecretariasRoute: AuthenticatedSecretariasRoute,
+  AuthenticatedSemLink1docRoute: AuthenticatedSemLink1docRoute,
   AuthenticatedTarefasRoute: AuthenticatedTarefasRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedProtocolosAntigosIndexRoute:
