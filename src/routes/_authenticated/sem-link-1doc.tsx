@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { invalidateProtocoloCaches } from "@/hooks/use-protocolos-realtime";
 import { link1docParaSalvar } from "@/lib/url-1doc";
+import { deveConstarSemLink1doc, semLinkDeOutroSistema } from "@/lib/sem-link-1doc";
 
 export const Route = createFileRoute("/_authenticated/sem-link-1doc")({
   head: () => ({
@@ -37,11 +38,13 @@ function SemLinkPage() {
     queryFn: async () => {
       const all: Row[] = [];
       for (let from = 0; ; from += 1000) {
-        const { data, error } = await supabase.from("protocolos")
-          .select("id, numero, assunto, secretarias(nome)")
-          .or("url.is.null,url.eq.")
-          .order("created_at", { ascending: false })
-          .range(from, from + 999);
+        const { data, error } = await semLinkDeOutroSistema(
+          supabase.from("protocolos")
+            .select("id, numero, assunto, secretarias(nome)")
+            .or("url.is.null,url.eq.")
+            .order("created_at", { ascending: false })
+            .range(from, from + 999),
+        );
         if (error) throw error;
         all.push(...((data ?? []) as unknown as Row[]));
         if (!data || data.length < 1000) break;
@@ -52,7 +55,8 @@ function SemLinkPage() {
 
   if (!isAdmin) return <p className="text-muted-foreground">Acesso restrito a administradores.</p>;
   const q = busca.trim().toLowerCase();
-  const lista = q ? data.filter(r => `${r.numero} ${r.assunto ?? ""} ${r.secretarias?.nome ?? ""}`.toLowerCase().includes(q)) : data;
+  const atuais = data.filter(r => deveConstarSemLink1doc(r.numero));
+  const lista = q ? atuais.filter(r => `${r.numero} ${r.assunto ?? ""} ${r.secretarias?.nome ?? ""}`.toLowerCase().includes(q)) : atuais;
 
   return (
     <Card>
