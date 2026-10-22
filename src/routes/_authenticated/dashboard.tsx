@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
+import { OnedocAgentButton } from "@/components/onedoc-agent-button";
+import { useIsAdmin } from "@/hooks/use-is-admin";
+import { idsOuvidorias1doc } from "@/lib/onedoc-batch";
 import { situacaoProtocolo, calcularPrazo, estavaAtrasadoNaData, endOfMonthOrNow, CATEGORIAS, calcularSla, resumoOperacional, categoriaDoProtocolo, type CategoriaProtocolo } from "@/lib/prazo";
 import {
   AlertTriangle, CheckCircle2, Clock, FileText, Smile,
@@ -45,7 +48,7 @@ import { MapDepartmentToggle } from "@/components/map-department-toggle";
 import { mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
 
 const DASHBOARD_COLUNAS =
-  "id, numero, numero_esic, tipo, categoria, assunto, status, secretaria_id, local_id, solicitante, endereco, latitude, longitude, data_abertura, data_conclusao, data_prorrogacao, prorrogado, created_at, triagem_concluida_em, triagem_pendente, resolucao, origem, sigilo, secretarias(nome, sigla, icone), locais(nome)";
+  "id, numero, numero_esic, tipo, categoria, assunto, status, secretaria_id, local_id, solicitante, endereco, latitude, longitude, data_abertura, data_conclusao, data_prorrogacao, prorrogado, created_at, triagem_concluida_em, triagem_pendente, resolucao, origem, sigilo, url, secretarias(nome, sigla, icone), locais(nome)";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [
@@ -1175,7 +1178,7 @@ function DrillDialog({
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>{data?.title ?? ""}</DialogTitle>
-          <DialogDescription>
+    <DialogDescription>
             Clique em um protocolo para abrir os detalhes.
           </DialogDescription>
         </DialogHeader>

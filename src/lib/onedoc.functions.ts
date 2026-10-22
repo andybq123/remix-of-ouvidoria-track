@@ -51,7 +51,7 @@ export const salvarOnedocConfig = createServerFn({ method: "POST" })
 
 export const enfileirarOnedoc = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { tipo: "teste" | "unitario" | "lote"; protocoloId?: string; protocoloIds?: string[]; secretariaId?: string }) => onedocInputSchema.parse(d))
+  .inputValidator((d: { tipo: "teste" | "unitario" | "lote"; protocoloId?: string; protocoloIds?: string[]; secretariaId?: string; incluirConcluidos?: boolean }) => onedocInputSchema.parse(d))
   .handler(async ({ data, context }) => {
     await exigirAdmin(context);
     let ids: string[] = [];
@@ -61,7 +61,8 @@ export const enfileirarOnedoc = createServerFn({ method: "POST" })
       ids = [data.protocoloId];
     } else if (data.tipo === "lote") {
       let query = context.supabase.from("protocolos")
-        .select("id, secretaria_id, secretarias(nome)").neq("status", "concluido").ilike("url", "%1doc%");
+        .select("id, secretaria_id, secretarias(nome)").ilike("url", "%1doc%");
+      if (!data.incluirConcluidos) query = query.neq("status", "concluido");
       if (data.protocoloIds) query = query.in("id", data.protocoloIds).eq("tipo", "ouvidoria");
       if (data.secretariaId) query = query.eq("secretaria_id", data.secretariaId);
       const { fetchAllPaginated } = await import("@/lib/fetch-all");
@@ -70,13 +71,26 @@ export const enfileirarOnedoc = createServerFn({ method: "POST" })
       const secretarias = new Map<string | null, { id: string | null; nome: string }>();
       for (const r of rows) secretarias.set(r.secretaria_id, { id: r.secretaria_id, nome: r.secretarias?.nome ?? "Sem secretaria" });
       contexto = { escopo: data.protocoloIds ? "selecionadas" : "todas", secretarias: [...secretarias.values()] };
-      if (!ids.length) throw new Error("Nenhuma ouvidoria em aberto com link do 1Doc");
+      if (!ids.length) throw new Error("Nenhuma ouvidoria elegível com link do 1Doc");
     }
     const { data: job, error } = await context.supabase.from("onedoc_jobs")
       .insert({ tipo: data.tipo, protocolo_ids: ids, total: ids.length, criado_por: context.userId, contexto })
       .select("id").single();
     if (error) throw new Error(error.message);
     return { id: job.id as string, total: ids.length };
+  });
+
+export const reverterAlteracaoOnedoc = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { historicoId: string }) => {
+    if (!/^[0-9a-f-]{36}$/i.test(d.historicoId)) throw new Error("Alteração inválida");
+    return d;
+  })
+  .handler(async ({ data, context }) => {
+    await exigirAdmin(context);
+    const { error } = await context.supabase.rpc("reverter_alteracao_1doc", { p_historico_id: data.historicoId });
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const statusOnedocJob = createServerFn({ method: "GET" })
