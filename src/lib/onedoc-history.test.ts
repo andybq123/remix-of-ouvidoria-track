@@ -19,4 +19,8 @@ describe("histórico 1Doc", () => {
   it("conta alterações e exclui resultados com falha", () => {
     expect(resumoResultados([{ id: "1", endereco_atualizado: true }, { id: "2", concluido: true }, { id: "3", erro: "Falha", concluido: true }, { id: "4" }])).toEqual({ enderecos: 1, concluidos: 1, erros: 1 });
   });
+  it("guarda valores anteriores e novos de assunto e categoria", () => {
+    const r = resultadoConferencia({ ...p, assunto: "Buraco", categoria: "solicitacao", endereco: "Rua Antiga" }, { assunto: "Demora em marcar consulta / procedimento", categoria: "reclamacao", endereco: "R. Pedro Gracher - São Luiz, Brusque" }, a, "regra");
+    expect(r).toMatchObject({ assunto_atualizado: true, assunto_anterior: "Buraco", assunto_novo: "Demora em marcar consulta / procedimento", categoria_atualizada: true, categoria_anterior: "solicitacao", categoria_nova: "reclamacao", endereco_anterior: "Rua Antiga", endereco_atualizado: true });
+  });
 });
