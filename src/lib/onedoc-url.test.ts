@@ -21,3 +21,22 @@ describe("links legados no agente 1Doc", () => {
     expect(limparUrl(link)).toBeNull();
   });
 });
+describe("links de rastreio do e-mail do 1Doc", async () => {
+  // @ts-expect-error módulo JS compartilhado
+  const { resolverRastreio1doc } = await import("../../local-docker/agente-1doc/url.mjs");
+  const resp = (loc: string | null) => ({ headers: { get: () => loc } });
+  it("segue o rastreio até o 1Doc", async () => {
+    const f = async () => resp(destino);
+    expect(await resolverRastreio1doc("http://el.1docmail.com.br/ls/click?upn=abc", f)).toBe(destino);
+  });
+  it("recusa rastreio que leva para fora do 1Doc", async () => {
+    const f = async () => resp("https://falso.example/");
+    expect(await resolverRastreio1doc("http://el.1docmail.com.br/ls/click?upn=abc", f)).toBeNull();
+  });
+  it("não visita rastreio de outro domínio", async () => {
+    let chamou = false;
+    const f = async () => { chamou = true; return resp(destino); };
+    expect(await resolverRastreio1doc("http://el.falso.com/ls/click?upn=abc", f)).toBeNull();
+    expect(chamou).toBe(false);
+  });
+});

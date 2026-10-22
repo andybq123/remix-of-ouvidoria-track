@@ -4,7 +4,7 @@ import { chromium } from "playwright";
 import { webcrypto as wc } from "node:crypto";
 import { analisarTexto1doc, atualizacaoProtocolo, precisaIA, validarRespostaIA, somenteCamposAgente, paginaDaOuvidoria, assuntoDoCatalogo } from "./parse.mjs";
 import { resultadoConferencia } from "./resultado.mjs";
-import { limparUrl } from "./url.mjs";
+import { limparUrl, resolverRastreio1doc } from "./url.mjs";
 
 const URL_DB = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -129,7 +129,7 @@ async function processar(job) {
       for (const p of prots) {
         const r = { id: p.id, numero: p.numero, assunto: p.assunto ?? null, secretaria_id: p.secretaria_id, secretaria_nome: p.secretarias?.nome ?? "Sem secretaria" };
         try {
-          const url = limparUrl(p.url);
+          const url = limparUrl(p.url) || await resolverRastreio1doc(p.url).catch(() => null);
           if (!url) throw new Error(p.url?.trim() ? "formato do link não reconhecido ou destino fora do 1Doc; nada foi alterado" : "ouvidoria sem link do 1Doc cadastrado; nada foi alterado");
           await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
           await page.waitForTimeout(1800);

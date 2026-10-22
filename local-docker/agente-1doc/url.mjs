@@ -17,3 +17,28 @@ export function limparUrl(raw) {
   }
   return null;
 }
+// Link de rastreio do e-mail do próprio 1Doc (el.1docmail.com.br/ls/click?...).
+// O destino vem cifrado, então só dá para descobrir seguindo o redirecionamento.
+export function linkRastreio1doc(raw) {
+  try {
+    const p = new URL(String(raw || "").trim().replace(/&amp;/gi, "&"));
+    if (!/^https?:$/.test(p.protocol) || p.username || p.password) return null;
+    const h = p.hostname.toLowerCase();
+    return h === "1docmail.com.br" || h.endsWith(".1docmail.com.br") ? p.toString() : null;
+  } catch { return null; }
+}
+
+// Segue os redirecionamentos (sem abrir a página) e aceita só destino no 1Doc.
+export async function resolverRastreio1doc(raw, fetcher = fetch) {
+  let u = linkRastreio1doc(raw);
+  for (let i = 0; u && i < 6; i++) {
+    const r = await fetcher(u, { redirect: "manual", signal: AbortSignal.timeout(20000) });
+    const loc = r.headers.get("location");
+    if (!loc) return null;
+    const prox = new URL(loc, u).toString();
+    const final = limparUrl(prox);
+    if (final) return final;
+    u = linkRastreio1doc(prox);
+  }
+  return null;
+}
