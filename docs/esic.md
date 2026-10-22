@@ -66,7 +66,7 @@ Anexos binários de e-mail não ganham um novo fluxo de download/armazenamento n
    ./atualizar_front.sh
    ```
 
-O procedimento existente cria backup e aplica `005_esic_campos_triagem.sql` antes de reiniciar a aplicação. As migrations de VPS e Supabase são equivalentes e idempotentes. Não há remoção de dados nem troca de identificadores internos.
+O procedimento existente cria backup e aplica as atualizações de banco antes de reiniciar a aplicação. `018_esic_numero_interno.sql` também corrige os números internos dos e-SIC existentes, mantendo os IDs, o histórico e a triagem. Conflitos de numeração geram um aviso para revisão individual, sem apagar ou mesclar pedidos. As migrations são idempotentes.
 
 A migration preenche o número oficial de registros **já classificados como e-SIC** pela versão antiga. Não reclassifica automaticamente textos históricos nem remove eventuais duplicatas legadas. Se houver várias cópias legadas para o mesmo número normalizado, a ingestão registra um conflito em vez de escolher uma silenciosamente: um administrador deve revisar os registros e corrigir o número/tipo indevido antes de reprocessar. Não exclua o histórico de e-mails para tentar resolver esse conflito.
 
