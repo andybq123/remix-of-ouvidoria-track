@@ -26,7 +26,7 @@ main() {
 
   echo "Agente de atualização OuviDesk iniciado em $(pwd)."
   # Pedido que ficou "rodando" porque o serviço reiniciou no meio: encerra.
-  sql "update atualizacao_jobs set status='erro', mensagem='Serviço da VPS reiniciou durante a atualização', updated_at=now() where status='rodando' and updated_at < now() - interval '15 minutes'" >/dev/null 2>&1 || true
+  sql "update atualizacao_jobs set status='erro', mensagem='Serviço da VPS reiniciou durante a atualização', updated_at=now() where status='rodando'" >/dev/null 2>&1 || true
 
   while true; do
     ID="$(sql "update atualizacao_jobs set status='rodando', etapa=0, mensagem='Iniciando a atualização', updated_at=now() where id = (select id from atualizacao_jobs where status='pendente' order by created_at limit 1 for update skip locked) returning id" 2>/dev/null | head -1 || true)"
