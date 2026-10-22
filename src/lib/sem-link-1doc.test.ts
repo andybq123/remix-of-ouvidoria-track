@@ -1,0 +1,25 @@
+import { describe, expect, it } from "vitest";
+import { deveConstarSemLink1doc, semLinkDeOutroSistema } from "./sem-link-1doc";
+
+describe("lista de ouvidorias sem link 1Doc", () => {
+  it("esconde ouvidorias de outro sistema (/2025)", () => {
+    expect(deveConstarSemLink1doc("3.565/2025")).toBe(false);
+    expect(deveConstarSemLink1doc("12/2025")).toBe(false);
+  });
+  it("mantém ouvidorias do 1Doc atual", () => {
+    expect(deveConstarSemLink1doc("3.565/2026")).toBe(true);
+    expect(deveConstarSemLink1doc("9.001/2026")).toBe(true);
+    expect(deveConstarSemLink1doc(null)).toBe(true);
+  });
+  it("filtra os anos de outro sistema na consulta ao banco", () => {
+    const filtros: string[] = [];
+    const query = {
+      not(column: string, operator: string, value: string) {
+        filtros.push(`${column} ${operator} ${value}`);
+        return query;
+      },
+    };
+    semLinkDeOutroSistema(query);
+    expect(filtros).toEqual(["numero like %/2025%"]);
+  });
+});

@@ -11,4 +11,5 @@
 - [x] Adicionar conferência 1Doc das atrasadas da secretaria escolhida na triagem; seleção e regras de baixa/endereço passaram nos testes, botão conferido com sessão real.
 - [ ] Validar execução real do lote e seus resultados no histórico na VPS — depende do agente atualizado e ligado e de ouvidorias com link 1Doc; não existem lotes no ambiente acessível.
 - [x] Registrar e exibir histórico de lotes 1Doc com secretaria, data, ouvidorias e alterações de endereço/conclusão; testes passaram e leitura autenticada conferida nas duas telas, sem lotes reais disponíveis.- [x] Acelerar e embelezar o `./atualizar.sh` (cache na compilação do GitHub, estado da compilação ao vivo, pula download quando só scripts/banco mudam, modo `--rapido`).
+- [x] Esconder da tela "Sem link 1Doc" as ouvidorias com /2025 (outro sistema); regra em src/lib/sem-link-1doc.ts com teste, lista conferida na tela com duas ouvidorias temporárias (só a /2026 apareceu) e removidas depois.
 - [ ] Conferir o novo atualizador rodando na VPS — depende de rodar `./atualizar.sh` lá.
