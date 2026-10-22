@@ -4,6 +4,7 @@ import { chromium } from "playwright";
 import { webcrypto as wc } from "node:crypto";
 import { analisarTexto1doc, atualizacaoProtocolo, precisaIA, validarRespostaIA, somenteCamposAgente, paginaDaOuvidoria, assuntoDoCatalogo } from "./parse.mjs";
 import { resultadoConferencia } from "./resultado.mjs";
+import { limparUrl } from "./url.mjs";
 
 const URL_DB = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -27,11 +28,6 @@ async function decifrar(s) {
   const k = await wc.subtle.importKey("raw", hash, "AES-GCM", false, ["decrypt"]);
   const out = await wc.subtle.decrypt({ name: "AES-GCM", iv: Buffer.from(iv, "base64") }, k, Buffer.from(dados, "base64"));
   return new TextDecoder().decode(out);
-}
-
-function limparUrl(raw) {
-  let u = String(raw || "").trim().replace(/=\r?\n/g, "").replace(/=3D/gi, "=").replace(/&amp;/gi, "&").replace(/\s+/g, "");
-  try { const p = new URL(u); return /^https?:$/.test(p.protocol) && (p.hostname === "1doc.com.br" || p.hostname.endsWith(".1doc.com.br")) && !p.username && !p.password ? p.toString() : null; } catch { return null; }
 }
 
 // Endereço -> coordenadas (OpenStreetMap), restrito a Brusque/SC
@@ -134,7 +130,7 @@ async function processar(job) {
         const r = { id: p.id, numero: p.numero, assunto: p.assunto ?? null, secretaria_id: p.secretaria_id, secretaria_nome: p.secretarias?.nome ?? "Sem secretaria" };
         try {
           const url = limparUrl(p.url);
-          if (!url) throw new Error("sem link válido do 1Doc");
+          if (!url) throw new Error(p.url?.trim() ? "formato do link não reconhecido ou destino fora do 1Doc; nada foi alterado" : "ouvidoria sem link do 1Doc cadastrado; nada foi alterado");
           await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
           await page.waitForTimeout(1800);
           if (await visivel(page, ['input[type="password"]'])) { await login(page, cfg); await page.goto(url, { waitUntil: "domcontentloaded" }); await page.waitForTimeout(1800); }
