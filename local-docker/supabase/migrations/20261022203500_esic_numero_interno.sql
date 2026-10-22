@@ -1,3 +1,4 @@
+BEGIN;
 CREATE OR REPLACE FUNCTION public.formatar_numero_esic(p_numero text)
 RETURNS text LANGUAGE sql IMMUTABLE STRICT SET search_path = public AS $$
   WITH partes AS (SELECT regexp_match(regexp_replace(btrim(p_numero), '[.[:space:]]', '', 'g'), '^([0-9]+)/([0-9]{4})$') AS m),
@@ -20,3 +21,20 @@ END;
 $$;
 CREATE OR REPLACE TRIGGER trg_zz_sincronizar_numero_esic BEFORE INSERT OR UPDATE ON public.protocolos
 FOR EACH ROW EXECUTE FUNCTION public.sincronizar_numero_esic();
+
+-- Corrige legados individualmente; conflitos não apagam nem mesclam registros.
+DO $$ DECLARE pedido record; BEGIN
+  FOR pedido IN SELECT id FROM public.protocolos WHERE tipo = 'esic'
+    AND public.formatar_numero_esic(coalesce(nullif(btrim(numero_esic), ''), numero)) IS NOT NULL
+    AND (numero IS DISTINCT FROM public.formatar_numero_esic(coalesce(nullif(btrim(numero_esic), ''), numero))
+      OR numero_esic IS DISTINCT FROM public.formatar_numero_esic(coalesce(nullif(btrim(numero_esic), ''), numero)))
+  LOOP
+    BEGIN
+      UPDATE public.protocolos SET numero_esic = public.formatar_numero_esic(coalesce(nullif(btrim(numero_esic), ''), numero)) WHERE id = pedido.id;
+    EXCEPTION WHEN unique_violation THEN
+      RAISE WARNING 'e-SIC % não corrigido: número em conflito; revisar individualmente.', pedido.id;
+    END;
+  END LOOP;
+END $$;
+NOTIFY pgrst, 'reload schema';
+COMMIT;
