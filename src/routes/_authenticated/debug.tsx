@@ -1,3 +1,4 @@
+import { AssuntosAlteradosPanel } from "@/components/assuntos-alterados-panel";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -329,6 +330,8 @@ function DebugPage() {
         <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
         <span>Alterações feitas aqui são definitivas. Faça um backup em Configurações → Backup antes de mexer.</span>
       </div>
+
+      <AssuntosAlteradosPanel />
 
       <Card className="border-primary/30">
         <CardHeader>

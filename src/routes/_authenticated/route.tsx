@@ -77,15 +77,15 @@ function AuthLayoutContent() {
     { to: "/mapa", label: "Mapa", icon: MapIcon },
     { to: "/atrasados", label: "Atrasados", icon: AlertTriangle },
     { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
+    ...(isAdmin ? [
+      { to: "/secretarias", label: "Secretarias", icon: Building2 },
+      { to: "/assuntos", label: "Assuntos", icon: Tag },
+    ] : []),
   ]) as { to: string; label: string; icon: any }[];
 
   const configItems = (isAdmin ? [
-    { to: "/secretarias", label: "Secretarias", icon: Building2 },
-    { to: "/assuntos", label: "Assuntos", icon: Tag },
     { to: "/email-inbox", label: "E-mails", icon: Mail },
-    { to: "/coletor", label: "Coletor 1doc", icon: Download },
     { to: "/agente-1doc", label: "Agente 1Doc", icon: Bot },
-    { to: "/assuntos-alterados", label: "Assuntos alterados", icon: Tag },
     { to: "/users", label: "Usuários", icon: Users },
     { to: "/ia-config", label: "IA", icon: Sparkles },
     { to: "/backup", label: "Backup", icon: DatabaseBackup },
