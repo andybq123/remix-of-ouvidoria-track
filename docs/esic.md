@@ -19,8 +19,8 @@ A extração desse formato é determinística e não depende de IA. Os demais e-
 
 ## Identificadores, duplicatas e histórico
 
-- `numero_esic` guarda o número oficial do pedido, preservando a grafia recebida, por exemplo `026/2026`.
-- `numero` permanece como identificador interno do sistema, gerado separadamente no recebimento automático. Um pedido e-SIC pode ter o mesmo número oficial de uma Ouvidoria sem ser confundido com ela.
+- `numero_esic` guarda o número oficial do pedido no padrão do sistema, por exemplo `0.026/2026`.
+- `numero` usa o mesmo valor de `numero_esic`, sem gerar outro identificador no recebimento automático, cadastro ou edição. As restrições globais de unicidade continuam valendo: um conflito com outro protocolo é registrado para revisão, sem inventar número nem vincular o e-SIC à Ouvidoria.
 - A busca de e-SIC normaliza zeros à esquerda, espaços e separadores de milhar: `026/2026`, `26/2026` e `0.026/2026` identificam o mesmo pedido.
 - Mensagens já processadas não criam outra cópia. Novas notificações do mesmo pedido são vinculadas ao registro existente, com histórico.
 - Se uma coleta simultânea tentar inserir o mesmo número oficial, o banco rejeita a segunda inserção. A tentativa fica recuperável no log e será vinculada ao pedido já existente ao reprocessar.

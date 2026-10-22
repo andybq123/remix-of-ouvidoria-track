@@ -117,7 +117,7 @@ describe("ingerirEmail: pedidos e-SIC", () => {
       local_id: null,
       solicitante: "Sandi E Oliveira Advogados",
     });
-    expect(mock.tables.protocolos[0].numero).not.toBe("0.026/2026");
+    expect(mock.tables.protocolos[0].numero).toBe("0.026/2026");
     expect(mock.tables.email_inbox_log[0]).toMatchObject({ status: "processado", erro: null });
   });
   it("não duplica uma mensagem já processada", async () => {
@@ -148,10 +148,11 @@ describe("ingerirEmail: pedidos e-SIC", () => {
       tipo: "ouvidoria",
       status: "aberto",
     });
-    expect((await ingerirEmail(entrada)).ok).toBe(true);
-    expect(mock.tables.protocolos).toHaveLength(2);
+    const resultado = await ingerirEmail(entrada);
+    expect(resultado.ok).toBe(false);
+    expect(resultado.error).toContain("conflito de numeração");
+    expect(mock.tables.protocolos).toHaveLength(1);
     expect(mock.tables.protocolos[0].status).toBe("aberto");
-    expect(mock.tables.protocolos[1].numero_esic).toBe("0.026/2026");
   });
   it("registra erro recuperável, sem criar pedido com número inventado", async () => {
     const res = await ingerirEmail({
