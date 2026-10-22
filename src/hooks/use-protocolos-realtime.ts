@@ -19,7 +19,7 @@ export function invalidateProtocoloCaches(qc: ReturnType<typeof useQueryClient>)
         k === "triagem-pendentes-count" ||
         k === "atrasados" ||
         k.startsWith("dashboard") ||
-        k === "protocolo"
+        k === "protocolo" || k === "historico"
       );
     },
   });

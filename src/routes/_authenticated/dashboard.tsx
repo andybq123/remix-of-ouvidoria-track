@@ -1156,6 +1156,8 @@ function DrillDialog({
   onSelect: (p: any) => void;
 }) {
   const [q, setQ] = useState("");
+  const isAdmin = useIsAdmin();
+  const ids1doc = idsOuvidorias1doc((data?.items ?? []).filter((p) => !p._antigo), true);
   const items = useMemo(() => {
     const arr = (data?.items ?? []).slice();
     // Ordena do mais atrasado (dias mais negativos) para o menos
@@ -1182,6 +1184,11 @@ function DrillDialog({
             Clique em um protocolo para abrir os detalhes.
           </DialogDescription>
         </DialogHeader>
+        {isAdmin && data?.title.startsWith("Local: ") && <div className="flex flex-wrap items-center gap-2">
+          <OnedocAgentButton tipo="lote" protocoloIds={ids1doc} incluirConcluidos escopo={`local:${data.title.replace(/ \(\d+\)$/, "")}`} disabled={!ids1doc.length}
+            label={`Conferir pelo 1Doc (${ids1doc.length})`}
+            confirmacao={`Conferir as ${ids1doc.length} ouvidorias com link deste local? Assunto, categoria e endereço serão atualizados conforme o 1Doc, com histórico individual.`} />
+        </div>}
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input

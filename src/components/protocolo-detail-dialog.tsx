@@ -1,4 +1,7 @@
 import { formatarNumeroEsic } from "@/lib/esic";
+import { useServerFn } from "@tanstack/react-start";
+import { reverterAlteracaoOnedoc } from "@/lib/onedoc.functions";
+import { podeReverter1doc } from "@/lib/onedoc-revert";
 import { urlValida1doc } from "@/lib/url-1doc";
 import { OnedocAgentButton } from "@/components/onedoc-agent-button";
 import { ProtocoloOnedocLink } from "@/components/protocolo-onedoc-link";
@@ -20,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CheckCircle2, RotateCw, Trash2, Save, Pencil, X, History } from "lucide-react";
+import { CheckCircle2, RotateCw, Trash2, Save, Pencil, X, History, Undo2 } from "lucide-react";
 import { Inbox, Lock, ExternalLink, MapPin } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { invalidateProtocoloCaches } from "@/hooks/use-protocolos-realtime";
@@ -40,6 +43,8 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
 }) {
   const qc = useQueryClient();
   const isAdmin = useIsAdmin();
+  const reverter = useServerFn(reverterAlteracaoOnedoc);
+  const [revertendo, setRevertendo] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
   const [mapPickerOpen, setMapPickerOpen] = useState(false);
@@ -153,6 +158,18 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
     },
     enabled: open && !!protocolo?.id && !isLegacy,
   });
+
+  async function desfazer(h: any) {
+    if (!confirm(`Reverter somente ${h.campo} para o valor anterior?`)) return;
+    setRevertendo(h.id);
+    try {
+      await reverter({ data: { historicoId: h.id } });
+      invalidateProtocoloCaches(qc);
+      await qc.invalidateQueries({ queryKey: ["historico", protocolo.id] });
+      toast.success("Alteração revertida e registrada no histórico");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Não foi possível reverter"); }
+    finally { setRevertendo(null); }
+  }
 
   useEffect(() => {
     if (protocolo) {
@@ -788,7 +805,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-[10px]">
-                        {h.acao === "create" ? "Criação" : h.campo.replace("_", " ")}
+                        {h.acao === "create" ? "Criação" : `${h.acao === "revert" ? "Reversão: " : ""}${h.campo.replace("_", " ")}`}
                       </Badge>
                       <span className="text-xs text-muted-foreground">{h.autor_nome ?? "Sistema"}</span>
                     </div>
@@ -797,7 +814,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
                     </span>
                   </div>
                   {h.acao !== "create" && (
-                    <div className="text-xs grid grid-cols-2 gap-2">
+                    <div className="text-xs grid grid-cols-1 sm:grid-cols-2 gap-2 break-words">
                       <div>
                         <span className="text-muted-foreground">De: </span>
                         <span className="line-through">{h.valor_anterior ?? "—"}</span>
@@ -808,6 +825,9 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
                       </div>
                     </div>
                   )}
+                  {isAdmin && !lockBloqueia && podeReverter1doc(h, historico, protocolo) && <Button size="sm" variant="outline" className="mt-2" onClick={() => void desfazer(h)} disabled={!!revertendo} title={`Reverter ${h.campo}`}>
+                    <Undo2 className="h-3.5 w-3.5 mr-1" /> {revertendo === h.id ? "Revertendo…" : "Reverter esta alteração"}
+                  </Button>}
                 </div>
               ))}
             </div>

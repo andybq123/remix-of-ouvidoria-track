@@ -4,6 +4,8 @@ export type OnedocResultado = {
   endereco_atualizado?: boolean; endereco_anterior?: string | null; endereco_novo?: string | null;
   localizacao_atualizada?: boolean;
   situacao?: string;
+  assunto_atualizado?: boolean; assunto_anterior?: string | null; assunto_novo?: string | null;
+  categoria_atualizada?: boolean; categoria_anterior?: string | null; categoria_nova?: string | null;
 };
 export type OnedocContexto = {
   escopo?: string; secretarias?: { id: string | null; nome: string }[];
