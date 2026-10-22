@@ -10,12 +10,13 @@ describe("lista de ouvidorias sem link 1doc", () => {
     expect(deveConstarSemLink1doc("3.565/2025")).toBe(false);
     expect(deveConstarSemLink1doc("12/2025")).toBe(false);
   });
-  it("esconde ouvidorias abaixo de 500/2026, que são de outro sistema", () => {
+  it("esconde ouvidorias até 570/2026, que são de outro sistema", () => {
     expect(deveConstarSemLink1doc("12/2026")).toBe(false);
-    expect(deveConstarSemLink1doc("499/2026")).toBe(false);
+    expect(deveConstarSemLink1doc("500/2026")).toBe(false);
+    expect(deveConstarSemLink1doc("570/2026")).toBe(false);
   });
   it("mantém ouvidorias do 1Doc atual", () => {
-    expect(deveConstarSemLink1doc("500/2026")).toBe(true);
+    expect(deveConstarSemLink1doc("571/2026")).toBe(true);
     expect(deveConstarSemLink1doc("3.565/2026")).toBe(true);
     expect(deveConstarSemLink1doc("9.001/2026")).toBe(true);
     expect(deveConstarSemLink1doc(null)).toBe(true);
@@ -25,7 +26,7 @@ describe("lista de ouvidorias sem link 1doc", () => {
   });
   it("lê o número ignorando separadores de milhar", () => {
     expect(valorDoNumero("3.565/2026")).toBe(3565);
-    expect(valorDoNumero("12/2026")).toBe(12);
+    expect(valorDoNumero("570/2026")).toBe(570);
     expect(valorDoNumero("sem numero/2026")).toBeNull();
   });
   it("filtra os anos de outro sistema na consulta ao banco", () => {
