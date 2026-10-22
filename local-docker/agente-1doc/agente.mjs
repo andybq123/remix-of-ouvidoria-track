@@ -2,7 +2,7 @@
 // com a configuração salva no sistema e confere baixa/arquivamento de cada ouvidoria.
 import { chromium } from "playwright";
 import { webcrypto as wc } from "node:crypto";
-import { analisarTexto1doc, atualizacaoProtocolo, precisaIA, validarRespostaIA, somenteCamposAgente, paginaDaOuvidoria, assuntoDoCatalogo, assuntoComNomeDeSecretaria } from "./parse.mjs";
+import { analisarTexto1doc, atualizacaoProtocolo, precisaIA, validarRespostaIA, somenteCamposAgente, paginaDaOuvidoria, assuntoDoCatalogo } from "./parse.mjs";
 import { resultadoConferencia } from "./resultado.mjs";
 
 const URL_DB = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
@@ -31,7 +31,7 @@ async function decifrar(s) {
 
 function limparUrl(raw) {
   let u = String(raw || "").trim().replace(/=\r?\n/g, "").replace(/=3D/gi, "=").replace(/&amp;/gi, "&").replace(/\s+/g, "");
-  try { const p = new URL(u); return /^https?:$/.test(p.protocol) ? p.toString() : null; } catch { return null; }
+  try { const p = new URL(u); return /^https?:$/.test(p.protocol) && (p.hostname === "1doc.com.br" || p.hostname.endsWith(".1doc.com.br")) && !p.username && !p.password ? p.toString() : null; } catch { return null; }
 }
 
 // Endereço -> coordenadas (OpenStreetMap), restrito a Brusque/SC
@@ -126,11 +126,10 @@ async function processar(job) {
       return await patch("onedoc_jobs", `id=eq.${job.id}`, { status: "concluido", mensagem: "Login no 1Doc funcionou", finalizado_em: new Date().toISOString() });
     }
     const catalogo = (await rest("assuntos?select=nome&ativo=eq.true")).map((x) => x.nome);
-    const secretarias = (await rest("secretarias?select=nome")).map((x) => x.nome);
     const ids = job.protocolo_ids || [];
     for (let i = 0; i < ids.length; i += 100) {
       const lote = ids.slice(i, i + 100);
-      const prots = await rest(`protocolos?select=id,numero,assunto,status,url,endereco,latitude,longitude,secretaria_id,secretarias(nome)&id=in.(${lote.join(",")})`);
+      const prots = await rest(`protocolos?select=id,numero,assunto,categoria,status,data_conclusao,url,endereco,latitude,longitude,secretaria_id,secretarias(nome)&id=in.(${lote.join(",")})`);
       for (const p of prots) {
         const r = { id: p.id, numero: p.numero, assunto: p.assunto ?? null, secretaria_id: p.secretaria_id, secretaria_nome: p.secretarias?.nome ?? "Sem secretaria" };
         try {
@@ -153,19 +152,19 @@ async function processar(job) {
             }
           }
           const upd = somenteCamposAgente(atualizacaoProtocolo(p, a));
-          // Só corrige assunto que hoje está com nome de secretaria (ex.: "Secretaria de Obras").
-          const assunto = assuntoComNomeDeSecretaria(p.assunto, secretarias) ? assuntoDoCatalogo(texto, catalogo) : null;
+          const assunto = assuntoDoCatalogo(texto, catalogo);
           if (assunto && assunto !== p.assunto) upd.assunto = assunto;
-          if (p.latitude == null || p.longitude == null) {
+          if (upd.endereco || p.latitude == null || p.longitude == null) {
+            // Um endereço novo nunca pode conservar o ponto do endereço antigo.
+            if (upd.endereco) Object.assign(upd, { latitude: null, longitude: null });
             const end = upd.endereco || p.endereco;
             if (end) { const c = await geocodificar(end); if (c) Object.assign(upd, c); }
           }
-          await patch("protocolos", `id=eq.${p.id}`, somenteCamposAgente(upd));
+          await rest("rpc/aplicar_conferencia_1doc", { method: "POST", body: JSON.stringify({
+            p_id: p.id, p_patch: somenteCamposAgente(upd),
+            p_anterior: { assunto: p.assunto, categoria: p.categoria, endereco: p.endereco, latitude: p.latitude, longitude: p.longitude, status: p.status, data_conclusao: p.data_conclusao, url: p.url },
+          }) });
           if (upd.status) atualizados++;
-          await rest("protocolo_historico", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({
-            protocolo_id: p.id, campo: "agente_1doc", acao: "update", autor_nome: "Agente 1Doc",
-            valor_anterior: p.status, valor_novo: `${a.situacao}${a.baixado_em ? " · baixa " + a.baixado_em : ""}${a.arquivado_em ? " · arquivo " + a.arquivado_em : ""}`,
-          }) }).catch(() => {});
           Object.assign(r, resultadoConferencia(p, upd, a, fonte));
         } catch (e) { erros++; r.verificado_em = new Date().toISOString(); r.erro = String(e?.message || e).slice(0, 200); }
         processados++;
