@@ -1,13 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { agruparAreasPorEmail, normalizarEmailAreas, prepararVinculosAreas } from "@/lib/user-areas";
+import { agruparAreasPorEmail, normalizarEmailAreas, prepararVinculosAreas, separarAreas, PREFIXO_AREA_LOCAL } from "@/lib/user-areas";
 import { senhaForte, MENSAGEM_SENHA_FRACA } from "@/lib/password-strength";
 
 async function sincronizarAreas(supabaseAdmin: any, email: string, secretariaIds?: string[]) {
   const emailNorm = normalizarEmailAreas(email);
   const { error: eDel } = await supabaseAdmin.from("user_secretarias").delete().eq("email", emailNorm);
   if (eDel) throw new Error(eDel.message);
-  const vinculos = prepararVinculosAreas(emailNorm, secretariaIds);
+  const { error: eDelL } = await supabaseAdmin.from("user_locais").delete().eq("email", emailNorm);
+  if (eDelL) throw new Error(eDelL.message);
+  const areas = separarAreas(secretariaIds);
+  if (areas.locais.length) {
+    const { error } = await supabaseAdmin.from("user_locais")
+      .insert(areas.locais.map((local_id) => ({ email: emailNorm, local_id })));
+    if (error) throw new Error(error.message);
+  }
+  const vinculos = prepararVinculosAreas(emailNorm, areas.secretarias);
   if (vinculos.length) {
     const { error } = await supabaseAdmin.from("user_secretarias").insert(vinculos);
     if (error) throw new Error(error.message);
@@ -35,7 +43,11 @@ export const listarUsuarios = createServerFn({ method: "GET" })
     if (e1) throw new Error(e1.message);
 
     const { data: areas } = await supabaseAdmin.from("user_secretarias").select("email, secretaria_id");
-    const areasPorEmail = agruparAreasPorEmail(areas ?? []);
+    const { data: areasLocais } = await supabaseAdmin.from("user_locais").select("email, local_id");
+    const areasPorEmail = agruparAreasPorEmail([
+      ...(areas ?? []),
+      ...(areasLocais ?? []).map((l: any) => ({ email: l.email, secretaria_id: PREFIXO_AREA_LOCAL + l.local_id })),
+    ]);
 
     const { data: list } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
     const usersByEmail = new Map<string, any>();
@@ -155,6 +167,7 @@ export const removerUsuario = createServerFn({ method: "POST" })
     await supabaseAdmin.from("allowed_emails").delete().eq("id", data.id);
     if (allowed?.email) {
       await supabaseAdmin.from("user_secretarias").delete().eq("email", normalizarEmailAreas(allowed.email));
+      await supabaseAdmin.from("user_locais").delete().eq("email", normalizarEmailAreas(allowed.email));
     }
 
     if (allowed?.email) {

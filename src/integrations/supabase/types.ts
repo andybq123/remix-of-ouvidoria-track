@@ -368,6 +368,7 @@ export type Database = {
       }
       locais: {
         Row: {
+          area_propria: boolean
           created_at: string
           id: string
           latitude: number | null
@@ -377,6 +378,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          area_propria?: boolean
           created_at?: string
           id?: string
           latitude?: number | null
@@ -386,6 +388,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          area_propria?: boolean
           created_at?: string
           id?: string
           latitude?: number | null
@@ -897,6 +900,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_locais: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          local_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          local_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          local_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_locais_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -956,6 +988,10 @@ export type Database = {
         Args: { p_anterior: Json; p_id: string; p_patch: Json }
         Returns: undefined
       }
+      area_permitida: {
+        Args: { _local: string; _secretaria: string }
+        Returns: boolean
+      }
       backup_exportar_usuarios: { Args: never; Returns: Json }
       backup_importar: {
         Args: { p_rows: Json; p_tabela: string }
@@ -1010,6 +1046,10 @@ export type Database = {
       liberar_triagem_admin: { Args: { p_id: string }; Returns: undefined }
       normalizar_numero_esic: { Args: { p_numero: string }; Returns: string }
       pode_editar_area: { Args: { _secretaria: string }; Returns: boolean }
+      pode_editar_local: {
+        Args: { _local: string; _secretaria: string }
+        Returns: boolean
+      }
       pode_triar: { Args: never; Returns: boolean }
       posso_editar: { Args: never; Returns: boolean }
       protocolo_esic_por_numero: {

@@ -19,6 +19,7 @@ import { useIsUserOnline } from "@/hooks/use-online-users";
 import { supabase } from "@/integrations/supabase/client";
 import { PasswordStrengthIndicator } from "@/components/password-strength";
 import { senhaForte, MENSAGEM_SENHA_FRACA } from "@/lib/password-strength";
+import { PREFIXO_AREA_LOCAL } from "@/lib/user-areas";
 
 type Secretaria = { id: string; nome: string };
 
@@ -28,7 +29,14 @@ function useSecretarias() {
     queryFn: async () => {
       const { data, error } = await supabase.from("secretarias").select("id, nome").order("nome");
       if (error) throw error;
-      return (data ?? []) as Secretaria[];
+      // Locais marcados como área própria (ex.: Vigilância Sanitária) viram uma área separada.
+      const { data: locais } = await supabase.from("locais")
+        .select("id, nome, secretarias(nome)").eq("area_propria", true).order("nome");
+      const extras = (locais ?? []).map((l: any) => ({
+        id: PREFIXO_AREA_LOCAL + l.id,
+        nome: `${l.nome}${l.secretarias?.nome ? ` (${l.secretarias.nome}, separada)` : ""}`,
+      }));
+      return [...(data ?? []), ...extras].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")) as Secretaria[];
     },
     staleTime: 60_000,
   });
@@ -259,7 +267,7 @@ function UserDialog({
             <div className="space-y-1.5">
               <Label>Áreas que este usuário pode visualizar</Label>
               <p className="text-xs text-muted-foreground">
-                Deixe tudo desmarcado para liberar todas as áreas.
+                Deixe tudo desmarcado para liberar todas as áreas. Marcar "Saúde" não inclui a Vigilância Sanitária, que é marcada à parte.
               </p>
               <div className="max-h-44 overflow-y-auto rounded-md border p-2 space-y-1">
                 {secretarias.length === 0 && (

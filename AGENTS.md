@@ -21,3 +21,4 @@
 - Read-only users get edit rights only via allowed_emails.pode_editar (admin-managed); protocol UPDATE for them is RLS-gated by pode_editar_area() to their areas and non-triage rows, while triage, delete and 1Doc stay admin-only.
 - Triage access = admin OR posso_editar() (pode_triar() in DB, usePodeTriar in UI); read-only users never see triage, and deleting protocols stays admin-only.
 - Every business-table change is audited by the generic registrar_alteracao() trigger into registro_sistema (admin-only read); add the trigger to any new business table.
+- Area access = area_permitida(secretaria, local): user_secretarias grants a department minus locais.area_propria; user_locais grants only that local (UI id "local:<uuid>"); no links = everything.

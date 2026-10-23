@@ -13,6 +13,8 @@ export function useSomenteSaude() {
       const { data, error } = await supabase
         .from("user_secretarias").select("secretarias(nome, sigla)").eq("email", email);
       if (error) throw error;
+      const { count } = await supabase.from("user_locais").select("id", { count: "exact", head: true }).eq("email", email);
+      if ((count ?? 0) > 0) return false;
       return somenteSaude((data ?? []).map((r: any) => r.secretarias ?? {}));
     },
     staleTime: 60_000,

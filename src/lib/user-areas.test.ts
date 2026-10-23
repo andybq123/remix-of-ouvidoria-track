@@ -32,3 +32,10 @@ describe("agruparAreasPorEmail", () => {
     expect(mapa.get("bob@x.com")).toEqual(["c"]);
   });
 });
+
+import { separarAreas } from "./user-areas";
+describe("separarAreas", () => {
+  it("separa Vigilância (local) da Saúde (secretaria)", () => {
+    expect(separarAreas(["sec-saude", "local:vig", "local:vig"])).toEqual({ secretarias: ["sec-saude"], locais: ["vig"] });
+  });
+});
