@@ -101,3 +101,102 @@ export async function rechecarLoteEsic(cursor: EsicMailboxCursor) {
     } finally { lock.release(); }
   } finally { try { await client.logout(); } catch { /* Keep original error. */ } }
 }
+
+type EmailEsic = { assunto: string; corpo: string; remetente: string; destinatario: string; externalId: string; receivedAt?: string };
+
+/** Busca direcionada: varre a caixa por assunto e-SIC e registra só os números pedidos, na triagem. */
+export async function buscarEsicPorNumeros(input: EsicNumerosBusca) {
+  exigirIngestaoAtiva();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: conta, error } = await supabaseAdmin.from("email_inbox_accounts").select("*")
+    .eq("id", input.accountId).eq("ativo", true).single();
+  if (error) throw error;
+  const alvo = new Map(input.numeros.map(n => [chaveNumeroEsic(n), formatarNumeroEsic(n)]));
+  const achados = new Set<string>();
+  const stats = { candidatos: 0, encontrados: 0, registrados: 0, erros: 0, detalhes: [] as string[] };
+  async function processar(email: EmailEsic) {
+    stats.candidatos++;
+    const extr = extrairPedidoEsic(`${email.assunto}\n${email.corpo}`);
+    if (!extr) return;
+    const chave = chaveNumeroEsic(extr.numero);
+    if (!alvo.has(chave)) return;
+    achados.add(chave);
+    stats.encontrados++;
+    if (!email.receivedAt || !Number.isFinite(Date.parse(email.receivedAt))) {
+      stats.erros++; stats.detalhes.push(`${alvo.get(chave)}: e-mail sem data de recebimento válida.`); return;
+    }
+    const resultado = await ingerirEmail({ account: conta, ...email, recheckEsic: true });
+    if (!resultado.ok) { stats.erros++; stats.detalhes.push(`${alvo.get(chave)}: ${resultado.error ?? "Falha ao registrar e-SIC"}`); }
+    else if (resultado.protocoloId) stats.registrados++;
+  }
+  if (conta.provider === "gmail") {
+    const lov = process.env.LOVABLE_API_KEY;
+    const gm = process.env.GOOGLE_MAIL_API_KEY;
+    if (!lov || !gm) throw new Error("Conta antiga: cadastre o mesmo e-mail com senha de app em Nova conta.");
+    async function get(path: string) {
+      const r = await fetch(`https://connector-gateway.lovable.dev/google_mail/gmail/v1${path}`, {
+        headers: { Authorization: `Bearer ${lov}`, "X-Connection-Api-Key": gm },
+      });
+      if (!r.ok) throw new Error(`Gmail ${r.status}: ${(await r.text()).slice(0, 300)}`);
+      return r.json();
+    }
+    let pageToken: string | undefined;
+    // Busca por assunto em toda a caixa; o limite de páginas é só trava de segurança.
+    for (let pagina = 0; pagina < 30; pagina++) {
+      const params = new URLSearchParams({ maxResults: "100", includeSpamTrash: "true", q: 'subject:"e-SIC" OR subject:"LAI"' });
+      if (pageToken) params.set("pageToken", pageToken);
+      const lista = await get(`/users/me/messages?${params}`);
+      for (const item of lista.messages ?? []) {
+        const msg = await get(`/users/me/messages/${encodeURIComponent(item.id)}?format=full`);
+        const headers = msg.payload?.headers ?? [];
+        const h = (name: string) => headers.find((x: any) => x.name.toLowerCase() === name.toLowerCase())?.value ?? "";
+        const textos: string[] = [];
+        function walk(p: any) {
+          if (["text/plain", "text/html"].includes(p?.mimeType) && p.body?.data) {
+            textos.push(Buffer.from(p.body.data, "base64url").toString("utf8"));
+          }
+          for (const part of p?.parts ?? []) walk(part);
+        }
+        walk(msg.payload);
+        await processar({ assunto: h("Subject"), corpo: textos.join("\n"), remetente: h("From"), destinatario: h("To"),
+          externalId: item.id, receivedAt: msg.internalDate ? new Date(Number(msg.internalDate)).toISOString() : undefined });
+      }
+      if (!lista.nextPageToken) break;
+      pageToken = lista.nextPageToken;
+    }
+  } else if (conta.provider === "imap") {
+    const { ImapFlow } = await import("imapflow");
+    const { simpleParser } = await import("mailparser");
+    if (!conta.imap_host || !conta.imap_user || !conta.imap_password) throw new Error("Credenciais de e-mail incompletas.");
+    const client = new ImapFlow({ host: conta.imap_host, port: conta.imap_port ?? 993, secure: conta.imap_tls ?? true,
+      auth: { user: conta.imap_user, pass: conta.imap_password }, logger: false });
+    try {
+      await client.connect();
+      for (const pasta of pastasEsic(await client.list())) {
+        const lock = await client.getMailboxLock(pasta.path, { readOnly: true });
+        try {
+          const status = await client.status(pasta.path, { uidValidity: true });
+          const validade = String(status.uidValidity ?? "");
+          const uids = await client.search({ or: [{ subject: "e-SIC" }, { subject: "LAI" }] }, { uid: true });
+          const lista = Array.isArray(uids) ? uids : [];
+          if (!lista.length) continue;
+          const mensagens = await client.fetchAll(lista, { uid: true, source: true, internalDate: true }, { uid: true });
+          for (const msg of mensagens) {
+            if (!msg.source) { stats.erros++; stats.detalhes.push(`${pasta.path}: mensagem sem conteúdo.`); continue; }
+            const parsed = await simpleParser(msg.source);
+            const remetente = parsed.from?.text ?? "";
+            const destinatario = parsed.to && "text" in parsed.to ? parsed.to.text : conta.email;
+            const corpo = `${parsed.text ?? ""}\n${typeof parsed.html === "string" ? parsed.html : ""}`;
+            const externalId = pasta.path.toUpperCase() === "INBOX" ? `uid:${validade}:${msg.uid}` : `folder:${encodeURIComponent(pasta.path)}:${validade}:${msg.uid}`;
+            await processar({ assunto: parsed.subject ?? "", corpo, remetente, destinatario, externalId,
+              receivedAt: msg.internalDate instanceof Date ? msg.internalDate.toISOString() : parsed.date?.toISOString() });
+          }
+        } finally { lock.release(); }
+      }
+    } finally { try { await client.logout(); } catch { /* Keep original error. */ } }
+  } else {
+    throw new Error("Conta não permite leitura da caixa de e-mail.");
+  }
+  const naoEncontrados = [...alvo.entries()].filter(([chave]) => !achados.has(chave)).map(([, fmt]) => fmt);
+  return { ...stats, naoEncontrados };
+}
