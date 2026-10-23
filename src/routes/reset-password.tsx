@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Shield, ArrowLeft } from "lucide-react";
+import { PasswordStrengthIndicator } from "@/components/password-strength";
+import { senhaForte, MENSAGEM_SENHA_FRACA } from "@/lib/password-strength";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [

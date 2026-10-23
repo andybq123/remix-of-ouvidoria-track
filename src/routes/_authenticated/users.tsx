@@ -17,6 +17,8 @@ import {
 } from "@/lib/users.functions";
 import { useIsUserOnline } from "@/hooks/use-online-users";
 import { supabase } from "@/integrations/supabase/client";
+import { PasswordStrengthIndicator } from "@/components/password-strength";
+import { senhaForte, MENSAGEM_SENHA_FRACA } from "@/lib/password-strength";
 
 type Secretaria = { id: string; nome: string };
 
