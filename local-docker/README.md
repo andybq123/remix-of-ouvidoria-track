@@ -1,6 +1,6 @@
 # OuviDesk — rodando localmente
 
-Requisitos: **Docker Desktop** e **Node.js 20+**.
+Requisitos: **Docker Desktop** e **Node.js 24.22.1+ (linha 24 LTS)**.
 
 ## 1. Subir o banco local (Postgres + login + tempo real)
 ```bash

@@ -32,21 +32,21 @@ jobs:
           bun-version: 1
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: "24.22.1"
       - name: Cache de dependências
         uses: actions/cache@v4
         with:
           path: |
             ~/.bun/install/cache
             node_modules
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
+          key: bun-node24-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-node24-${{ runner.os }}-
       - name: Cache da compilação
         uses: actions/cache@v4
         with:
           path: node_modules/.vite
-          key: vite-${{ runner.os }}-${{ github.sha }}
-          restore-keys: vite-${{ runner.os }}-
+          key: vite-node24-${{ runner.os }}-${{ github.sha }}
+          restore-keys: vite-node24-${{ runner.os }}-
       - name: Instalar dependências
         run: bun install --frozen-lockfile || bun install
       - name: Build (Node server)

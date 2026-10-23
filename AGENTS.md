@@ -1,4 +1,5 @@
 # Project rules
+- Keep VPS host, app, worker images and CI on the same patched Node LTS baseline; enforce host minimums through local-docker/node-runtime.sh and refresh images before restart, because changing a Docker tag alone leaves installed host and worker runtimes vulnerable.
 - Restrição de áreas de usuários de leitura fica em `user_secretarias` vinculada por e-mail em minúsculas (o usuário pode ainda não estar registrado); a política de leitura de protocolos trata ausência de vínculos como acesso a todas as áreas e exclui ouvidorias sem secretaria de usuários restritos.
 - O mapa filtra os botões Saúde/Obras pelas áreas do usuário via `escoposMapaPermitidos` em src/lib/map-departments.ts, consultando `user_secretarias` sempre com filtro do próprio e-mail (admin enxerga vínculos de todos pela RLS, então sem o filtro ele herdaria escopo alheio).
 - `secretarias` e `locais` têm policy de SELECT para `authenticated` (além da de `anon`): sem ela, usuários não-admin veem as telas Saúde e Mapa vazias, pois essas telas leem as duas tabelas diretamente.
