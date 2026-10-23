@@ -31,3 +31,16 @@ export function prepararVinculosAreas(
     secretaria_id,
   }));
 }
+
+/** Áreas formadas por um local (ex.: Vigilância Sanitária) usam o id "local:<uuid>" na lista de áreas. */
+export const PREFIXO_AREA_LOCAL = "local:";
+
+export function separarAreas(ids?: string[]): { secretarias: string[]; locais: string[] } {
+  const secretarias: string[] = [];
+  const locais: string[] = [];
+  for (const id of [...new Set((ids ?? []).filter(Boolean))]) {
+    if (id.startsWith(PREFIXO_AREA_LOCAL)) locais.push(id.slice(PREFIXO_AREA_LOCAL.length));
+    else secretarias.push(id);
+  }
+  return { secretarias, locais };
+}

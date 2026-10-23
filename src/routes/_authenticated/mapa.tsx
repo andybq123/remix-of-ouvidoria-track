@@ -74,7 +74,13 @@ function MapaPage() {
         .select("secretaria_id, secretarias(nome, sigla)")
         .eq("email", (user.email ?? "").toLowerCase());
       if (error) throw error;
-      return (data ?? []).map((r: any) => r.secretarias ?? {});
+      // Áreas por local (ex.: Vigilância) contam como a secretaria do local.
+      const { data: locais } = await supabase.from("user_locais")
+        .select("locais(secretarias(nome, sigla))").eq("email", (user.email ?? "").toLowerCase());
+      return [
+        ...(data ?? []).map((r: any) => r.secretarias ?? {}),
+        ...(locais ?? []).map((r: any) => r.locais?.secretarias ?? {}),
+      ];
     },
   });
   const escoposPermitidos = useMemo(
