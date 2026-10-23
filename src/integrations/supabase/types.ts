@@ -66,6 +66,7 @@ export type Database = {
           email: string
           id: string
           nome: string | null
+          pode_editar: boolean
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string
         }
@@ -75,6 +76,7 @@ export type Database = {
           email: string
           id?: string
           nome?: string | null
+          pode_editar?: boolean
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
         }
@@ -84,6 +86,7 @@ export type Database = {
           email?: string
           id?: string
           nome?: string | null
+          pode_editar?: boolean
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
         }
@@ -961,6 +964,8 @@ export type Database = {
       liberar_triagem: { Args: { p_id: string }; Returns: undefined }
       liberar_triagem_admin: { Args: { p_id: string }; Returns: undefined }
       normalizar_numero_esic: { Args: { p_numero: string }; Returns: string }
+      pode_editar_area: { Args: { _secretaria: string }; Returns: boolean }
+      posso_editar: { Args: never; Returns: boolean }
       protocolo_esic_por_numero: {
         Args: { p_numero: string }
         Returns: {

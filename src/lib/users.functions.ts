@@ -57,7 +57,7 @@ export const listarUsuarios = createServerFn({ method: "GET" })
 
 export const criarUsuario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { email: string; nome?: string; role: "admin" | "user"; senha?: string; secretaria_ids?: string[] }) => d)
+  .inputValidator((d: { email: string; nome?: string; role: "admin" | "user"; senha?: string; secretaria_ids?: string[]; pode_editar?: boolean }) => d)
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const email = data.email.trim().toLowerCase();
@@ -66,8 +66,12 @@ export const criarUsuario = createServerFn({ method: "POST" })
 
     const { error: errIns } = await supabaseAdmin
       .from("allowed_emails")
-      .insert({ email, nome: data.nome ?? null, role: data.role, created_by: context.userId });
+      .insert({ email, nome: data.nome ?? null, role: data.role, pode_editar: data.role === "user" && !!data.pode_editar, created_by: context.userId });
     if (errIns && !errIns.message.includes("duplicate")) throw new Error(errIns.message);
+    if (errIns) {
+      await supabaseAdmin.from("allowed_emails")
+        .update({ pode_editar: data.role === "user" && !!data.pode_editar }).eq("email", email);
+    }
 
     await sincronizarAreas(supabaseAdmin, email, data.role === "user" ? data.secretaria_ids : []);
 
@@ -106,7 +110,7 @@ export const criarUsuario = createServerFn({ method: "POST" })
 
 export const atualizarUsuario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { id: string; nome?: string; role: "admin" | "user"; novaSenha?: string; secretaria_ids?: string[] }) => d)
+  .inputValidator((d: { id: string; nome?: string; role: "admin" | "user"; novaSenha?: string; secretaria_ids?: string[]; pode_editar?: boolean }) => d)
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -117,7 +121,7 @@ export const atualizarUsuario = createServerFn({ method: "POST" })
 
     const { error: e2 } = await supabaseAdmin
       .from("allowed_emails")
-      .update({ nome: data.nome ?? null, role: data.role })
+      .update({ nome: data.nome ?? null, role: data.role, pode_editar: data.role === "user" && !!data.pode_editar })
       .eq("id", data.id);
     if (e2) throw new Error(e2.message);
 

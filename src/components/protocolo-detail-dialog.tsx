@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useIsAdmin } from "@/hooks/use-is-admin";
+import { usePodeEditar } from "@/hooks/use-pode-editar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,6 +44,8 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
 }) {
   const qc = useQueryClient();
   const isAdmin = useIsAdmin();
+  const podeEditar = usePodeEditar();
+  const podeAgir = isAdmin || podeEditar;
   const reverter = useServerFn(reverterAlteracaoOnedoc);
   const [revertendo, setRevertendo] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -487,10 +490,10 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
         )}
 
         {/* Ações rápidas — apenas admins */}
-        {isAdmin && <div className="flex flex-wrap items-center gap-2 border-y py-3">
+        {podeAgir && <div className="flex flex-wrap items-center gap-2 border-y py-3">
           {/* Grupo principal (ações positivas / fluxo) */}
           <div className="flex flex-wrap items-center gap-2">
-            {!isLegacy && protocolo.triagem_pendente && editing && (
+            {isAdmin && !isLegacy && protocolo.triagem_pendente && editing && (
               wrapTooltip(
                 "concluir-triagem",
                 <Button
@@ -518,7 +521,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
                 "Abre o protocolo no sistema 1Doc em uma nova aba"
               )
             )}
-            {!isLegacy && link1doc && (
+            {isAdmin && !isLegacy && link1doc && (
               wrapTooltip(
                 "agente-1doc",
                 <span><OnedocAgentButton tipo="unitario" protocoloId={protocolo.id} label="Atualizar pelo 1Doc" /></span>,
@@ -568,7 +571,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
 
           {/* Grupo secundário (edição / cancelamento / exclusão) */}
           <div className="flex flex-wrap items-center gap-2 ml-auto">
-            {!isLegacy && (!editing ? (
+            {!isLegacy && (isAdmin || !protocolo.triagem_pendente) && (!editing ? (
               <Button size="sm" variant="outline" onClick={() => setEditing(true)} disabled={lockBloqueia}>
                 <Pencil className="h-4 w-4 mr-1" /> Editar
               </Button>
@@ -581,7 +584,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
                 "Descarta as alterações feitas no formulário (Esc)"
               )
             ))}
-            {!isLegacy && (
+            {isAdmin && !isLegacy && (
               wrapTooltip(
                 "excluir-protocolo",
                 <Button
@@ -597,7 +600,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
             )}
           </div>
         </div>}
-        {!isAdmin && link1doc && (
+        {!podeAgir && link1doc && (
           <div className="border-y py-3">
             <a href={link1doc} target="_blank" rel="noopener noreferrer">
               <Button size="sm" className="bg-sky-600 text-white hover:bg-sky-700">
