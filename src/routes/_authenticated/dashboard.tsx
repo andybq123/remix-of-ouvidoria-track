@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { OnedocAgentButton } from "@/components/onedoc-agent-button";
 import { useIsAdmin } from "@/hooks/use-is-admin";
+import { usePodeTriar } from "@/hooks/use-pode-triar";
 import { idsOuvidorias1doc } from "@/lib/onedoc-batch";
 import { situacaoProtocolo, calcularPrazo, estavaAtrasadoNaData, endOfMonthOrNow, CATEGORIAS, calcularSla, resumoOperacional, categoriaDoProtocolo, type CategoriaProtocolo } from "@/lib/prazo";
 import {
@@ -82,6 +83,7 @@ function fmtDuracao(horas: number): string {
 
 function Dashboard() {
   const navigate = useNavigate();
+  const podeTriar = usePodeTriar();
   const [drill, setDrill] = useState<{
     titleBase: string;
     predicate: (p: any) => boolean;

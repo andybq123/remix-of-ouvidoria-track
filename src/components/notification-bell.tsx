@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchAllPaginated } from "@/lib/fetch-all";
 import { STALE } from "@/lib/query-policies";
 import { situacaoProtocolo, formatDate } from "@/lib/prazo";
+import { usePodeTriar } from "@/hooks/use-pode-triar";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 
 export function NotificationBell() {
@@ -32,8 +33,10 @@ export function NotificationBell() {
     refetchInterval: STALE.alertas,
   });
 
-  const { data: triagemPendentes = 0 } = useQuery({
+  const podeTriar = usePodeTriar();
+  const { data: triagemPendentesBruto = 0 } = useQuery({
     queryKey: ["triagem-pendentes-count"],
+    enabled: podeTriar,
     queryFn: async () => {
       const { count } = await supabase
         .from("protocolos")
