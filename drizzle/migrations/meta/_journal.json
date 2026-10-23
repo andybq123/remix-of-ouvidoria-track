@@ -127,6 +127,13 @@
       "when": 1792765358501,
       "tag": "0017_usuario_pode_editar_area",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792765383399,
+      "tag": "0018_funcao_posso_editar",
+      "breakpoints": true
     }
   ]
 }
