@@ -130,10 +130,10 @@ export async function buscarEsicPorNumeros(input: EsicNumerosBusca) {
     else if (resultado.protocoloId) stats.registrados++;
   }
   if (conta.provider === "gmail") {
-    const lov = process.env.LOVABLE_API_KEY;
-    const gm = process.env.GOOGLE_MAIL_API_KEY;
-    if (!lov || !gm) throw new Error("Conta antiga: cadastre o mesmo e-mail com senha de app em Nova conta.");
     async function get(path: string) {
+      const lov = process.env.LOVABLE_API_KEY;
+      const gm = process.env.GOOGLE_MAIL_API_KEY;
+      if (!lov || !gm) throw new Error("Conta antiga: cadastre o mesmo e-mail com senha de app em Nova conta.");
       const r = await fetch(`https://connector-gateway.lovable.dev/google_mail/gmail/v1${path}`, {
         headers: { Authorization: `Bearer ${lov}`, "X-Connection-Api-Key": gm },
       });
