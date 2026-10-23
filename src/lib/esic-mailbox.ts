@@ -20,7 +20,7 @@ export type EsicNumerosBusca = z.infer<typeof esicNumerosBuscaSchema>;
 export function extrairNumerosEsicTexto(texto: string): string[] {
   const vistos = new Set<string>();
   const saida: string[] = [];
-  for (const trecho of texto.match(/\d[\d.]*\s*\/\s*20\d{2}/g) ?? []) {
+  for (const trecho of texto.match(/(?<![\d.])\d[\d.]*\s*\/\s*20\d{2}(?!\d)/g) ?? []) {
     const fmt = formatarNumeroEsic(trecho);
     const chave = chaveNumeroEsic(fmt);
     if (!vistos.has(chave)) { vistos.add(chave); saida.push(fmt); }
