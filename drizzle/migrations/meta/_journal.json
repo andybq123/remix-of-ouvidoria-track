@@ -120,6 +120,13 @@
       "when": 1792762944411,
       "tag": "0016_leitura_autenticada_secretarias_locais",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792765358501,
+      "tag": "0017_usuario_pode_editar_area",
+      "breakpoints": true
     }
   ]
 }
