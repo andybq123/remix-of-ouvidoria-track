@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
+import { getRouteApi } from "@tanstack/react-router";
 import { SearchCheck, Loader2, Pause, Play } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ export function EsicMailboxButton({ accountIds, disabled }: { accountIds: string
   const [rodando, setRodando] = useState(false);
   const continuar = useRef(false);
   const montado = useRef(true);
-  const { user } = RouteContext();
+  const { user } = getRouteApi("/_authenticated").useRouteContext();
   const storageKey = `ouvidesk-esic-mailbox:${user.id}`;
   useEffect(() => {
     montado.current = true;
@@ -94,7 +95,3 @@ export function EsicMailboxButton({ accountIds, disabled }: { accountIds: string
     </div>}
   </div>;
 }
-
-// The authenticated layout owns the session; checkpoints are isolated per user.
-import { Route as AuthRoute } from "@/routes/_authenticated/route";
-function RouteContext() { return AuthRoute.useRouteContext(); }

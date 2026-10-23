@@ -273,6 +273,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
         account_id: account.id, remetente, destinatario, assunto,
         corpo: textoCompleto.slice(0, 20000), status: "pendente",
         external_id: externalId ?? null,
+        ...(input.receivedAt ? { recebido_em: input.receivedAt } : {}),
       })
       .select("id").single();
     if (logErr) throw logErr;
