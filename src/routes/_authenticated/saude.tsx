@@ -1,4 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useIsAdmin } from "@/hooks/use-is-admin";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useSomenteVigilancia } from "@/hooks/use-somente-vigilancia";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,8 +32,19 @@ export const Route = createFileRoute("/_authenticated/saude")({
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
-  component: SaudePage,
+  component: SaudeGuard,
 });
+
+function SaudeGuard() {
+  const isAdmin = useIsAdmin();
+  const soVigilancia = useSomenteVigilancia();
+  if (soVigilancia && !isAdmin) {
+    return <div className="py-10 text-center text-sm text-muted-foreground">
+      Suas ouvidorias ficam na aba <Link to="/protocolos" className="underline">Protocolos</Link>.
+    </div>;
+  }
+  return <SaudePage />;
+}
 
 function SaudePage() {
   const [busca, setBusca] = useState("");

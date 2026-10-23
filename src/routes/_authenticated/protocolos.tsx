@@ -1,4 +1,5 @@
 import { useSomenteSaude } from "@/hooks/use-somente-saude";
+import { useSomenteVigilancia } from "@/hooks/use-somente-vigilancia";
 import { useIsAdmin as useIsAdminGuard } from "@/hooks/use-is-admin";
 import { formatarNumeroEsic } from "@/lib/esic";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -125,6 +126,7 @@ function ProtocolosPage() {
   });
 
   // ID da secretaria de Saúde — protocolos dessa secretaria aparecem só na aba Saúde
+  const soVigilancia = useSomenteVigilancia();
   const { data: saudeSecId } = useQuery({
     queryKey: ["secretaria-saude-id"],
     queryFn: async () => {
@@ -170,7 +172,7 @@ function ProtocolosPage() {
   const buscando = termos.length > 0;
 
   const filtrados = protocolosComAntigos.filter(p => {
-    if (!isAntigo(p) && saudeSecId && p.secretaria_id === saudeSecId) return false;
+    if (!isAntigo(p) && !soVigilancia && saudeSecId && p.secretaria_id === saudeSecId) return false;
     // Concluídos só aparecem quando filtrados explicitamente, buscados pelo número
     // ou quando estamos vendo os Protocolos Antigos (a maioria já está concluída).
     if (p.status === "concluido"
