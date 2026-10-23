@@ -1,5 +1,6 @@
 # Tarefas
-- [ ] Adicionar botão no E-mail para rechecar toda a caixa em busca de e-SIC, sem corte de datas ou páginas, preservando duplicatas e triagem.
+- [x] Adicionar botão no E-mail para rechecar toda a caixa em busca de e-SIC, sem corte de datas ou páginas, com pausa/retomada, data original e proteção contra duplicatas; testes passaram e botão conferido com sessão real.
+- [ ] Validar busca completa na caixa real da VPS — depende da atualização da VPS e das contas de e-mail locais; o ambiente acessível não possui contas cadastradas.
 - [x] Igualar o número interno ao número oficial dos pedidos e-SIC; 19 testes de extração/ingestão, testes reais de banco (edição, conversão, legados, conflitos e idempotência) e cadastro autenticado com leitura na triagem validados; correção de legados incluída na atualização da VPS.
 - [x] Adicionar conferência 1Doc por indicador de local, atualizar assunto/categoria/endereço e permitir reversão individual no histórico; 47 testes passaram, lote enfileirado com sessão real e reversão de endereço conferida na tela sem alterar categoria, com registro de autoria e coordenadas restauradas; registros temporários removidos.
 - [x] Corrigir o contraste da lista de meses do BI e substituir a logo pelo brasão enviado; lista escura, seleção e imagem carregada conferidas no navegador.

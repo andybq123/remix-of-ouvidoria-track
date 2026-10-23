@@ -66,7 +66,7 @@ export async function rechecarLoteEsic(cursor: EsicMailboxCursor) {
     if (indice < 0) throw new Error("A pasta em conferência não existe mais. Reinicie a busca.");
     const pasta = pastas[indice];
     if (!pasta) return { ...stats, pasta: "Toda a caixa", proximo: null };
-    const lock = await client.getMailboxLock(pasta.path);
+    const lock = await client.getMailboxLock(pasta.path, { readOnly: true });
     try {
       const status = await client.status(pasta.path, { uidValidity: true, uidNext: true });
       const validade = String(status.uidValidity ?? "");
@@ -75,7 +75,12 @@ export async function rechecarLoteEsic(cursor: EsicMailboxCursor) {
       const intervalo = intervaloEsic(cursor.nextUid ?? 1, maxUid);
       // Sequence holes are normal; UID intervals still progress until uidNext.
       if (intervalo.inicio <= intervalo.fim) {
-        const mensagens = await client.fetchAll(`${intervalo.inicio}:${intervalo.fim}`, { uid: true, source: true, internalDate: true }, { uid: true });
+        const uids = await client.search({ uid: `${intervalo.inicio}:${maxUid}` }, { uid: true });
+        const loteUids = Array.isArray(uids) ? uids.filter(uid => uid >= intervalo.inicio && uid <= maxUid).sort((a, b) => a - b).slice(0, ESIC_MAIL_BATCH) : [];
+        // Jump over deleted UID gaps instead of making thousands of empty requests.
+        const ultimo = loteUids.at(-1);
+        intervalo.proximo = ultimo && ultimo < maxUid ? ultimo + 1 : null;
+        const mensagens = loteUids.length ? await client.fetchAll(loteUids, { uid: true, source: true, internalDate: true }, { uid: true }) : [];
         for (const msg of mensagens) {
           if (!msg.source) throw new Error("Mensagem sem conteúdo; tente novamente.");
           const parsed = await simpleParser(msg.source);
