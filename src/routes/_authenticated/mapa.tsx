@@ -61,6 +61,31 @@ function MapaPage() {
   const [savingMove, setSavingMove] = useState(false);
   const qc = useQueryClient();
 
+  // Áreas vinculadas ao usuário (user_secretarias); a policy já limita às do próprio e-mail.
+  const { data: minhasAreas } = useQuery({
+    queryKey: ["minhas-areas-mapa"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_secretarias")
+        .select("secretaria_id, secretarias(nome, sigla)");
+      if (error) throw error;
+      return (data ?? []).map((r: any) => r.secretarias ?? {});
+    },
+  });
+  const escoposPermitidos = useMemo(
+    () => (minhasAreas === undefined ? undefined : escoposMapaPermitidos(minhasAreas)),
+    [minhasAreas],
+  );
+  // Se a área escolhida não é permitida para o usuário, cai na primeira permitida.
+  const scopeEfetivo: MapDepartmentScope | null =
+    escoposPermitidos === undefined
+      ? mapScope
+      : escoposPermitidos.length === 0
+        ? null
+        : escoposPermitidos.includes(mapScope as (typeof escoposPermitidos)[number])
+          ? mapScope
+          : escoposPermitidos[0];
+
   const { data: secretariasMapa = [] } = useQuery({
     queryKey: ["secretarias-mapa-setores"],
     queryFn: async () => {
