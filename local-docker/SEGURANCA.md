@@ -1,7 +1,7 @@
 # Auditoria de segurança — Ouvidoria (rodada 1)
 
 ## 1. Arquitetura identificada
-- App: TanStack Start (React 19 + SSR), servidor Node (`.output/server/index.mjs`) no container `app` (imagem `node:22-bookworm`), porta `127.0.0.1:8080`.
+- App: TanStack Start (React 19 + SSR), servidor Node (`.output/server/index.mjs`) no container `app` (imagem `node:24.22.1-bookworm`), porta `127.0.0.1:8080`.
 - Banco/autenticação: Supabase local (Postgres 15, GoTrue, PostgREST, Realtime) via `supabase start`, API em `127.0.0.1:54321`.
 - Caddy (no host) termina HTTPS e encaminha `/auth/v1`, `/rest/v1`, `/realtime/v1`, `/storage/v1`, `/functions/v1` para 54321 e o resto para 8080.
 - Autorização: RLS no Postgres + papéis em `user_roles` (`admin`/`user`) verificados por `has_role()`; funções de servidor usam `requireSupabaseAuth` (token do usuário).
@@ -41,6 +41,8 @@ Verificado sem problema: rotas `/api/public/*` exigem `INGEST_TOKEN`/`CRON_SECRE
 - `consultar_protocolo_publico` devolve descrição, solicitante e contato a quem tem número+hash (é o próprio munícipe). Mantido.
 
 ## 6. Riscos remanescentes
+- Revisão de Node (23/10/2026): host, app, agente 1Doc e CI passam a usar linha 24 LTS com mínimo 24.22.1, release oficial de segurança de 20/10/2026. O atualizador baixa a imagem do app e recompila a imagem do agente antes do reinício; o host só instala novamente quando está fora do mínimo. Validar versões e operação na VPS após aplicar. Referência: https://nodejs.org/dist/index.json.
+- A varredura de dependências também apontou vulnerabilidades em bibliotecas, incluindo `xlsx`, dependências de `jspdf`, e processamento de e-mail; atualizar Node não corrige esses avisos. Esta alteração não representa auditoria completa nem garantia de ausência de vulnerabilidades.
 - **Alto:** ausência de isolamento por secretaria (se for exigência legal); abuso de cota de IA pelo formulário público.
 - **Médio:** CSP só em Report-Only até ser validada; container como root.
 - **Baixo:** SSRF administrativo no teste IMAP; vazamento de existência de conta pela mensagem de login (padrão do GoTrue).

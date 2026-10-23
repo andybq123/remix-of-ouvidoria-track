@@ -90,10 +90,13 @@ run_status() {
 }
 rodar_node() {
   if command -v node >/dev/null 2>&1; then node "$@"
-  else docker run --rm -v "$PWD:$PWD" -w "$PWD" node:22-alpine node "$@"; fi
+  else docker run --rm --pull=always -v "$PWD:$PWD" -w "$PWD" node:24.22.1-alpine node "$@"; fi
 }
 
 cd local-docker
+source ./node-runtime.sh
+info "Conferindo Node da VPS (LTS com correções de segurança)."
+atualizar_node_host >>"$LOG" 2>&1 || falha "Não consegui atualizar o Node da VPS." "Execute como root (sudo -i) e confira o registro."
 PRONTO=0; LOCAL_BUILD=0; TOTAL=120
 
 # ---------- 2. compilação ----------
@@ -197,8 +200,11 @@ if [ "$PRONTO" = "1" ]; then
 fi
 COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.prod.yml)
 [ "$MODO" = "dev" ] && COMPOSE=(docker compose)
+# Baixa a imagem corrigida antes de parar o app; o build do agente usa cache nas próximas atualizações.
+"${COMPOSE[@]}" pull app >>"$LOG" 2>&1 || falha "Não consegui baixar a imagem corrigida do Node."
+"${COMPOSE[@]}" build --pull agente-1doc >>"$LOG" 2>&1 || falha "Não consegui preparar o agente 1Doc com Node atualizado."
 "${COMPOSE[@]}" rm -sf app >>"$LOG" 2>&1 || true
-( "${COMPOSE[@]}" up -d --force-recreate >>"$LOG" 2>&1 ) &
+( "${COMPOSE[@]}" up -d --force-recreate --renew-anon-volumes >>"$LOG" 2>&1 ) &
 PID_COMPOSE=$!
 ok "Reinício solicitado."
 

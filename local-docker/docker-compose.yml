@@ -1,6 +1,6 @@
 services:
   app:
-    image: node:22-bookworm
+    image: node:24.22.1-bookworm
     working_dir: /app
     restart: unless-stopped
     volumes:
@@ -34,17 +34,19 @@ services:
 
   # Agente 1Doc: confere baixa/arquivamento das ouvidorias quando pedido no sistema
   agente-1doc:
-    image: mcr.microsoft.com/playwright:v1.48.2-jammy
+    build:
+      context: ./agente-1doc
+    image: ouvidesk-agente-1doc:node24
     restart: unless-stopped
     env_file: .env.local
     working_dir: /agente
     volumes:
       - ./agente-1doc:/agente
-      - agente_node_modules:/agente/node_modules
+      # Dependências da imagem prevalecem sobre instalações antigas do volume.
+      - /agente/node_modules
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    command: sh -c "npm install --no-audit --no-fund --omit=dev >/dev/null 2>&1; exec node agente.mjs"
+    command: node agente.mjs
 
 volumes:
-  agente_node_modules:
   app_node_modules:
