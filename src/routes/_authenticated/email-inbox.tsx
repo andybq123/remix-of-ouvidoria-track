@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { useServerFn } from "@tanstack/react-start";
 import { sincronizarGmail, ressincronizarGmail, reverificarEmails, backfillUrls1Doc, reprocessarEmail, testarContaImap } from "@/lib/gmail-sync.functions";
+import { EsicMailboxButton } from "@/components/esic-mailbox-button";
 
 const SYNC_INTERVAL_MIN = 3;
 
@@ -251,7 +252,8 @@ function EmailInboxPage() {
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Mail className="h-6 w-6" /> Recepção por E-mail</h1>
           <p className="text-sm text-muted-foreground">Encaminhe e-mails para um endereço único e o sistema cria a ouvidoria automaticamente.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-start gap-2">
+          <EsicMailboxButton accountIds={syncAccounts.map(a => a.id)} disabled={sincronizando || ressincronizando || reverificando || backfillando} />
           <Button variant="outline" onClick={rodarBackfillUrls} disabled={backfillando || reverificando || ressincronizando || sincronizando} title="Preenche a URL do 1Doc nos protocolos existentes sem link">
             <RefreshCw className={`h-4 w-4 mr-1 ${backfillando ? "animate-spin" : ""}`} />
             Backfill URLs 1Doc

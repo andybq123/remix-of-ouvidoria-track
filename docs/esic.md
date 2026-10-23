@@ -19,6 +19,8 @@ A extração desse formato é determinística e não depende de IA. Os demais e-
 
 ## Identificadores, duplicatas e histórico
 
+Na aba **E-mail**, **Buscar e-SIC em toda a caixa** percorre todas as mensagens das contas Gmail/IMAP ativas, sem corte de datas ou de páginas, incluindo arquivadas. No Gmail por IMAP, lê Todos os e-mails, Spam e Lixeira sem duplicar marcadores. Usa lotes curtos com contagem ao vivo e opção de pausar/retomar; mantenha a aba aberta. Ao sair ou recarregar, a busca fica pausada e pode ser retomada na mesma sessão do navegador. Não altera os cursores da sincronização automática. Mensagens sem protocolo, inclusive as antigas marcadas como processadas, são reconsideradas apenas quando reconhecidas como e-SIC; mensagens já vinculadas não são reprocessadas. Novos pedidos conservam a data original de recebimento e entram na triagem. Erros de ingestão ficam no histórico de e-mails e no resumo; falhas de conexão pausam a busca no lote atual para nova tentativa. A leitura real exige a conta de e-mail configurada e acessível na VPS.
+
 - `numero_esic` guarda o número oficial do pedido no padrão do sistema, por exemplo `0.026/2026`.
 - `numero` usa o mesmo valor de `numero_esic`, sem gerar outro identificador no recebimento automático, cadastro ou edição. As restrições globais de unicidade continuam valendo: um conflito com outro protocolo é registrado para revisão, sem inventar número nem vincular o e-SIC à Ouvidoria.
 - A busca de e-SIC normaliza zeros à esquerda, espaços e separadores de milhar: `026/2026`, `26/2026` e `0.026/2026` identificam o mesmo pedido.
