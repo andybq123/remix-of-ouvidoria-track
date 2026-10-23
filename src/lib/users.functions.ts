@@ -77,12 +77,26 @@ export const criarUsuario = createServerFn({ method: "POST" })
         email_confirm: true,
         user_metadata: { nome: data.nome ?? "" },
       });
-      if (errUser && !String(errUser.message).toLowerCase().includes("already")) {
-        throw new Error(errUser.message);
+      let authUserId = created?.user?.id ?? null;
+      if (errUser) {
+        if (!String(errUser.message).toLowerCase().includes("already")) {
+          throw new Error(errUser.message);
+        }
+        // E-mail já existia no acesso: atualiza a senha em vez de ignorar,
+        // senão o login falha com "credencial inválida".
+        const { data: list } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
+        const existente = (list?.users ?? []).find(x => x.email?.toLowerCase() === email);
+        if (!existente) throw new Error(errUser.message);
+        const { error: errUpd } = await supabaseAdmin.auth.admin.updateUserById(existente.id, {
+          password: data.senha,
+          email_confirm: true,
+        });
+        if (errUpd) throw new Error(errUpd.message);
+        authUserId = existente.id;
       }
-      if (created?.user) {
+      if (authUserId) {
         await supabaseAdmin.from("user_roles")
-          .upsert({ user_id: created.user.id, role: data.role }, { onConflict: "user_id,role" });
+          .upsert({ user_id: authUserId, role: data.role }, { onConflict: "user_id,role" });
       }
     }
     return { ok: true };
