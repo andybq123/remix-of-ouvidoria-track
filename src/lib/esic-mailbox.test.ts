@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { intervaloEsic, pastasEsic } from "./esic-mailbox";
+import { extrairNumerosEsicTexto, intervaloEsic, pastasEsic } from "./esic-mailbox";
 
 describe("varredura completa e-SIC", () => {
   it("percorre mais de duas páginas até o último UID sem limite total", () => {
@@ -31,5 +31,19 @@ describe("varredura completa e-SIC", () => {
       { path: "Arquivo 2026", flags: new Set<string>() },
       { path: "Pasta mãe", flags: new Set(["\\Noselect"]) },
     ]).map(p => p.path)).toEqual(["INBOX", "Arquivo 2025", "Arquivo 2026"]);
+  });
+});
+
+describe("busca de e-SIC por números", () => {
+  it("extrai números de texto livre, normalizando zeros e pontos e removendo duplicados", () => {
+    expect(extrairNumerosEsicTexto("092/2026, 93/2026 e 0.094/2026; repetir 092/2026"))
+      .toEqual(["0.092/2026", "0.093/2026", "0.094/2026"]);
+  });
+  it("ignora trechos sem ano de quatro dígitos e textos sem número", () => {
+    expect(extrairNumerosEsicTexto("protocolo 12/99 e 5/20266, nada mais")).toEqual([]);
+  });
+  it("aceita números colados de listas com marcadores e quebras de linha", () => {
+    expect(extrairNumerosEsicTexto("- 040/2026\n- 041/2026\n- 101/2026"))
+      .toEqual(["0.040/2026", "0.041/2026", "0.101/2026"]);
   });
 });

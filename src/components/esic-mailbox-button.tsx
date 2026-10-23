@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
-import { SearchCheck, Loader2, Pause, Play } from "lucide-react";
+import { SearchCheck, Loader2, Pause, Play, ListFilter } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { rechecarEsic } from "@/lib/esic-mailbox.functions";
-import { esicMailboxCursorSchema, type EsicMailboxCursor } from "@/lib/esic-mailbox";
+import { Textarea } from "@/components/ui/textarea";
+import { buscarEsicNumeros, rechecarEsic } from "@/lib/esic-mailbox.functions";
+import { esicMailboxCursorSchema, extrairNumerosEsicTexto, NUMEROS_ESIC_IMPRESSOS, type EsicMailboxCursor } from "@/lib/esic-mailbox";
 
 type Busca = {
   contas: string[]; indice: number; cursor: EsicMailboxCursor;
@@ -18,6 +19,38 @@ export function EsicMailboxButton({ accountIds, disabled }: { accountIds: string
   const qc = useQueryClient();
   const [busca, setBusca] = useState<Busca | null>(null);
   const [rodando, setRodando] = useState(false);
+  const buscarNumeros = useServerFn(buscarEsicNumeros);
+  const [espAberto, setEspAberto] = useState(false);
+  const [espTexto, setEspTexto] = useState(NUMEROS_ESIC_IMPRESSOS);
+  const [espRodando, setEspRodando] = useState(false);
+
+  async function executarEspecificos() {
+    const numeros = extrairNumerosEsicTexto(espTexto);
+    if (!numeros.length) { toast.error("Informe ao menos um número no formato 092/2026."); return; }
+    if (!confirm(`Buscar na caixa de e-mail somente os ${numeros.length} números listados e enviar os pedidos encontrados para a triagem? Pedidos já vinculados não serão duplicados.`)) return;
+    setEspRodando(true);
+    const total = { candidatos: 0, encontrados: 0, registrados: 0, erros: 0 };
+    const faltantes: string[] = [];
+    try {
+      for (const accountId of accountIds) {
+        const r = await buscarNumeros({ data: { accountId, numeros } });
+        total.candidatos += r.candidatos; total.encontrados += r.encontrados;
+        total.registrados += r.registrados; total.erros += r.erros;
+        for (const n of r.naoEncontrados) if (!faltantes.includes(n)) faltantes.push(n);
+      }
+      toast[total.erros ? "warning" : "success"](
+        `Busca de e-SIC específicos: ${total.encontrados} encontrados, ${total.registrados} registrados/vinculados na triagem e ${total.erros} erros.${faltantes.length ? ` Não encontrados na caixa: ${faltantes.join(", ")}.` : ""}`,
+        { duration: 20000 },
+      );
+    } catch (e) {
+      toast.error(`Falha na busca: ${e instanceof Error ? e.message : "erro desconhecido"}`);
+    } finally {
+      setEspRodando(false);
+      for (const key of ["email-inbox-log", "protocolos", "protocolos-triagem", "triagem-pendentes-count", "triagem-stats", "protocolos-dashboard"]) {
+        void qc.invalidateQueries({ queryKey: [key] });
+      }
+    }
+  }
   const continuar = useRef(false);
   const montado = useRef(true);
   const { user } = getRouteApi("/_authenticated").useRouteContext();
@@ -87,7 +120,18 @@ export function EsicMailboxButton({ accountIds, disabled }: { accountIds: string
         {rodando ? "Pausar busca e-SIC" : busca ? "Retomar busca e-SIC" : "Buscar e-SIC em toda a caixa"}
       </Button>
       {busca && !rodando && <Button variant="ghost" onClick={() => { if (confirm("Descartar o progresso da busca? Os pedidos já registrados serão preservados.")) salvar(null); }}>Encerrar busca</Button>}
+      <Button variant="outline" disabled={disabled || espRodando || accountIds.length === 0} onClick={() => setEspAberto(v => !v)}>
+        <ListFilter className="h-4 w-4 mr-1" />Buscar e-SIC específicos
+      </Button>
     </div>
+    {espAberto && <div className="w-full max-w-lg space-y-2 rounded-md border p-3">
+      <p className="text-xs text-muted-foreground">Números a procurar na caixa (formato 092/2026, separados por vírgula). A lista abaixo já vem preenchida com os números dos prints e pode ser editada.</p>
+      <Textarea value={espTexto} onChange={e => setEspTexto(e.target.value)} rows={4} disabled={espRodando} />
+      <Button size="sm" disabled={espRodando} onClick={() => void executarEspecificos()}>
+        {espRodando && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+        {espRodando ? "Buscando na caixa..." : "Buscar estes números"}
+      </Button>
+    </div>}
     {busca && <div role="status" className="text-xs text-muted-foreground space-y-1 max-w-lg break-words">
       <p className="flex items-center gap-1">{rodando && <Loader2 className="h-3 w-3 animate-spin shrink-0" />}{rodando ? "Buscando" : "Pausada"} · Conta {busca.indice + 1}/{busca.contas.length} · {busca.pasta}</p>
       <p>{busca.lidos} lidos · {busca.encontrados} e-SIC · {busca.registrados} registrados/vinculados · {busca.erros} erros</p>
