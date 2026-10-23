@@ -64,13 +64,15 @@ function MapaPage() {
   const [savingMove, setSavingMove] = useState(false);
   const qc = useQueryClient();
 
-  // Áreas vinculadas ao usuário (user_secretarias); a policy já limita às do próprio e-mail.
+  // Áreas vinculadas ao usuário (user_secretarias). Filtra pelo próprio e-mail:
+  // admins enxergam os vínculos de todos pela policy, mas aqui só os deles importam.
   const { data: minhasAreas } = useQuery({
-    queryKey: ["minhas-areas-mapa"],
+    queryKey: ["minhas-areas-mapa", user.email],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_secretarias")
-        .select("secretaria_id, secretarias(nome, sigla)");
+        .select("secretaria_id, secretarias(nome, sigla)")
+        .eq("email", (user.email ?? "").toLowerCase());
       if (error) throw error;
       return (data ?? []).map((r: any) => r.secretarias ?? {});
     },
