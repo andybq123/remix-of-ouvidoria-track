@@ -13,7 +13,7 @@ import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { toast } from "sonner";
 import { MapPointPicker } from "@/components/map-point-picker";
 import { categoriaDoProtocolo, situacaoProtocolo } from "@/lib/prazo";
-import { mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
+import { escoposMapaPermitidos, mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
 import { MapDepartmentToggle } from "@/components/map-department-toggle";
 import {
   AlertDialog,
