@@ -546,7 +546,7 @@ function Dashboard() {
       </div>
 
       {/* Triagem widget */}
-      <Card className="border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/10">
+      {podeTriar && <Card className="border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/10">
         <CardContent className="py-3 px-4 flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2 flex-1 min-w-[200px]">
             <Inbox className="h-5 w-5 text-amber-600" />
@@ -572,7 +572,7 @@ function Dashboard() {
             <Button size="sm" className="bg-yellow-400 text-yellow-950 hover:bg-yellow-500">Abrir fila de triagem</Button>
           </Link>
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Painel operacional do dia — cards clicáveis abrem a lista filtrada */}
       <div>
@@ -590,9 +590,9 @@ function Dashboard() {
           <KpiCard icon={Inbox} tone="info" label="Aguardando resposta" value={op.aguardando}
             hint="sem resolução registrada"
             onClick={() => openDrill("Aguardando resposta", p => p.status !== "concluido" && calcularSla(p).aguardandoResposta)} />
-          <KpiCard icon={Inbox} tone="warning" label="Pendentes de triagem" value={triagemStats?.pendentes ?? 0}
+          {podeTriar && <KpiCard icon={Inbox} tone="warning" label="Pendentes de triagem" value={triagemStats?.pendentes ?? 0}
             hint="fila de triagem"
-            onClick={() => navigate({ to: "/tarefas" })} />
+            onClick={() => navigate({ to: "/tarefas" })} />}
           <KpiCard icon={CheckCircle2} tone="success" label="Concluídos" value={op.concluidos}
             hint="no período"
             onClick={() => openDrill("Protocolos concluídos", p => p.status === "concluido")} />

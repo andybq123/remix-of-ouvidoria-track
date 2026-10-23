@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, redirect, Link, useRouter, useRouterState } fr
 import { useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, FileText, Building2, LogOut, AlertTriangle, BarChart3, Mail, Users, HeartPulse, Map as MapIcon, Settings, ChevronDown, PanelLeft, PanelTop, Tag, Inbox, Sparkles, DatabaseBackup, Bug, Bot, Check, Link2Off, RefreshCw, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, FileText, Building2, LogOut, AlertTriangle, BarChart3, Mail, Users, HeartPulse, Map as MapIcon, Settings, ChevronDown, PanelLeft, PanelTop, Tag, Inbox, Sparkles, DatabaseBackup, Bug, Bot, Check, Link2Off, RefreshCw, ScrollText, type LucideIcon } from "lucide-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { NotificationBell } from "@/components/notification-bell";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import type { LayoutMode } from "@/hooks/use-layout-mode";
 import { OnedocBackgroundProvider } from "@/components/onedoc-background-provider";
 import { AtualizacaoOverlay } from "@/components/atualizacao-overlay";
+import { usePodeEditar } from "@/hooks/use-pode-editar";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -57,6 +58,9 @@ function AuthLayoutContent() {
     },
   });
 
+  const podeEditar = usePodeEditar();
+  const podeTriar = isAdmin || podeEditar;
+
   const displayName =
     (user.user_metadata as any)?.nome ||
     (user.user_metadata as any)?.full_name ||
@@ -72,7 +76,7 @@ function AuthLayoutContent() {
 
   const nav = ([
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    ...(isAdmin ? [{ to: "/tarefas", label: "Triagem", icon: Inbox }] : []),
+    ...(podeTriar ? [{ to: "/tarefas", label: "Triagem", icon: Inbox }] : []),
     { to: "/protocolos", label: "Protocolos", icon: FileText },
     { to: "/saude", label: "Saúde", icon: HeartPulse },
     { to: "/mapa", label: "Mapa", icon: MapIcon },
@@ -92,6 +96,7 @@ function AuthLayoutContent() {
     { to: "/users", label: "Usuários", icon: Users },
     { to: "/ia-config", label: "IA", icon: Sparkles },
     { to: "/backup", label: "Backup", icon: DatabaseBackup },
+    { to: "/registro", label: "Registro do sistema", icon: ScrollText },
     { to: "/debug", label: "Debug", icon: Bug },
   ] : []) as { to: string; label: string; icon: any }[];
   const configActive = configItems.some(c => pathname.startsWith(c.to));
