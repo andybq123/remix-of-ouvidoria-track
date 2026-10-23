@@ -16,6 +16,21 @@ import {
   listarUsuarios, criarUsuario, atualizarUsuario, removerUsuario,
 } from "@/lib/users.functions";
 import { useIsUserOnline } from "@/hooks/use-online-users";
+import { supabase } from "@/integrations/supabase/client";
+
+type Secretaria = { id: string; nome: string };
+
+function useSecretarias() {
+  return useQuery({
+    queryKey: ["secretarias-lista-usuarios"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("secretarias").select("id, nome").order("nome");
+      if (error) throw error;
+      return (data ?? []) as Secretaria[];
+    },
+    staleTime: 60_000,
+  });
+}
 
 export const Route = createFileRoute("/_authenticated/users")({
   head: () => ({ meta: [
@@ -40,6 +55,7 @@ function UsersPage() {
     queryKey: ["allowed-users"],
     queryFn: () => listar({}),
   });
+  const { data: secretarias = [] } = useSecretarias();
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["allowed-users"] });
 
@@ -62,6 +78,7 @@ function UsersPage() {
         </div>
         <UserDialog
           title="Novo usuário"
+          secretarias={secretarias}
           trigger={<Button><Plus className="h-4 w-4 mr-1" /> Novo usuário</Button>}
           onSubmit={async (v) => {
             await criar({ data: v as any });
@@ -83,6 +100,7 @@ function UsersPage() {
           <UserCard
             key={u.id}
             u={u}
+            secretarias={secretarias}
             onEdit={async (v) => { await atualizar({ data: { id: u.id, ...v } as any }); toast.success("Usuário atualizado"); refresh(); }}
             onDelete={() => { if (confirm(`Remover ${u.email}?`)) mDel.mutate(u.id); }}
           />
@@ -92,7 +110,7 @@ function UsersPage() {
   );
 }
 
-function UserCard({ u, onEdit, onDelete }: { u: any; onEdit: (v: any) => Promise<void>; onDelete: () => void }) {
+function UserCard({ u, secretarias, onEdit, onDelete }: { u: any; secretarias: Secretaria[]; onEdit: (v: any) => Promise<void>; onDelete: () => void }) {
   const online = useIsUserOnline(u.id);
   return (
     <Card>
@@ -125,6 +143,13 @@ function UserCard({ u, onEdit, onDelete }: { u: any; onEdit: (v: any) => Promise
                     : <Badge variant="secondary">Aguardando 1º login</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{u.email}</p>
+                {u.role !== "admin" && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Áreas: {u.secretaria_ids?.length
+                      ? u.secretaria_ids.map((id: string) => secretarias.find(s => s.id === id)?.nome ?? "?").join(", ")
+                      : "Todas"}
+                  </p>
+                )}
                 {u.last_sign_in_at && (
                   <p className="text-xs text-muted-foreground">
                     Último acesso: {format(new Date(u.last_sign_in_at), "dd/MM/yyyy HH:mm")}
@@ -135,6 +160,7 @@ function UserCard({ u, onEdit, onDelete }: { u: any; onEdit: (v: any) => Promise
                 <UserDialog
                   title="Editar usuário"
                   initial={u}
+                  secretarias={secretarias}
                   trigger={<Button size="sm" variant="outline"><Pencil className="h-3 w-3" /></Button>}
                   onSubmit={onEdit}
                 />
@@ -148,12 +174,13 @@ function UserCard({ u, onEdit, onDelete }: { u: any; onEdit: (v: any) => Promise
 }
 
 function UserDialog({
-  title, trigger, initial, onSubmit,
+  title, trigger, initial, secretarias, onSubmit,
 }: {
   title: string;
   trigger: React.ReactNode;
   initial?: any;
-  onSubmit: (v: { email?: string; nome?: string; role: "admin" | "user"; senha?: string; novaSenha?: string }) => Promise<void>;
+  secretarias: Secretaria[];
+  onSubmit: (v: { email?: string; nome?: string; role: "admin" | "user"; senha?: string; novaSenha?: string; secretaria_ids?: string[] }) => Promise<void>;
 }) {
   const isEdit = !!initial;
   const [open, setOpen] = useState(false);
@@ -161,15 +188,20 @@ function UserDialog({
   const [nome, setNome] = useState(initial?.nome ?? "");
   const [role, setRole] = useState<"admin" | "user">(initial?.role ?? "user");
   const [senha, setSenha] = useState("");
+  const [areas, setAreas] = useState<string[]>(initial?.secretaria_ids ?? []);
   const [loading, setLoading] = useState(false);
+
+  function toggleArea(id: string) {
+    setAreas(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
 
   async function submit() {
     setLoading(true);
     try {
       if (isEdit) {
-        await onSubmit({ nome, role, novaSenha: senha || undefined });
+        await onSubmit({ nome, role, novaSenha: senha || undefined, secretaria_ids: areas });
       } else {
-        await onSubmit({ email, nome, role, senha: senha || undefined });
+        await onSubmit({ email, nome, role, senha: senha || undefined, secretaria_ids: areas });
       }
       setOpen(false);
       setSenha("");
@@ -204,6 +236,30 @@ function UserDialog({
               </SelectContent>
             </Select>
           </div>
+          {role === "user" && (
+            <div className="space-y-1.5">
+              <Label>Áreas que este usuário pode visualizar</Label>
+              <p className="text-xs text-muted-foreground">
+                Deixe tudo desmarcado para liberar todas as áreas.
+              </p>
+              <div className="max-h-44 overflow-y-auto rounded-md border p-2 space-y-1">
+                {secretarias.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Nenhuma secretaria cadastrada.</p>
+                )}
+                {secretarias.map(s => (
+                  <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={areas.includes(s.id)}
+                      onChange={() => toggleArea(s.id)}
+                    />
+                    {s.nome}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>{isEdit ? "Nova senha (opcional)" : "Senha (opcional — deixe em branco para entrar só com Google)"}</Label>
             <Input type="password" value={senha} onChange={e => setSenha(e.target.value)} placeholder="mínimo 6 caracteres" />

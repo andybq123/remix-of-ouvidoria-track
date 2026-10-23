@@ -870,6 +870,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_secretarias: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          secretaria_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          secretaria_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          secretaria_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_secretarias_secretaria_id_fkey"
+            columns: ["secretaria_id"]
+            isOneToOne: false
+            referencedRelation: "secretarias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

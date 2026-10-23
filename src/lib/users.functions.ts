@@ -1,5 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { agruparAreasPorEmail, normalizarEmailAreas, prepararVinculosAreas } from "@/lib/user-areas";
+
+async function sincronizarAreas(supabaseAdmin: any, email: string, secretariaIds?: string[]) {
+  const emailNorm = normalizarEmailAreas(email);
+  const { error: eDel } = await supabaseAdmin.from("user_secretarias").delete().eq("email", emailNorm);
+  if (eDel) throw new Error(eDel.message);
+  const vinculos = prepararVinculosAreas(emailNorm, secretariaIds);
+  if (vinculos.length) {
+    const { error } = await supabaseAdmin.from("user_secretarias").insert(vinculos);
+    if (error) throw new Error(error.message);
+  }
+}
 
 async function assertAdmin(context: any) {
   const { data, error } = await context.supabase.rpc("has_role", {
@@ -21,6 +33,9 @@ export const listarUsuarios = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
     if (e1) throw new Error(e1.message);
 
+    const { data: areas } = await supabaseAdmin.from("user_secretarias").select("email, secretaria_id");
+    const areasPorEmail = agruparAreasPorEmail(areas ?? []);
+
     const { data: list } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
     const usersByEmail = new Map<string, any>();
     (list?.users ?? []).forEach(u => {
@@ -34,13 +49,14 @@ export const listarUsuarios = createServerFn({ method: "GET" })
         registered: !!u,
         last_sign_in_at: u?.last_sign_in_at ?? null,
         auth_user_id: u?.id ?? null,
+        secretaria_ids: areasPorEmail.get(normalizarEmailAreas(a.email)) ?? [],
       };
     });
   });
 
 export const criarUsuario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { email: string; nome?: string; role: "admin" | "user"; senha?: string }) => d)
+  .inputValidator((d: { email: string; nome?: string; role: "admin" | "user"; senha?: string; secretaria_ids?: string[] }) => d)
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const email = data.email.trim().toLowerCase();
@@ -51,6 +67,8 @@ export const criarUsuario = createServerFn({ method: "POST" })
       .from("allowed_emails")
       .insert({ email, nome: data.nome ?? null, role: data.role, created_by: context.userId });
     if (errIns && !errIns.message.includes("duplicate")) throw new Error(errIns.message);
+
+    await sincronizarAreas(supabaseAdmin, email, data.role === "user" ? data.secretaria_ids : []);
 
     if (data.senha && data.senha.length >= 6) {
       const { data: created, error: errUser } = await supabaseAdmin.auth.admin.createUser({
@@ -72,7 +90,7 @@ export const criarUsuario = createServerFn({ method: "POST" })
 
 export const atualizarUsuario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { id: string; nome?: string; role: "admin" | "user"; novaSenha?: string }) => d)
+  .inputValidator((d: { id: string; nome?: string; role: "admin" | "user"; novaSenha?: string; secretaria_ids?: string[] }) => d)
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -86,6 +104,8 @@ export const atualizarUsuario = createServerFn({ method: "POST" })
       .update({ nome: data.nome ?? null, role: data.role })
       .eq("id", data.id);
     if (e2) throw new Error(e2.message);
+
+    await sincronizarAreas(supabaseAdmin, allowed.email, data.role === "user" ? data.secretaria_ids : []);
 
     const { data: list } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
     const u = (list?.users ?? []).find(x => x.email?.toLowerCase() === allowed.email.toLowerCase());
@@ -110,6 +130,9 @@ export const removerUsuario = createServerFn({ method: "POST" })
       .from("allowed_emails").select("email").eq("id", data.id).single();
 
     await supabaseAdmin.from("allowed_emails").delete().eq("id", data.id);
+    if (allowed?.email) {
+      await supabaseAdmin.from("user_secretarias").delete().eq("email", normalizarEmailAreas(allowed.email));
+    }
 
     if (allowed?.email) {
       const { data: list } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 });
