@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Shield, ArrowLeft } from "lucide-react";
+import { PasswordStrengthIndicator } from "@/components/password-strength";
+import { senhaForte, MENSAGEM_SENHA_FRACA } from "@/lib/password-strength";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [
@@ -47,9 +49,8 @@ function ResetPasswordPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const senhaRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
-    if (!senhaRegex.test(password)) {
-      return toast.error("A senha deve conter letra maiúscula, minúscula, número e caractere especial.");
+    if (!senhaForte(password)) {
+      return toast.error(MENSAGEM_SENHA_FRACA);
     }
     if (password !== confirmPassword) {
       return toast.error("As senhas não coincidem.");
@@ -84,6 +85,7 @@ function ResetPasswordPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <PasswordStrengthIndicator senha={password} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="confirm">Confirmar senha</Label>

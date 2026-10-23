@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { agruparAreasPorEmail, normalizarEmailAreas, prepararVinculosAreas } from "@/lib/user-areas";
+import { senhaForte, MENSAGEM_SENHA_FRACA } from "@/lib/password-strength";
 
 async function sincronizarAreas(supabaseAdmin: any, email: string, secretariaIds?: string[]) {
   const emailNorm = normalizarEmailAreas(email);
@@ -70,7 +71,8 @@ export const criarUsuario = createServerFn({ method: "POST" })
 
     await sincronizarAreas(supabaseAdmin, email, data.role === "user" ? data.secretaria_ids : []);
 
-    if (data.senha && data.senha.length >= 6) {
+    if (data.senha) {
+      if (!senhaForte(data.senha)) throw new Error(MENSAGEM_SENHA_FRACA);
       const { data: created, error: errUser } = await supabaseAdmin.auth.admin.createUser({
         email,
         password: data.senha,
@@ -126,7 +128,8 @@ export const atualizarUsuario = createServerFn({ method: "POST" })
     if (u) {
       await supabaseAdmin.from("user_roles").delete().eq("user_id", u.id);
       await supabaseAdmin.from("user_roles").insert({ user_id: u.id, role: data.role });
-      if (data.novaSenha && data.novaSenha.length >= 6) {
+      if (data.novaSenha) {
+        if (!senhaForte(data.novaSenha)) throw new Error(MENSAGEM_SENHA_FRACA);
         await supabaseAdmin.auth.admin.updateUserById(u.id, { password: data.novaSenha });
       }
     }
