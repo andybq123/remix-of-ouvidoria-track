@@ -53,3 +53,8 @@ export function escoposMapaPermitidos(areas: MapDepartmentRecord[]): MapDepartme
   }
   return [...escopos];
 }
+
+/** Usuário restrito apenas à Saúde não precisa da página Protocolos (tudo dele fica na aba Saúde). */
+export function somenteSaude(areas: MapDepartmentRecord[]): boolean {
+  return areas.length > 0 && areas.every((a) => mapDepartmentOf(a) === "saude");
+}

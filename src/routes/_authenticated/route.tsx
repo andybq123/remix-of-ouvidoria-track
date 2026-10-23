@@ -21,6 +21,7 @@ import type { LayoutMode } from "@/hooks/use-layout-mode";
 import { OnedocBackgroundProvider } from "@/components/onedoc-background-provider";
 import { AtualizacaoOverlay } from "@/components/atualizacao-overlay";
 import { usePodeEditar } from "@/hooks/use-pode-editar";
+import { useSomenteSaude } from "@/hooks/use-somente-saude";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -60,6 +61,7 @@ function AuthLayoutContent() {
 
   const podeEditar = usePodeEditar();
   const podeTriar = isAdmin || podeEditar;
+  const soSaude = useSomenteSaude() && !isAdmin;
 
   const displayName =
     (user.user_metadata as any)?.nome ||
@@ -77,7 +79,7 @@ function AuthLayoutContent() {
   const nav = ([
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     ...(podeTriar ? [{ to: "/tarefas", label: "Triagem", icon: Inbox }] : []),
-    { to: "/protocolos", label: "Protocolos", icon: FileText },
+    ...(soSaude ? [] : [{ to: "/protocolos", label: "Protocolos", icon: FileText }]),
     { to: "/saude", label: "Saúde", icon: HeartPulse },
     { to: "/mapa", label: "Mapa", icon: MapIcon },
     { to: "/atrasados", label: "Atrasados", icon: AlertTriangle },
