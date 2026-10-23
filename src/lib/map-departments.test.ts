@@ -52,3 +52,12 @@ describe("escoposMapaPermitidos", () => {
     expect(escoposMapaPermitidos([{ nome: "SEFAZ" }])).toEqual([]);
   });
 });
+
+import { somenteSaude } from "./map-departments";
+describe("somenteSaude", () => {
+  it("oculta Protocolos só quando todas as áreas são Saúde", () => {
+    expect(somenteSaude([{ nome: "Saúde" }])).toBe(true);
+    expect(somenteSaude([{ nome: "Saúde" }, { nome: "Vigilância Sanitária" }])).toBe(false);
+    expect(somenteSaude([])).toBe(false);
+  });
+});

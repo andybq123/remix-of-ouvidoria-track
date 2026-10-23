@@ -1,5 +1,7 @@
+import { useSomenteSaude } from "@/hooks/use-somente-saude";
+import { useIsAdmin as useIsAdminGuard } from "@/hooks/use-is-admin";
 import { formatarNumeroEsic } from "@/lib/esic";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,8 +44,19 @@ export const Route = createFileRoute("/_authenticated/protocolos")({
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
-  component: ProtocolosPage,
+  component: ProtocolosGuard,
 });
+
+function ProtocolosGuard() {
+  const isAdmin = useIsAdminGuard();
+  const soSaude = useSomenteSaude();
+  if (soSaude && !isAdmin) {
+    return <div className="py-10 text-center text-sm text-muted-foreground">
+      Suas ouvidorias ficam na aba <Link to="/saude" className="underline">Saúde</Link>.
+    </div>;
+  }
+  return <ProtocolosPage />;
+}
 
 function ProtocolosPage() {
   const qc = useQueryClient();
