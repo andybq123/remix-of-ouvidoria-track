@@ -377,6 +377,8 @@ function MapaPage() {
           />
         </CardContent>
       </Card>
+      </>
+      )}
       <ProtocoloDetailDialog protocolo={detail} open={!!detail} onOpenChange={(v) => !v && setDetail(null)} />
 
       {/* Dialog: escolher qual unidade/local receber um ponto no mapa */}
