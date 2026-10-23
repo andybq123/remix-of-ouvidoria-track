@@ -46,6 +46,7 @@ export function NotificationBell() {
     },
     refetchInterval: STALE.alertas,
   });
+  const triagemPendentes = podeTriar ? triagemPendentesBruto : 0;
 
   // Ao abrir um aviso, busca o registro completo para o detalhe.
   const abrirDetalhe = async (id: string) => {
