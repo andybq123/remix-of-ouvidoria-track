@@ -126,6 +126,27 @@ describe("ingerirEmail: pedidos e-SIC", () => {
     expect(mock.tables.protocolos).toHaveLength(1);
     expect(mock.tables.email_inbox_log).toHaveLength(1);
   });
+  it("recupera e-SIC antigo processado sem protocolo e conserva a data original", async () => {
+    mock.tables.email_inbox_log.push({ id: "log-antigo", account_id: conta.id, external_id: entrada.externalId, status: "processado", protocolo_id: null });
+    const resultado = await ingerirEmail({ ...entrada, recheckEsic: true, receivedAt: "2026-01-15T12:00:00.000Z" });
+    expect(resultado.ok).toBe(true);
+    expect(mock.tables.protocolos[0].data_abertura).toBe("2026-01-15");
+    expect(mock.tables.protocolos[0].triagem_pendente).toBe(true);
+    expect(mock.tables.email_inbox_log).toHaveLength(1);
+    expect(mock.tables.email_inbox_log[0].protocolo_id).toBe(mock.tables.protocolos[0].id);
+  });
+  it("rechecagem completa não reprocessa e-SIC já vinculado", async () => {
+    await ingerirEmail(entrada);
+    expect((await ingerirEmail({ ...entrada, recheckEsic: true })).ok).toBe(true);
+    expect(mock.tables.protocolos).toHaveLength(1);
+    expect(mock.tables.protocolo_historico).toHaveLength(0);
+  });
+  it("rechecagem e-SIC não reprocessa Ouvidoria antiga marcada como processada", async () => {
+    mock.tables.email_inbox_log.push({ id: "log-antigo", account_id: conta.id, external_id: entrada.externalId, status: "processado", protocolo_id: null });
+    await ingerirEmail({ ...entrada, assunto: "Ouvidoria 026/2026 recebida", corpo: "Nova Ouvidoria recebida. Iluminação", recheckEsic: true });
+    expect(mock.tables.protocolos).toHaveLength(0);
+    expect(mock.ai).not.toHaveBeenCalled();
+  });
   it("reconhece atualização com zeros diferentes sem reabrir triagem nem concluir por palavras do relato", async () => {
     await ingerirEmail(entrada);
     mock.tables.protocolos[0].triagem_pendente = false;

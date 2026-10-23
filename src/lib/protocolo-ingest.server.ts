@@ -227,6 +227,8 @@ export type IngestInput = {
   corpo: string;
   externalId?: string;
   existingLogId?: string;
+  recheckEsic?: boolean;
+  receivedAt?: string;
 };
 
 export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; protocoloId?: string; numero?: string; logId?: string; error?: string }> {
@@ -246,7 +248,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
       .from("email_inbox_log").select("id, status, protocolo_id")
       .eq("account_id", account.id).eq("external_id", externalId).maybeSingle();
     if (error) throw error;
-    if (existente?.protocolo_id || existente?.status === "processado") {
+    if (existente?.protocolo_id || (existente?.status === "processado" && !(input.recheckEsic && emailEhEsic))) {
       return { ok: true, logId: existente.id };
     }
     if (existente) logId = existente.id;
@@ -260,6 +262,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
         processado_em: null,
         ai_provider: null,
         external_id: externalId ?? null,
+        ...(input.receivedAt ? { recebido_em: input.receivedAt } : {}),
       })
       .eq("id", logId);
     if (logErr) throw logErr;
@@ -270,6 +273,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
         account_id: account.id, remetente, destinatario, assunto,
         corpo: textoCompleto.slice(0, 20000), status: "pendente",
         external_id: externalId ?? null,
+        ...(input.receivedAt ? { recebido_em: input.receivedAt } : {}),
       })
       .select("id").single();
     if (logErr) throw logErr;
@@ -542,7 +546,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
         return { ok: true, protocoloId: jaExiste.id, numero: jaExiste.numero, logId };
       }
     }
-    const dataAbertura = extr.data_abertura || new Date().toISOString().slice(0, 10);
+    const dataAbertura = extr.data_abertura || input.receivedAt?.slice(0, 10) || new Date().toISOString().slice(0, 10);
 
     const resumo = [
       emailEhEsic ? "Novo Pedido e-SIC recebido." : "Nova Ouvidoria recebida.",
