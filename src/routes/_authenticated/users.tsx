@@ -198,6 +198,10 @@ function UserDialog({
   }
 
   async function submit() {
+    if (senha && !senhaForte(senha)) {
+      toast.error(MENSAGEM_SENHA_FRACA);
+      return;
+    }
     setLoading(true);
     try {
       if (isEdit) {
@@ -264,7 +268,8 @@ function UserDialog({
           )}
           <div className="space-y-1.5">
             <Label>{isEdit ? "Nova senha (opcional)" : "Senha (opcional — deixe em branco para entrar só com Google)"}</Label>
-            <Input type="password" value={senha} onChange={e => setSenha(e.target.value)} placeholder="mínimo 6 caracteres" />
+            <Input type="password" value={senha} onChange={e => setSenha(e.target.value)} placeholder="mínimo 8 caracteres" />
+            <PasswordStrengthIndicator senha={senha} />
           </div>
         </div>
         <DialogFooter>
