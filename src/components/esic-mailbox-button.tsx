@@ -23,6 +23,8 @@ export function EsicMailboxButton({ accountIds, disabled }: { accountIds: string
   const [espAberto, setEspAberto] = useState(false);
   const [espTexto, setEspTexto] = useState(NUMEROS_ESIC_IMPRESSOS);
   const [espRodando, setEspRodando] = useState(false);
+  const [espResultado, setEspResultado] = useState<string[]>([]);
+  const [espProgresso, setEspProgresso] = useState("");
 
   async function executarEspecificos() {
     const numeros = extrairNumerosEsicTexto(espTexto);
@@ -30,20 +32,34 @@ export function EsicMailboxButton({ accountIds, disabled }: { accountIds: string
     if (!confirm(`Buscar na caixa de e-mail somente os ${numeros.length} números listados e enviar os pedidos encontrados para a triagem? Pedidos já vinculados não serão duplicados.`)) return;
     setEspRodando(true);
     const total = { candidatos: 0, encontrados: 0, registrados: 0, erros: 0 };
-    const faltantes: string[] = [];
+    setEspResultado([]);
+    const encontrados = new Set<string>();
+    const detalhes: string[] = [];
     try {
       for (const accountId of accountIds) {
-        const r = await buscarNumeros({ data: { accountId, numeros } });
-        total.candidatos += r.candidatos; total.encontrados += r.encontrados;
-        total.registrados += r.registrados; total.erros += r.erros;
-        for (const n of r.naoEncontrados) if (!faltantes.includes(n)) faltantes.push(n);
+        let cursor: EsicMailboxCursor | null = { accountId };
+        while (cursor && montado.current) {
+          const r = await buscarNumeros({ data: { accountId, numeros, cursor } });
+          total.candidatos += r.candidatos; total.encontrados += r.encontrados;
+          total.registrados += r.registrados; total.erros += r.erros;
+          r.numerosEncontrados.forEach(n => encontrados.add(n));
+          detalhes.push(...r.detalhes);
+          setEspProgresso(`${r.pasta} · ${total.candidatos} lidos · ${total.encontrados} encontrados · ${total.registrados} registrados/vinculados · ${total.erros} erros`);
+          setEspResultado([...detalhes]);
+          cursor = r.proximo;
+        }
+        if (!montado.current) return;
       }
+      const faltantes = numeros.filter(n => !encontrados.has(n));
+      setEspResultado([...detalhes, ...(faltantes.length ? [`Não encontrados na caixa: ${faltantes.join(", ")}.`] : [])]);
       toast[total.erros ? "warning" : "success"](
-        `Busca de e-SIC específicos: ${total.encontrados} encontrados, ${total.registrados} registrados/vinculados na triagem e ${total.erros} erros.${faltantes.length ? ` Não encontrados na caixa: ${faltantes.join(", ")}.` : ""}`,
+        `Busca de e-SIC específicos: ${total.encontrados} encontrados, ${total.registrados} registrados/vinculados e ${total.erros} erros.${faltantes.length ? ` Não encontrados na caixa: ${faltantes.join(", ")}.` : ""}`,
         { duration: 20000 },
       );
     } catch (e) {
-      toast.error(`Falha na busca: ${e instanceof Error ? e.message : "erro desconhecido"}`);
+      const erro = e instanceof Error ? e.message : "erro desconhecido";
+      setEspResultado([...detalhes, `Falha na busca: ${erro}`]);
+      toast.error(`Falha na busca: ${erro}`);
     } finally {
       setEspRodando(false);
       for (const key of ["email-inbox-log", "protocolos", "protocolos-triagem", "triagem-pendentes-count", "triagem-stats", "protocolos-dashboard"]) {
@@ -112,7 +128,7 @@ export function EsicMailboxButton({ accountIds, disabled }: { accountIds: string
   }
   return <div className="flex flex-col items-start gap-2 max-w-full">
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" disabled={disabled || (!busca && accountIds.length === 0)} onClick={() => {
+      <Button variant="outline" disabled={disabled || espRodando || (!busca && accountIds.length === 0)} onClick={() => {
         if (rodando) { continuar.current = false; return; }
         if (busca) void executar(busca); else iniciar();
       }}>
@@ -120,7 +136,7 @@ export function EsicMailboxButton({ accountIds, disabled }: { accountIds: string
         {rodando ? "Pausar busca e-SIC" : busca ? "Retomar busca e-SIC" : "Buscar e-SIC em toda a caixa"}
       </Button>
       {busca && !rodando && <Button variant="ghost" onClick={() => { if (confirm("Descartar o progresso da busca? Os pedidos já registrados serão preservados.")) salvar(null); }}>Encerrar busca</Button>}
-      <Button variant="outline" disabled={disabled || espRodando || accountIds.length === 0} onClick={() => setEspAberto(v => !v)}>
+      <Button variant="outline" disabled={disabled || rodando || espRodando || accountIds.length === 0} onClick={() => setEspAberto(v => !v)}>
         <ListFilter className="h-4 w-4 mr-1" />Buscar e-SIC específicos
       </Button>
     </div>
@@ -131,6 +147,10 @@ export function EsicMailboxButton({ accountIds, disabled }: { accountIds: string
         {espRodando && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
         {espRodando ? "Buscando na caixa..." : "Buscar estes números"}
       </Button>
+      {espProgresso && <p role="status" className="text-xs text-muted-foreground break-words">{espProgresso}</p>}
+      {espResultado.length > 0 && <ul className="text-xs text-destructive space-y-1 max-h-64 overflow-auto break-words">
+        {espResultado.map((texto, indice) => <li key={indice}>{texto}</li>)}
+      </ul>}
     </div>}
     {busca && <div role="status" className="text-xs text-muted-foreground space-y-1 max-w-lg break-words">
       <p className="flex items-center gap-1">{rodando && <Loader2 className="h-3 w-3 animate-spin shrink-0" />}{rodando ? "Buscando" : "Pausada"} · Conta {busca.indice + 1}/{busca.contas.length} · {busca.pasta}</p>

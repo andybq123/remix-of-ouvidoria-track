@@ -10,11 +10,6 @@ export const NUMEROS_ESIC_IMPRESSOS = [
   "094/2026", "095/2026", "096/2026", "097/2026", "098/2026", "099/2026", "100/2026", "101/2026",
 ].join(", ");
 
-export const esicNumerosBuscaSchema = z.object({
-  accountId: z.string().uuid(),
-  numeros: z.array(z.string().max(40)).min(1).max(300),
-});
-export type EsicNumerosBusca = z.infer<typeof esicNumerosBuscaSchema>;
 
 /** Lê números "092/2026" de um texto livre, normalizando e removendo duplicados. */
 export function extrairNumerosEsicTexto(texto: string): string[] {
@@ -39,6 +34,13 @@ export const esicMailboxCursorSchema = z.object({
   maxUid: z.number().int().nonnegative().optional(),
 });
 export type EsicMailboxCursor = z.infer<typeof esicMailboxCursorSchema>;
+
+export const esicNumerosBuscaSchema = z.object({
+  accountId: z.string().uuid(),
+  numeros: z.array(z.string().max(40)).min(1).max(300),
+  cursor: esicMailboxCursorSchema.optional(),
+}).refine(input => !input.cursor || input.cursor.accountId === input.accountId, "Cursor de outra conta.");
+export type EsicNumerosBusca = z.infer<typeof esicNumerosBuscaSchema>;
 
 export function intervaloEsic(nextUid: number, maxUid: number) {
   const fim = Math.min(maxUid, nextUid + ESIC_MAIL_BATCH - 1);
