@@ -120,7 +120,18 @@ export function EsicMailboxButton({ accountIds, disabled }: { accountIds: string
         {rodando ? "Pausar busca e-SIC" : busca ? "Retomar busca e-SIC" : "Buscar e-SIC em toda a caixa"}
       </Button>
       {busca && !rodando && <Button variant="ghost" onClick={() => { if (confirm("Descartar o progresso da busca? Os pedidos já registrados serão preservados.")) salvar(null); }}>Encerrar busca</Button>}
+      <Button variant="outline" disabled={disabled || espRodando || accountIds.length === 0} onClick={() => setEspAberto(v => !v)}>
+        <ListFilter className="h-4 w-4 mr-1" />Buscar e-SIC específicos
+      </Button>
     </div>
+    {espAberto && <div className="w-full max-w-lg space-y-2 rounded-md border p-3">
+      <p className="text-xs text-muted-foreground">Números a procurar na caixa (formato 092/2026, separados por vírgula). A lista abaixo já vem preenchida com os números dos prints e pode ser editada.</p>
+      <Textarea value={espTexto} onChange={e => setEspTexto(e.target.value)} rows={4} disabled={espRodando} />
+      <Button size="sm" disabled={espRodando} onClick={() => void executarEspecificos()}>
+        {espRodando && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+        {espRodando ? "Buscando na caixa..." : "Buscar estes números"}
+      </Button>
+    </div>}
     {busca && <div role="status" className="text-xs text-muted-foreground space-y-1 max-w-lg break-words">
       <p className="flex items-center gap-1">{rodando && <Loader2 className="h-3 w-3 animate-spin shrink-0" />}{rodando ? "Buscando" : "Pausada"} · Conta {busca.indice + 1}/{busca.contas.length} · {busca.pasta}</p>
       <p>{busca.lidos} lidos · {busca.encontrados} e-SIC · {busca.registrados} registrados/vinculados · {busca.erros} erros</p>

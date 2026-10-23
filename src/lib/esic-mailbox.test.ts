@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { intervaloEsic, pastasEsic } from "./esic-mailbox";
+import { extrairNumerosEsicTexto, intervaloEsic, pastasEsic } from "./esic-mailbox";
 
 describe("varredura completa e-SIC", () => {
   it("percorre mais de duas páginas até o último UID sem limite total", () => {
