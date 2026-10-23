@@ -174,12 +174,13 @@ function UserCard({ u, secretarias, onEdit, onDelete }: { u: any; secretarias: S
 }
 
 function UserDialog({
-  title, trigger, initial, onSubmit,
+  title, trigger, initial, secretarias, onSubmit,
 }: {
   title: string;
   trigger: React.ReactNode;
   initial?: any;
-  onSubmit: (v: { email?: string; nome?: string; role: "admin" | "user"; senha?: string; novaSenha?: string }) => Promise<void>;
+  secretarias: Secretaria[];
+  onSubmit: (v: { email?: string; nome?: string; role: "admin" | "user"; senha?: string; novaSenha?: string; secretaria_ids?: string[] }) => Promise<void>;
 }) {
   const isEdit = !!initial;
   const [open, setOpen] = useState(false);
@@ -187,15 +188,20 @@ function UserDialog({
   const [nome, setNome] = useState(initial?.nome ?? "");
   const [role, setRole] = useState<"admin" | "user">(initial?.role ?? "user");
   const [senha, setSenha] = useState("");
+  const [areas, setAreas] = useState<string[]>(initial?.secretaria_ids ?? []);
   const [loading, setLoading] = useState(false);
+
+  function toggleArea(id: string) {
+    setAreas(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
 
   async function submit() {
     setLoading(true);
     try {
       if (isEdit) {
-        await onSubmit({ nome, role, novaSenha: senha || undefined });
+        await onSubmit({ nome, role, novaSenha: senha || undefined, secretaria_ids: areas });
       } else {
-        await onSubmit({ email, nome, role, senha: senha || undefined });
+        await onSubmit({ email, nome, role, senha: senha || undefined, secretaria_ids: areas });
       }
       setOpen(false);
       setSenha("");
@@ -230,6 +236,30 @@ function UserDialog({
               </SelectContent>
             </Select>
           </div>
+          {role === "user" && (
+            <div className="space-y-1.5">
+              <Label>Áreas que este usuário pode visualizar</Label>
+              <p className="text-xs text-muted-foreground">
+                Deixe tudo desmarcado para liberar todas as áreas.
+              </p>
+              <div className="max-h-44 overflow-y-auto rounded-md border p-2 space-y-1">
+                {secretarias.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Nenhuma secretaria cadastrada.</p>
+                )}
+                {secretarias.map(s => (
+                  <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={areas.includes(s.id)}
+                      onChange={() => toggleArea(s.id)}
+                    />
+                    {s.nome}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>{isEdit ? "Nova senha (opcional)" : "Senha (opcional — deixe em branco para entrar só com Google)"}</Label>
             <Input type="password" value={senha} onChange={e => setSenha(e.target.value)} placeholder="mínimo 6 caracteres" />
