@@ -766,6 +766,51 @@ export type Database = {
         }
         Relationships: []
       }
+      registro_sistema: {
+        Row: {
+          autor_email: string | null
+          autor_id: string | null
+          autor_nome: string | null
+          campos: string[]
+          created_at: string
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          id: number
+          operacao: string
+          registro_id: string | null
+          resumo: string | null
+          tabela: string
+        }
+        Insert: {
+          autor_email?: string | null
+          autor_id?: string | null
+          autor_nome?: string | null
+          campos?: string[]
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: number
+          operacao: string
+          registro_id?: string | null
+          resumo?: string | null
+          tabela: string
+        }
+        Update: {
+          autor_email?: string | null
+          autor_id?: string | null
+          autor_nome?: string | null
+          campos?: string[]
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: number
+          operacao?: string
+          registro_id?: string | null
+          resumo?: string | null
+          tabela?: string
+        }
+        Relationships: []
+      }
       secretaria_responsaveis: {
         Row: {
           ativo: boolean
@@ -965,6 +1010,7 @@ export type Database = {
       liberar_triagem_admin: { Args: { p_id: string }; Returns: undefined }
       normalizar_numero_esic: { Args: { p_numero: string }; Returns: string }
       pode_editar_area: { Args: { _secretaria: string }; Returns: boolean }
+      pode_triar: { Args: never; Returns: boolean }
       posso_editar: { Args: never; Returns: boolean }
       protocolo_esic_por_numero: {
         Args: { p_numero: string }
