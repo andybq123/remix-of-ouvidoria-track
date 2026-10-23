@@ -1,4 +1,5 @@
 # Tarefas
+- [ ] Corrigir busca e-SIC específica: requisições limitadas com progresso, erros por pedido visíveis e testes; validar importação real depende da caixa na VPS.
 - [x] Adicionar botão no E-mail para rechecar toda a caixa em busca de e-SIC, sem corte de datas ou páginas, com pausa/retomada, data original e proteção contra duplicatas; testes passaram e botão conferido com sessão real.
 - [ ] Validar busca completa na caixa real da VPS — depende da atualização da VPS e das contas de e-mail locais; o ambiente acessível não possui contas cadastradas.
 - [x] Igualar o número interno ao número oficial dos pedidos e-SIC; 19 testes de extração/ingestão, testes reais de banco (edição, conversão, legados, conflitos e idempotência) e cadastro autenticado com leitura na triagem validados; correção de legados incluída na atualização da VPS.
