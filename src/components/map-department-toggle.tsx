@@ -10,13 +10,17 @@ const OPTIONS: { value: MapDepartmentScope; label: string; Icon: typeof HeartPul
 export function MapDepartmentToggle({
   value,
   onChange,
+  scopes,
 }: {
   value: MapDepartmentScope;
   onChange: (value: MapDepartmentScope) => void;
+  /** Áreas visíveis; padrão mostra todas. */
+  scopes?: MapDepartment[];
 }) {
+  const visiveis = OPTIONS.filter((o) => !scopes || scopes.includes(o.value as MapDepartment));
   return (
     <div className="flex flex-wrap gap-2" role="group" aria-label="Área exibida no mapa">
-      {OPTIONS.map(({ value: option, label, Icon }) => (
+      {visiveis.map(({ value: option, label, Icon }) => (
         <Button
           key={option}
           type="button"
