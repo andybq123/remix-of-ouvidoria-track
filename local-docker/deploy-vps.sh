@@ -185,9 +185,11 @@ if [ -d ../.git ] && [ -x ./atualizar.sh ]; then
 else
   info "Compilando na VPS (pode levar 5–10 minutos na primeira vez)..."
   rm -rf ../.output 2>/dev/null || true
+  docker compose -f docker-compose.yml -f docker-compose.prod.yml pull app >>"$LOG" 2>&1 \
+    || falha "Não consegui baixar a imagem corrigida do Node."
   docker compose -f docker-compose.yml -f docker-compose.prod.yml build --pull agente-1doc >>"$LOG" 2>&1 \
     || falha "Não consegui preparar o agente 1Doc com Node atualizado."
-  docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --pull always --force-recreate >>"$LOG" 2>&1 \
+  docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate --renew-anon-volumes >>"$LOG" 2>&1 \
     || falha "Não consegui iniciar o sistema."
   T=0
   until curl -fsS -m 3 -o /dev/null http://127.0.0.1:8080/; do
