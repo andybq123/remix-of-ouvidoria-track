@@ -98,8 +98,8 @@ function MapaPage() {
     },
   });
   const secretariasSelecionadas = useMemo(
-    () => secretariasMapa.filter((s) => matchesMapDepartment(s, mapScope)),
-    [secretariasMapa, mapScope],
+    () => (scopeEfetivo ? secretariasMapa.filter((s) => matchesMapDepartment(s, scopeEfetivo)) : []),
+    [secretariasMapa, scopeEfetivo],
   );
   const secretariaIdsSelecionadas = useMemo(
     () => secretariasSelecionadas.map((s) => s.id),
@@ -250,7 +250,7 @@ function MapaPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <HeartPulse className="h-6 w-6 text-emerald-500" />
-            {mapScope === "saude" ? "Mapa da Saúde" : "Mapa de Obras (SOSU)"}
+            {scopeEfetivo === "obras" ? "Mapa de Obras (SOSU)" : "Mapa da Saúde"}
           </h1>
           <p className="text-sm text-muted-foreground">
             Pontos e protocolos das áreas selecionadas em Brusque.
@@ -268,8 +268,17 @@ function MapaPage() {
         </Button>
       </div>
 
+      {scopeEfetivo === null ? (
+        <Card>
+          <CardContent className="py-12 text-center text-sm text-muted-foreground">
+            Nenhuma das suas áreas possui mapa (Saúde ou Obras).
+          </CardContent>
+        </Card>
+      ) : (
+      <>
       <MapDepartmentToggle
-        value={mapScope}
+        value={scopeEfetivo}
+        scopes={escoposPermitidos}
         onChange={(value) => { setMapScope(value); setLocalFiltroId("todos"); setPrazo(value === "obras" ? "atrasados" : "todos"); }}
       />
 
