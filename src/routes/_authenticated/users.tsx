@@ -16,6 +16,21 @@ import {
   listarUsuarios, criarUsuario, atualizarUsuario, removerUsuario,
 } from "@/lib/users.functions";
 import { useIsUserOnline } from "@/hooks/use-online-users";
+import { supabase } from "@/integrations/supabase/client";
+
+type Secretaria = { id: string; nome: string };
+
+function useSecretarias() {
+  return useQuery({
+    queryKey: ["secretarias-lista-usuarios"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("secretarias").select("id, nome").order("nome");
+      if (error) throw error;
+      return (data ?? []) as Secretaria[];
+    },
+    staleTime: 60_000,
+  });
+}
 
 export const Route = createFileRoute("/_authenticated/users")({
   head: () => ({ meta: [
