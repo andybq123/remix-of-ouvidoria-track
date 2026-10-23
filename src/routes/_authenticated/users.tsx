@@ -147,7 +147,7 @@ function UserCard({ u, secretarias, onEdit, onDelete }: { u: any; secretarias: S
                 <p className="text-xs text-muted-foreground mt-0.5">{u.email}</p>
                 {u.role !== "admin" && (
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Áreas: {u.secretaria_ids?.length
+                    {u.pode_editar ? "Pode modificar · " : "Somente leitura · "}Áreas: {u.secretaria_ids?.length
                       ? u.secretaria_ids.map((id: string) => secretarias.find(s => s.id === id)?.nome ?? "?").join(", ")
                       : "Todas"}
                   </p>
@@ -182,7 +182,7 @@ function UserDialog({
   trigger: React.ReactNode;
   initial?: any;
   secretarias: Secretaria[];
-  onSubmit: (v: { email?: string; nome?: string; role: "admin" | "user"; senha?: string; novaSenha?: string; secretaria_ids?: string[] }) => Promise<void>;
+  onSubmit: (v: { email?: string; nome?: string; role: "admin" | "user"; senha?: string; novaSenha?: string; secretaria_ids?: string[]; pode_editar?: boolean }) => Promise<void>;
 }) {
   const isEdit = !!initial;
   const [open, setOpen] = useState(false);
@@ -191,6 +191,7 @@ function UserDialog({
   const [role, setRole] = useState<"admin" | "user">(initial?.role ?? "user");
   const [senha, setSenha] = useState("");
   const [areas, setAreas] = useState<string[]>(initial?.secretaria_ids ?? []);
+  const [podeEditar, setPodeEditar] = useState<boolean>(!!initial?.pode_editar);
   const [loading, setLoading] = useState(false);
 
   function toggleArea(id: string) {
@@ -205,9 +206,9 @@ function UserDialog({
     setLoading(true);
     try {
       if (isEdit) {
-        await onSubmit({ nome, role, novaSenha: senha || undefined, secretaria_ids: areas });
+        await onSubmit({ nome, role, novaSenha: senha || undefined, secretaria_ids: areas, pode_editar: podeEditar });
       } else {
-        await onSubmit({ email, nome, role, senha: senha || undefined, secretaria_ids: areas });
+        await onSubmit({ email, nome, role, senha: senha || undefined, secretaria_ids: areas, pode_editar: podeEditar });
       }
       setOpen(false);
       setSenha("");
@@ -242,6 +243,18 @@ function UserDialog({
               </SelectContent>
             </Select>
           </div>
+          {role === "user" && (
+            <label className="flex items-start gap-2 rounded-md border p-2 text-sm cursor-pointer">
+              <input type="checkbox" className="h-4 w-4 mt-0.5" checked={podeEditar}
+                onChange={e => setPodeEditar(e.target.checked)} />
+              <span>
+                <strong>Pode modificar o sistema</strong>
+                <span className="block text-xs text-muted-foreground">
+                  Marcado: pode editar, concluir e prorrogar ouvidorias das suas áreas. Desmarcado: somente leitura.
+                </span>
+              </span>
+            </label>
+          )}
           {role === "user" && (
             <div className="space-y-1.5">
               <Label>Áreas que este usuário pode visualizar</Label>
