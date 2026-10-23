@@ -55,6 +55,7 @@ function UsersPage() {
     queryKey: ["allowed-users"],
     queryFn: () => listar({}),
   });
+  const { data: secretarias = [] } = useSecretarias();
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["allowed-users"] });
 
@@ -77,6 +78,7 @@ function UsersPage() {
         </div>
         <UserDialog
           title="Novo usuário"
+          secretarias={secretarias}
           trigger={<Button><Plus className="h-4 w-4 mr-1" /> Novo usuário</Button>}
           onSubmit={async (v) => {
             await criar({ data: v as any });
@@ -98,6 +100,7 @@ function UsersPage() {
           <UserCard
             key={u.id}
             u={u}
+            secretarias={secretarias}
             onEdit={async (v) => { await atualizar({ data: { id: u.id, ...v } as any }); toast.success("Usuário atualizado"); refresh(); }}
             onDelete={() => { if (confirm(`Remover ${u.email}?`)) mDel.mutate(u.id); }}
           />
@@ -107,7 +110,7 @@ function UsersPage() {
   );
 }
 
-function UserCard({ u, onEdit, onDelete }: { u: any; onEdit: (v: any) => Promise<void>; onDelete: () => void }) {
+function UserCard({ u, secretarias, onEdit, onDelete }: { u: any; secretarias: Secretaria[]; onEdit: (v: any) => Promise<void>; onDelete: () => void }) {
   const online = useIsUserOnline(u.id);
   return (
     <Card>
@@ -140,6 +143,13 @@ function UserCard({ u, onEdit, onDelete }: { u: any; onEdit: (v: any) => Promise
                     : <Badge variant="secondary">Aguardando 1º login</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{u.email}</p>
+                {u.role !== "admin" && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Áreas: {u.secretaria_ids?.length
+                      ? u.secretaria_ids.map((id: string) => secretarias.find(s => s.id === id)?.nome ?? "?").join(", ")
+                      : "Todas"}
+                  </p>
+                )}
                 {u.last_sign_in_at && (
                   <p className="text-xs text-muted-foreground">
                     Último acesso: {format(new Date(u.last_sign_in_at), "dd/MM/yyyy HH:mm")}
@@ -150,6 +160,7 @@ function UserCard({ u, onEdit, onDelete }: { u: any; onEdit: (v: any) => Promise
                 <UserDialog
                   title="Editar usuário"
                   initial={u}
+                  secretarias={secretarias}
                   trigger={<Button size="sm" variant="outline"><Pencil className="h-3 w-3" /></Button>}
                   onSubmit={onEdit}
                 />
