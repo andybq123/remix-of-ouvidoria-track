@@ -1,4 +1,5 @@
 # Project rules
+- Restrição de áreas de usuários de leitura fica em `user_secretarias` vinculada por e-mail em minúsculas (o usuário pode ainda não estar registrado); a política de leitura de protocolos trata ausência de vínculos como acesso a todas as áreas e exclui ouvidorias sem secretaria de usuários restritos.
 - Full e-SIC mailbox backfills use resumable bounded requests across all provider pages/folders, separate from incremental sync cursors; reuse ingestion with original received dates and never reprocess linked logs.
 - Enforce e-SIC identifier equality in a database trigger and all write paths; preserve global protocol uniqueness and report collisions without inventing identifiers or merging records.
 - Keep BI positive-volume filtering in a browser-safe visualization helper and its regression test, so zero-demand departments stay hidden without changing public aggregate queries.
