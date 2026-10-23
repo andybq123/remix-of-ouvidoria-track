@@ -113,6 +113,13 @@
       "when": 1792760140401,
       "tag": "0015_restricao_secretarias_usuario_leitura",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792762944411,
+      "tag": "0016_leitura_autenticada_secretarias_locais",
+      "breakpoints": true
     }
   ]
 }

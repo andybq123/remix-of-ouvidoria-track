@@ -38,3 +38,18 @@ export function matchesMapDepartment(
 ): boolean {
   return scope === "todos" || mapDepartmentOf(secretaria) === scope;
 }
+
+/**
+ * Áreas do mapa que o usuário pode ver, dada sua lista de secretarias
+ * vinculadas (user_secretarias). Lista vazia = sem restrição = ambas as áreas.
+ * Lista com áreas, mas nenhuma de Saúde/Obras = nenhum mapa disponível.
+ */
+export function escoposMapaPermitidos(areas: MapDepartmentRecord[]): MapDepartment[] {
+  if (areas.length === 0) return ["saude", "obras"];
+  const escopos = new Set<MapDepartment>();
+  for (const area of areas) {
+    const dep = mapDepartmentOf(area);
+    if (dep) escopos.add(dep);
+  }
+  return [...escopos];
+}

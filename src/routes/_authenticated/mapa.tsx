@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,7 @@ import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { toast } from "sonner";
 import { MapPointPicker } from "@/components/map-point-picker";
 import { categoriaDoProtocolo, situacaoProtocolo } from "@/lib/prazo";
-import { mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
+import { escoposMapaPermitidos, mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
 import { MapDepartmentToggle } from "@/components/map-department-toggle";
 import {
   AlertDialog,
@@ -38,7 +38,10 @@ export const Route = createFileRoute("/_authenticated/mapa")({
   component: MapaPage,
 });
 
+const layoutApi = getRouteApi("/_authenticated");
+
 function MapaPage() {
+  const { user } = layoutApi.useRouteContext();
   const [mapScope, setMapScope] = useState<MapDepartmentScope>("saude");
   const [status, setStatus] = useState<string>("todos");
   const [prazo, setPrazo] = useState<string>("todos");
@@ -61,6 +64,33 @@ function MapaPage() {
   const [savingMove, setSavingMove] = useState(false);
   const qc = useQueryClient();
 
+  // Áreas vinculadas ao usuário (user_secretarias). Filtra pelo próprio e-mail:
+  // admins enxergam os vínculos de todos pela policy, mas aqui só os deles importam.
+  const { data: minhasAreas } = useQuery({
+    queryKey: ["minhas-areas-mapa", user.email],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_secretarias")
+        .select("secretaria_id, secretarias(nome, sigla)")
+        .eq("email", (user.email ?? "").toLowerCase());
+      if (error) throw error;
+      return (data ?? []).map((r: any) => r.secretarias ?? {});
+    },
+  });
+  const escoposPermitidos = useMemo(
+    () => (minhasAreas === undefined ? undefined : escoposMapaPermitidos(minhasAreas)),
+    [minhasAreas],
+  );
+  // Se a área escolhida não é permitida para o usuário, cai na primeira permitida.
+  const scopeEfetivo: MapDepartmentScope | null =
+    escoposPermitidos === undefined
+      ? mapScope
+      : escoposPermitidos.length === 0
+        ? null
+        : escoposPermitidos.includes(mapScope as (typeof escoposPermitidos)[number])
+          ? mapScope
+          : escoposPermitidos[0];
+
   const { data: secretariasMapa = [] } = useQuery({
     queryKey: ["secretarias-mapa-setores"],
     queryFn: async () => {
@@ -73,8 +103,8 @@ function MapaPage() {
     },
   });
   const secretariasSelecionadas = useMemo(
-    () => secretariasMapa.filter((s) => matchesMapDepartment(s, mapScope)),
-    [secretariasMapa, mapScope],
+    () => (scopeEfetivo ? secretariasMapa.filter((s) => matchesMapDepartment(s, scopeEfetivo)) : []),
+    [secretariasMapa, scopeEfetivo],
   );
   const secretariaIdsSelecionadas = useMemo(
     () => secretariasSelecionadas.map((s) => s.id),
@@ -225,7 +255,7 @@ function MapaPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <HeartPulse className="h-6 w-6 text-emerald-500" />
-            {mapScope === "saude" ? "Mapa da Saúde" : "Mapa de Obras (SOSU)"}
+            {scopeEfetivo === "obras" ? "Mapa de Obras (SOSU)" : "Mapa da Saúde"}
           </h1>
           <p className="text-sm text-muted-foreground">
             Pontos e protocolos das áreas selecionadas em Brusque.
@@ -243,8 +273,17 @@ function MapaPage() {
         </Button>
       </div>
 
+      {scopeEfetivo === null ? (
+        <Card>
+          <CardContent className="py-12 text-center text-sm text-muted-foreground">
+            Nenhuma das suas áreas possui mapa (Saúde ou Obras).
+          </CardContent>
+        </Card>
+      ) : (
+      <>
       <MapDepartmentToggle
-        value={mapScope}
+        value={scopeEfetivo}
+        scopes={escoposPermitidos}
         onChange={(value) => { setMapScope(value); setLocalFiltroId("todos"); setPrazo(value === "obras" ? "atrasados" : "todos"); }}
       />
 
@@ -343,6 +382,8 @@ function MapaPage() {
           />
         </CardContent>
       </Card>
+      </>
+      )}
       <ProtocoloDetailDialog protocolo={detail} open={!!detail} onOpenChange={(v) => !v && setDetail(null)} />
 
       {/* Dialog: escolher qual unidade/local receber um ponto no mapa */}
