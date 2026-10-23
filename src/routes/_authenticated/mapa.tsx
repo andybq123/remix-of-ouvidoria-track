@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,7 +38,10 @@ export const Route = createFileRoute("/_authenticated/mapa")({
   component: MapaPage,
 });
 
+const layoutApi = getRouteApi("/_authenticated");
+
 function MapaPage() {
+  const { user } = layoutApi.useRouteContext();
   const [mapScope, setMapScope] = useState<MapDepartmentScope>("saude");
   const [status, setStatus] = useState<string>("todos");
   const [prazo, setPrazo] = useState<string>("todos");
