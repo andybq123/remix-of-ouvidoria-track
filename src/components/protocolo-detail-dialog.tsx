@@ -493,7 +493,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
         {podeAgir && <div className="flex flex-wrap items-center gap-2 border-y py-3">
           {/* Grupo principal (ações positivas / fluxo) */}
           <div className="flex flex-wrap items-center gap-2">
-            {isAdmin && !isLegacy && protocolo.triagem_pendente && editing && (
+            {!isLegacy && protocolo.triagem_pendente && editing && (
               wrapTooltip(
                 "concluir-triagem",
                 <Button
@@ -571,7 +571,7 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
 
           {/* Grupo secundário (edição / cancelamento / exclusão) */}
           <div className="flex flex-wrap items-center gap-2 ml-auto">
-            {!isLegacy && (isAdmin || !protocolo.triagem_pendente) && (!editing ? (
+            {!isLegacy && (!editing ? (
               <Button size="sm" variant="outline" onClick={() => setEditing(true)} disabled={lockBloqueia}>
                 <Pencil className="h-4 w-4 mr-1" /> Editar
               </Button>
