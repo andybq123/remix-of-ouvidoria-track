@@ -1,4 +1,5 @@
 # Tarefas
+- [ ] Avaliar lentidão de acesso na VPS e adoção de Redis — investigação do código em andamento; medições da VPS necessárias para confirmar o gargalo antes de implantar cache.
 - [x] Corrigir busca e-SIC específica: lotes pequenos sem corte de páginas, progresso e erros por pedido visíveis; 19 testes passaram. A causa específica da VPS e a importação real aguardam nova execução lá, pois não há contas de e-mail no ambiente acessível.
 - [x] Adicionar botão no E-mail para rechecar toda a caixa em busca de e-SIC, sem corte de datas ou páginas, com pausa/retomada, data original e proteção contra duplicatas; testes passaram e botão conferido com sessão real.
 - [ ] Validar busca completa na caixa real da VPS — depende da atualização da VPS e das contas de e-mail locais; o ambiente acessível não possui contas cadastradas.
