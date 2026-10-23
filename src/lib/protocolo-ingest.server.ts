@@ -529,11 +529,12 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
     // tinha devolvido outro valor).
     {
       const variantes = normalizarNumero(numero);
-      const { data: jaExiste } = await supabaseAdmin
+      const { data: jaExiste, error: erroDuplicidade } = await supabaseAdmin
         .from("protocolos")
         .select("id, numero, tipo")
         .in("numero", variantes)
         .maybeSingle();
+      if (erroDuplicidade) throw erroDuplicidade;
       if (jaExiste) {
         if (emailEhEsic || jaExiste.tipo === "esic") throw new Error("Número já utilizado por outro protocolo; revise o conflito de numeração antes de reprocessar.");
         await supabaseAdmin.from("email_inbox_log").update({
