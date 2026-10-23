@@ -1,5 +1,5 @@
-import { extrairPedidoEsic } from "./esic";
-import { ESIC_MAIL_BATCH, intervaloEsic, pastasEsic, type EsicMailboxCursor } from "./esic-mailbox";
+import { chaveNumeroEsic, extrairPedidoEsic, formatarNumeroEsic } from "./esic";
+import { ESIC_MAIL_BATCH, intervaloEsic, pastasEsic, type EsicMailboxCursor, type EsicNumerosBusca } from "./esic-mailbox";
 import { exigirIngestaoAtiva } from "./import-maintenance.server";
 import { ingerirEmail } from "./protocolo-ingest.server";
 
