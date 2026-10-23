@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 function accepts(version: string): boolean {
   const output = execFileSync("bash", ["-c", `
     source local-docker/node-runtime.sh
-    node() { printf '%s\\n' "$1"; }
     node() { printf '%s\\n' '${version}'; }
     if node_host_atualizado; then printf accepted; else printf rejected; fi
   `], { cwd: process.cwd(), encoding: "utf8" });
