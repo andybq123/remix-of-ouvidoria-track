@@ -19,3 +19,5 @@
 - Scoped e-SIC mailbox searches (buscarEsicPorNumeros in esic-mailbox.server.ts) filter by provider-side subject search (Gmail q / IMAP SEARCH) and only ingest numbers whose chaveNumeroEsic matches the requested set, always reusing ingerirEmail with recheckEsic so dedup by externalId and triagem_pendente stay identical to the full backfill.
 - Every database change in drizzle/migrations must also ship as an idempotent numbered file in local-docker/atualizacoes-banco/, because atualizar.sh only applies that folder on the VPS.
 - Read-only users get edit rights only via allowed_emails.pode_editar (admin-managed); protocol UPDATE for them is RLS-gated by pode_editar_area() to their areas and non-triage rows, while triage, delete and 1Doc stay admin-only.
+- Triage access = admin OR posso_editar() (pode_triar() in DB, usePodeTriar in UI); read-only users never see triage, and deleting protocols stays admin-only.
+- Every business-table change is audited by the generic registrar_alteracao() trigger into registro_sistema (admin-only read); add the trigger to any new business table.
