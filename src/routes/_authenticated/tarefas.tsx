@@ -23,6 +23,7 @@ import { MapPointPicker } from "@/components/map-point-picker";
 import { OnedocAgentButton } from "@/components/onedoc-agent-button";
 import { idsOuvidorias1doc } from "@/lib/onedoc-batch";
 import { useIsAdmin } from "@/hooks/use-is-admin";
+import { usePodeTriar } from "@/hooks/use-pode-triar";
 import { OnedocBatchHistory } from "@/components/onedoc-batch-history";
 
 export const Route = createFileRoute("/_authenticated/tarefas")({
@@ -263,6 +264,20 @@ function AtrasadasLocalizacao({ secretarias, onVoltar, onAbrir }: {
 }
 
 function TarefasPage() {
+  const podeTriar = usePodeTriar();
+  if (!podeTriar) {
+    return (
+      <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">
+        <Lock className="h-6 w-6 mx-auto mb-2" />
+        A triagem não está disponível para usuários somente leitura.
+      </CardContent></Card>
+    );
+  }
+  return <TarefasConteudo />;
+}
+
+function TarefasConteudo() {
+  const isAdminTriagem = useIsAdmin();
   const qc = useQueryClient();
   const [detail, setDetail] = useState<any | null>(null);
   const [modoAtrasadas, setModoAtrasadas] = useState(false);
@@ -453,10 +468,10 @@ function TarefasPage() {
             <Button size="sm" onClick={() => batchMut.mutate()} disabled={!batchSec || batchMut.isPending}>
               <CheckCheck className="h-4 w-4 mr-1" /> Concluir triagem em lote
             </Button>
-            <Button size="sm" variant="destructive" disabled={delMut.isPending}
+            {isAdminTriagem && <Button size="sm" variant="destructive" disabled={delMut.isPending}
               onClick={() => excluir(Array.from(selected), `${selected.size} protocolo(s) selecionado(s)`)}>
               <Trash2 className="h-4 w-4 mr-1" /> Excluir selecionados
-            </Button>
+            </Button>}
             <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Limpar seleção</Button>
           </CardContent>
         </Card>
@@ -516,12 +531,12 @@ function TarefasPage() {
                   <Eye className="h-4 w-4 mr-1" />
                   {isLockAtivo(p) && p.triagem_lock_por !== meId ? "Visualizar" : "Triar"}
                 </Button>
-                <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive"
+                {isAdminTriagem && <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive"
                   aria-label={`Excluir protocolo ${p.numero}`} title="Excluir protocolo"
                   disabled={delMut.isPending}
                   onClick={() => excluir([p.id], `o protocolo ${p.numero}`)}>
                   <Trash2 className="h-4 w-4" />
-                </Button>
+                </Button>}
               </CardContent>
             </Card>
           ))}

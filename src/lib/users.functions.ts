@@ -101,6 +101,8 @@ export const criarUsuario = createServerFn({ method: "POST" })
         authUserId = existente.id;
       }
       if (authUserId) {
+        // Remove papéis antigos (ex.: admin) para não sobrar acesso indevido.
+        await supabaseAdmin.from("user_roles").delete().eq("user_id", authUserId).neq("role", data.role);
         await supabaseAdmin.from("user_roles")
           .upsert({ user_id: authUserId, role: data.role }, { onConflict: "user_id,role" });
       }

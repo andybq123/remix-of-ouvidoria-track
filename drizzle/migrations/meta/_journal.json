@@ -134,6 +134,13 @@
       "when": 1792765383399,
       "tag": "0018_funcao_posso_editar",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792766174570,
+      "tag": "0019_triagem_editores_registro_sistema",
+      "breakpoints": true
     }
   ]
 }

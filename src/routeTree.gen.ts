@@ -29,6 +29,7 @@ import { Route as AuthenticatedEmailInboxRouteImport } from './routes/_authentic
 import { Route as AuthenticatedIaConfigRouteImport } from './routes/_authenticated/ia-config'
 import { Route as AuthenticatedMapaRouteImport } from './routes/_authenticated/mapa'
 import { Route as AuthenticatedProtocolosRouteImport } from './routes/_authenticated/protocolos'
+import { Route as AuthenticatedRegistroRouteImport } from './routes/_authenticated/registro'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedSaudeRouteImport } from './routes/_authenticated/saude'
 import { Route as AuthenticatedSecretariasRouteImport } from './routes/_authenticated/secretarias'
@@ -145,6 +146,11 @@ const AuthenticatedProtocolosRoute = AuthenticatedProtocolosRouteImport.update({
   path: '/protocolos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRegistroRoute = AuthenticatedRegistroRouteImport.update({
+  id: '/registro',
+  path: '/registro',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/ia-config': typeof AuthenticatedIaConfigRoute
   '/mapa': typeof AuthenticatedMapaRoute
   '/protocolos': typeof AuthenticatedProtocolosRoute
+  '/registro': typeof AuthenticatedRegistroRoute
   '/relatorios': typeof AuthenticatedRelatoriosRouteWithChildren
   '/saude': typeof AuthenticatedSaudeRoute
   '/secretarias': typeof AuthenticatedSecretariasRoute
@@ -286,6 +293,7 @@ export interface FileRoutesByTo {
   '/ia-config': typeof AuthenticatedIaConfigRoute
   '/mapa': typeof AuthenticatedMapaRoute
   '/protocolos': typeof AuthenticatedProtocolosRoute
+  '/registro': typeof AuthenticatedRegistroRoute
   '/saude': typeof AuthenticatedSaudeRoute
   '/secretarias': typeof AuthenticatedSecretariasRoute
   '/sem-link-1doc': typeof AuthenticatedSemLink1docRoute
@@ -323,6 +331,7 @@ export interface FileRoutesById {
   '/_authenticated/ia-config': typeof AuthenticatedIaConfigRoute
   '/_authenticated/mapa': typeof AuthenticatedMapaRoute
   '/_authenticated/protocolos': typeof AuthenticatedProtocolosRoute
+  '/_authenticated/registro': typeof AuthenticatedRegistroRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRouteWithChildren
   '/_authenticated/saude': typeof AuthenticatedSaudeRoute
   '/_authenticated/secretarias': typeof AuthenticatedSecretariasRoute
@@ -361,6 +370,7 @@ export interface FileRouteTypes {
     | '/ia-config'
     | '/mapa'
     | '/protocolos'
+    | '/registro'
     | '/relatorios'
     | '/saude'
     | '/secretarias'
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/ia-config'
     | '/mapa'
     | '/protocolos'
+    | '/registro'
     | '/saude'
     | '/secretarias'
     | '/sem-link-1doc'
@@ -433,6 +444,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ia-config'
     | '/_authenticated/mapa'
     | '/_authenticated/protocolos'
+    | '/_authenticated/registro'
     | '/_authenticated/relatorios'
     | '/_authenticated/saude'
     | '/_authenticated/secretarias'
@@ -609,6 +621,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProtocolosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/registro': {
+      id: '/_authenticated/registro'
+      path: '/registro'
+      fullPath: '/registro'
+      preLoaderRoute: typeof AuthenticatedRegistroRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/relatorios': {
       id: '/_authenticated/relatorios'
       path: '/relatorios'
@@ -746,6 +765,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIaConfigRoute: typeof AuthenticatedIaConfigRoute
   AuthenticatedMapaRoute: typeof AuthenticatedMapaRoute
   AuthenticatedProtocolosRoute: typeof AuthenticatedProtocolosRoute
+  AuthenticatedRegistroRoute: typeof AuthenticatedRegistroRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRouteWithChildren
   AuthenticatedSaudeRoute: typeof AuthenticatedSaudeRoute
   AuthenticatedSecretariasRoute: typeof AuthenticatedSecretariasRoute
@@ -768,6 +788,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIaConfigRoute: AuthenticatedIaConfigRoute,
   AuthenticatedMapaRoute: AuthenticatedMapaRoute,
   AuthenticatedProtocolosRoute: AuthenticatedProtocolosRoute,
+  AuthenticatedRegistroRoute: AuthenticatedRegistroRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRouteWithChildren,
   AuthenticatedSaudeRoute: AuthenticatedSaudeRoute,
   AuthenticatedSecretariasRoute: AuthenticatedSecretariasRoute,
