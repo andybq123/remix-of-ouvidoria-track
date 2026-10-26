@@ -155,6 +155,13 @@
       "when": 1793018065984,
       "tag": "0021_limpar_vinculos_usuarios_inexistentes",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793044790685,
+      "tag": "0022_licenca_estado",
+      "breakpoints": true
     }
   ]
 }

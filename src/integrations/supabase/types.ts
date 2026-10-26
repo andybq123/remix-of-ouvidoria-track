@@ -366,6 +366,30 @@ export type Database = {
           },
         ]
       }
+      licenca_estado: {
+        Row: {
+          bloqueado: boolean
+          codigo: string | null
+          id: number
+          motivo: string | null
+          verificado_em: string | null
+        }
+        Insert: {
+          bloqueado?: boolean
+          codigo?: string | null
+          id?: number
+          motivo?: string | null
+          verificado_em?: string | null
+        }
+        Update: {
+          bloqueado?: boolean
+          codigo?: string | null
+          id?: number
+          motivo?: string | null
+          verificado_em?: string | null
+        }
+        Relationships: []
+      }
       locais: {
         Row: {
           area_propria: boolean
@@ -984,6 +1008,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aplicar_bloqueio_licenca: { Args: never; Returns: undefined }
       aplicar_conferencia_1doc: {
         Args: { p_anterior: Json; p_id: string; p_patch: Json }
         Returns: undefined
@@ -1044,6 +1069,7 @@ export type Database = {
       }
       liberar_triagem: { Args: { p_id: string }; Returns: undefined }
       liberar_triagem_admin: { Args: { p_id: string }; Returns: undefined }
+      licenca_bloqueada: { Args: never; Returns: boolean }
       limpar_vinculos_usuarios_inexistentes: { Args: never; Returns: number }
       normalizar_numero_esic: { Args: { p_numero: string }; Returns: string }
       pode_editar_area: { Args: { _secretaria: string }; Returns: boolean }
