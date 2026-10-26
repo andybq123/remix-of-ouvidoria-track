@@ -38,7 +38,8 @@ export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, secretariaI
       track({ id, tipo, scope, startedAt: Date.now() });
       qc.invalidateQueries({ queryKey: ["onedoc-historico"] });
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível iniciar");
+      console.error("[agente 1Doc] falha ao iniciar", e);
+      toast.error("Não foi possível iniciar o agente 1Doc", { description: motivoErro(e), duration: 15000 });
     } finally {
       setIniciando(false);
     }
