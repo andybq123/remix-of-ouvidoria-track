@@ -587,22 +587,28 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
       extr.tipo === "ouvidoria" && (forcarTriagemAssunto || !secretariaId || casaSaude)
     );
 
-    const { data: novo, error: errIns } = await supabaseAdmin
-      .from("protocolos")
-      .insert({
-        numero,
-        numero_esic: numeroEsic,
-        tipo: extr.tipo,
-        categoria: emailEhEsic ? "pedido_informacao" : extr.categoria,
-        assunto: stripAssuntoPrefixo(extr.assunto || assunto || "Sem assunto"),
-        descricao: resumo,
-        solicitante: extr.solicitante || remetente || null,
-        secretaria_id: secretariaId, local_id: localId,
-        data_abertura: dataAbertura, created_by: account.created_by,
-        triagem_pendente: precisaTriagem,
-        url: extrairLinkAcompanhar(corpo),
-      })
-      .select("id, numero").single();
+    const dadosNovo = {
+      numero,
+      numero_esic: numeroEsic,
+      tipo: extr.tipo,
+      categoria: emailEhEsic ? "pedido_informacao" : extr.categoria,
+      assunto: stripAssuntoPrefixo(extr.assunto || assunto || "Sem assunto"),
+      descricao: resumo,
+      solicitante: extr.solicitante || remetente || null,
+      secretaria_id: secretariaId, local_id: localId,
+      data_abertura: dataAbertura, created_by: account.created_by,
+      triagem_pendente: precisaTriagem,
+      url: extrairLinkAcompanhar(corpo),
+    } as any;
+    let { data: novo, error: errIns } = await supabaseAdmin
+      .from("protocolos").insert(dadosNovo).select("id, numero").single();
+    // Conta de e-mail vinda de backup com responsável que não existe nesta
+    // instalação: grava sem responsável e limpa os vínculos inválidos.
+    if (errIns && errIns.code === "23503" && /created_by/.test(errIns.message ?? "")) {
+      await (supabaseAdmin as any).rpc("limpar_vinculos_usuarios_inexistentes");
+      ({ data: novo, error: errIns } = await supabaseAdmin
+        .from("protocolos").insert({ ...dadosNovo, created_by: null }).select("id, numero").single());
+    }
     if (errIns) throw errIns;
 
     await supabaseAdmin.from("email_inbox_log").update({
