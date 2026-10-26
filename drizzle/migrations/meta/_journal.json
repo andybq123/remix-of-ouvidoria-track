@@ -148,6 +148,13 @@
       "when": 1792766814084,
       "tag": "0020_area_vigilancia_separada",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793018065984,
+      "tag": "0021_limpar_vinculos_usuarios_inexistentes",
+      "breakpoints": true
     }
   ]
 }
