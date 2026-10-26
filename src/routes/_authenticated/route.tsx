@@ -93,17 +93,9 @@ function AuthLayoutContent() {
     ] : []),
   ]) as { to: string; label: string; icon: any }[];
 
-  const configItems = (isAdmin ? [
-    { to: "/email-inbox", label: "E-mails", icon: Mail },
-    { to: "/agente-1doc", label: "Agente 1Doc", icon: Bot },
-    { to: "/sem-link-1doc", label: "Sem link 1Doc", icon: Link2Off },
-    { to: "/atualizacao", label: "Atualização", icon: RefreshCw },
-    { to: "/users", label: "Usuários", icon: Users },
-    { to: "/ia-config", label: "IA", icon: Sparkles },
-    { to: "/backup", label: "Backup", icon: DatabaseBackup },
-    { to: "/registro", label: "Registro do sistema", icon: ScrollText },
-    { to: "/debug", label: "Debug", icon: Bug },
-  ] : []) as { to: string; label: string; icon: any }[];
+  const configItems = (isAdmin
+    ? [{ to: "/configuracoes", label: "Configurações", icon: Settings }, ...CONFIG_ITEMS]
+    : []) as { to: string; label: string; icon: any }[];
   const configActive = configItems.some(c => pathname.startsWith(c.to));
 
   const LayoutSwitch = <LayoutSelector mode={layoutMode} onChange={setLayoutMode} />;
@@ -126,7 +118,7 @@ function AuthLayoutContent() {
   }
 
   if (layoutMode === "sidebar") {
-    const allNav = [...nav, ...configItems];
+    const allNav = [...nav, ...configItems.slice(0, 1)];
     return (
       <RealtimeSyncProvider>
       <OnlineUsersProvider userId={user.id} nome={displayName}>
@@ -212,30 +204,13 @@ function AuthLayoutContent() {
                 </Link>
               );
             })}
-            {configItems.length > 0 && <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm transition-colors ${configActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-secondary"}`}
-                >
-                  <Settings className="h-4 w-4" />
-                  <span className="hidden md:inline">Configurações</span>
-                  <ChevronDown className="h-3 w-3 opacity-70" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {configItems.map(item => {
-                  const Icon = item.icon;
-                  return (
-                    <DropdownMenuItem key={item.to} asChild>
-                      <Link to={item.to} className="flex items-center gap-2 cursor-pointer">
-                        <Icon className="h-4 w-4" />
-                        <span>{item.label}</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>}
+            {configItems.length > 0 && (
+              <Link to="/configuracoes"
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm transition-colors ${configActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-secondary"}`}>
+                <Settings className="h-4 w-4" />
+                <span className="hidden md:inline">Configurações</span>
+              </Link>
+            )}
           </nav>
           <div className="flex items-center gap-1">
             {OnlineIndicatorEl}
@@ -373,27 +348,12 @@ function WorkspaceLayout({
               ))}
               {configItems.length > 0 && (
                 <>
-                  <button
-                    type="button"
-                    className={`workspace-nav-heading workspace-nav-heading-spaced workspace-nav-toggle${configActive ? " is-current" : ""}`}
-                    aria-label="Configurações"
-                    aria-expanded={configMenuOpen}
-                    aria-controls="workspace-config-menu"
-                    onClick={() => setConfigMenuOpen((open) => !open)}
-                  >
-                    <span>CONFIGURAÇÕES</span>
-                    <ChevronDown className={`h-3.5 w-3.5 transition-transform${configMenuOpen ? " rotate-180" : ""}`} aria-hidden="true" />
-                  </button>
-                  <div id="workspace-config-menu" hidden={!configMenuOpen}>
-                    {configItems.map((item) => (
-                      <WorkspaceNavLink
-                        key={item.to}
-                        item={item}
-                        active={pathname.startsWith(item.to)}
-                        onNavigate={() => setMobileNavOpen(false)}
-                      />
-                    ))}
-                  </div>
+                  <div className="workspace-nav-heading workspace-nav-heading-spaced">SISTEMA</div>
+                  <WorkspaceNavLink
+                    item={{ to: "/configuracoes", label: "Configurações", icon: Settings }}
+                    active={configActive}
+                    onNavigate={() => setMobileNavOpen(false)}
+                  />
                 </>
               )}
             </nav>
