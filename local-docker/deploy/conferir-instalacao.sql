@@ -9,7 +9,7 @@ BEGIN
   FOREACH t IN ARRAY ARRAY[
     'profiles','user_roles','allowed_emails','secretarias','locais','assuntos','protocolos',
     'protocolo_historico','user_secretarias','user_locais','registro_sistema','email_inbox_accounts',
-    'email_inbox_log','onedoc_jobs','onedoc_config','atualizacao_jobs','ai_config','coletas'
+    'email_inbox_log','onedoc_jobs','onedoc_config','atualizacao_jobs','ai_config','coletas','licenca_estado'
   ] LOOP
     IF to_regclass('public.' || t) IS NULL THEN faltando := faltando || ('tabela ' || t); END IF;
   END LOOP;
@@ -17,7 +17,7 @@ BEGIN
   FOREACH f IN ARRAY ARRAY[
     'has_role(uuid,app_role)','posso_editar()','pode_triar()','area_permitida(uuid,uuid)',
     'registrar_alteracao()','handle_new_user()','limpar_vinculos_usuarios_inexistentes()',
-    'backup_importar(text,jsonb)','backup_importar_usuarios(jsonb)'
+    'backup_importar(text,jsonb)','backup_importar_usuarios(jsonb)','licenca_bloqueada()','bloquear_se_licenca()'
   ] LOOP
     IF to_regprocedure('public.' || f) IS NULL THEN faltando := faltando || ('função ' || f); END IF;
   END LOOP;
