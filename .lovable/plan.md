@@ -37,7 +37,14 @@ Os scripts antigos (`atualizar.sh`, `atualizar_front.sh`, `deploy-vps.sh`, `alte
 - Explica o que o OuviDesk faz (ouvidorias, e-SIC, triagem, prazos, mapas, BI, agente 1Doc, permissões por área, registro do sistema), como instalar, atualizar, trocar domínio, fazer e importar backup.
 - Sem menções a Lovable, Lovable Cloud ou Supabase nos textos e documentação: o sistema é descrito como rodando apenas na VPS.
 
-**7. Teste antes de entregar**
+**7. Licença**
+- Instalação nova pede a chave de licença e a salva na VPS (arquivo protegido, fora do Git, preservado nas atualizações).
+- Antes de instalar e de cada atualização (terminal ou botão), o deploy consulta o servidor de licenças; licença inválida/expirada bloqueia com mensagem clara, sem mexer no sistema.
+- Ferramentas: opção para trocar a licença.
+- O servidor de licenças será o seu outro projeto. Deixo pronto o "contrato": endereço configurável e uma resposta simples (válida, expira em, mensagem). Até ele existir, a verificação fica desligada por configuração.
+- O sistema em uso não para se o servidor de licenças cair; só instalação/atualização dependem dele.
+
+**8. Teste antes de entregar**
 - Instalação completa num banco limpo aqui: aplicar tudo do zero duas vezes, criar usuários, conferir permissões, áreas, triagem, registro do sistema e importação de backup com usuário ausente.
 - Rodar todos os testes existentes.
 

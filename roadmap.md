@@ -33,3 +33,4 @@
 - [ ] Banco confiável em instalação nova (migrações reconciliadas + conferência)
 - [ ] README refeito explicando o sistema, sem menções a Lovable/Supabase/nuvem
 - [ ] Importação de backup sem erro "responsável inexistente"
+- [ ] Licença pedida na instalação, salva na VPS e validada antes de instalar/atualizar (servidor de licenças em projeto separado)
