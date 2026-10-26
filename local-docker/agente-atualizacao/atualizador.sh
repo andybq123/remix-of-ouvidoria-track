@@ -60,7 +60,8 @@ main() {
         if [ "$RC" -eq 0 ]; then
           sql "update atualizacao_jobs set status='concluido', etapa=etapas_total, mensagem='Sistema atualizado e no ar', log='$(esc "$TAIL")', updated_at=now() where id='$ID'" >/dev/null 2>&1 && break
         else
-          sql "update atualizacao_jobs set status='erro', mensagem='A atualização falhou (código $RC)', log='$(esc "$TAIL")', updated_at=now() where id='$ID'" >/dev/null 2>&1 && break
+          [ "$RC" -eq 124 ] && FALHA='A atualização passou de 60 minutos e foi interrompida' || FALHA="A atualização falhou (código $RC)"
+          sql "update atualizacao_jobs set status='erro', mensagem='$(esc "$FALHA")', log='$(esc "$TAIL")', updated_at=now() where id='$ID'" >/dev/null 2>&1 && break
         fi
         sleep 3
       done
