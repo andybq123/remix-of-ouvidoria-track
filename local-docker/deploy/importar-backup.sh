@@ -3,7 +3,7 @@
 #  OuviDesk — Importa o backup do sistema original (nuvem)
 #  para o banco local da VPS, mantendo os mesmos IDs e ligações.
 #
-#  Uso:  ./importar-backup.sh /root/backup_sistema_seta.zip
+#  Uso:  bash deploy.sh ferramentas  (ou: importar-backup.sh /caminho/backup.zip)
 #
 #  - Faz uma cópia de segurança do banco atual antes de tudo.
 #  - Substitui protocolos, secretarias, locais, assuntos, histórico etc.
@@ -11,11 +11,11 @@
 #  - Mantém as chaves de IA já cadastradas na VPS.
 # ============================================================
 set -euo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 ZIP="${1:-}"
 if [ -z "$ZIP" ] || [ ! -f "$ZIP" ]; then
-  echo "Uso: ./importar-backup.sh /caminho/do/backup.zip"; exit 1
+  echo "Uso: bash deploy.sh ferramentas  (Importar backup)"; exit 1
 fi
 command -v unzip >/dev/null || apt-get install -y unzip >/dev/null
 
@@ -115,6 +115,8 @@ for t in secretarias locais assuntos allowed_emails profiles user_roles secretar
 done
 cat <<'SQL'
 SET session_replication_role = origin;
+-- Usuários citados no backup que não existem aqui (ex.: responsável da conta de e-mail).
+SELECT public.limpar_vinculos_usuarios_inexistentes();
 COMMIT;
 SQL
 } > "$TMP/importar.sql"

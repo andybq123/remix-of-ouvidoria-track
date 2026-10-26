@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Troca somente domínio/proxy na instalação VPS existente. Não instala nem limpa dados.
+# OuviDesk — troca de domínio (chamada por: deploy.sh dominio).
+# Troca somente domínio/proxy na instalação existente. Não instala nem limpa dados.
 set +x
 set -Eeuo pipefail
 umask 077
 fail() { printf 'ERRO: %s\n' "$*" >&2; exit 1; }
 MODE="${1:-}"
-[[ "$MODE" == '' || "$MODE" == --simular || "$MODE" == --restaurar ]] || fail 'Uso: ./alterar_dominio.sh [--simular | --restaurar CAMINHO_DO_BACKUP]'
+[[ "$MODE" == '' || "$MODE" == --simular || "$MODE" == --restaurar ]] || fail 'Uso: bash deploy.sh dominio [--simular | --restaurar CAMINHO_DO_BACKUP]'
 [[ $# -le 1 || ( "$MODE" == --restaurar && $# -eq 2 ) ]] || fail 'Argumentos inválidos.'
 [[ -r /dev/tty ]] || fail 'Execute em um terminal interativo, não por curl | bash.'
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
@@ -21,10 +22,10 @@ AUTH="$ROOT/local-docker/manutencao/dominio-auth.mjs"
 ENVFILE="$ROOT/local-docker/.env.local"
 CADDY=/etc/caddy/Caddyfile
 [[ -f "$ENVFILE" && ! -L "$ENVFILE" && -f "$CADDY" && ! -L "$CADDY" ]] || fail 'Configuração ausente ou com links simbólicos. Revisão manual necessária.'
-[[ -f "$CONFIG" && -f "$AUTH" ]] || fail 'Atualize primeiro com ./atualizar_front.sh.'
+[[ -f "$CONFIG" && -f "$AUTH" ]] || fail 'Atualize primeiro com: bash deploy.sh atualizar'
 [[ -z "${DOCKER_HOST:-}" && -z "${DOCKER_CONTEXT:-}" ]] || fail 'Use o Docker local da VPS, sem contexto/host remoto.'
 [[ "$(docker context show)" == default ]] || fail 'O contexto Docker deve ser default (socket local).'
-exec 9>/tmp/controle-seta-atualizar-front.lock
+exec 9>/tmp/ouvidesk-deploy.lock
 flock -n 9 || fail 'Há outra manutenção/atualização em andamento.'
 COMPOSE=(docker compose --project-directory "$ROOT/local-docker" -f "$ROOT/local-docker/docker-compose.yml" -f "$ROOT/local-docker/docker-compose.prod.yml")
 APP_ID="$("${COMPOSE[@]}" ps --all -q app)"
@@ -94,7 +95,8 @@ if [[ "$MODE" == --restaurar ]]; then
   exit $?
 fi
 [[ -f .output/server/index.mjs && ! -L .output ]] || fail 'É necessária a instalação em PRODUÇÃO com .output pronta. Atualize primeiro o front.'
-[[ -f .output/VERSION && "$(cat .output/VERSION)" == "$(git rev-parse HEAD)" ]] || fail 'Checkout e artefato diferem. Execute ./atualizar_front.sh antes.'
+# A versão instalada pode ser anterior ao HEAD quando só scripts/banco mudaram.
+[[ -f .output/VERSION ]] && git merge-base --is-ancestor "$(cat .output/VERSION)" HEAD 2>/dev/null || fail 'Versão instalada desconhecida. Atualize antes com: bash deploy.sh atualizar'
 # Recusar um app em Vite/dev: reiniciar em produção aqui seria uma troca de runtime não solicitada.
 APP_CMD="$(docker inspect --format '{{json .Config.Cmd}}' "$APP_ID")"
 [[ "$APP_CMD" == *'.output/server/index.mjs'* ]] || fail 'Aplicação não está no runtime de produção reconhecido.'
@@ -202,6 +204,6 @@ fi
 printf 'concluido\n' > "$BACKUP/status.txt"
 COMPLETE=1
 printf '\nDomínio alterado: https://%s\nProxy selecionado: %s\nBackup: %s\n' "$DOMAIN" "$PROXY" "$BACKUP"
-printf 'Rollback: sudo ./alterar_dominio.sh --restaurar "%s"\n' "$BACKUP"
+printf 'Rollback: sudo bash deploy.sh dominio --restaurar "%s"\n' "$BACKUP"
 printf 'DNS/SSL/WAF do painel não são alterados pela VPS e devem ser revertidos manualmente se necessário.\n'
 printf 'Atualize também callbacks OAuth Gmail, webhooks externos, links e favoritos que usavam o domínio anterior.\n'

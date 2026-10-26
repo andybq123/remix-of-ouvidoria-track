@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Cria um usuário ou redefine a senha de um existente.
-# Uso: ./criar-usuario.sh email senha [admin|user] [Nome]
+# Uso: bash deploy.sh ferramentas  (ou: criar-usuario.sh email senha [admin|user] [Nome])
 set -euo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 if [ $# -lt 2 ]; then
   read -rp "E-mail: " EMAIL
-  read -rsp "Senha (mín. 6): " SENHA; echo
+  read -rsp "Senha (mín. 8, com maiúscula, minúscula, número e símbolo): " SENHA; echo
   read -rp "Perfil (admin/user) [admin]: " PERFIL
   set -- "$EMAIL" "$SENHA" "${PERFIL:-admin}"
 fi
