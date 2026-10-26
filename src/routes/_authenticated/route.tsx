@@ -24,6 +24,7 @@ import { usePodeEditar } from "@/hooks/use-pode-editar";
 import { useSomenteSaude } from "@/hooks/use-somente-saude";
 import { useSomenteVigilancia } from "@/hooks/use-somente-vigilancia";
 import { LicencaAviso } from "@/components/licenca-aviso";
+import { CONFIG_ITEMS } from "@/lib/config-items";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -132,7 +133,7 @@ function AuthLayoutContent() {
           </div>
           <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
             {allNav.map(item => {
-              const active = pathname.startsWith(item.to);
+              const active = item.to === "/configuracoes" ? configActive : pathname.startsWith(item.to);
               const Icon = item.icon;
               return (
                 <Link
