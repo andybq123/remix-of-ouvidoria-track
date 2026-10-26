@@ -162,6 +162,13 @@
       "when": 1793044790685,
       "tag": "0022_licenca_estado",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793044973927,
+      "tag": "0023_licenca_bloqueio_invoker",
+      "breakpoints": true
     }
   ]
 }
