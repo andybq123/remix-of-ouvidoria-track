@@ -20,7 +20,7 @@ Mescle o PR e espere **Compilar versão da VPS** concluir com sucesso. Na raiz d
 
 ```bash
 cd ~/controle-seta
-./atualizar_front.sh
+sudo bash deploy.sh atualizar
 ```
 
 A atualização inclui os comandos de manutenção e a correção de compatibilidade e-SIC com o modo de importação do backup. A migration `006_esic_importacao_backup.sql` não apaga dados: garante que uma restauração autorizada preserve status, triagem e prorrogação antigas em vez de tratá-las como cadastro novo.
@@ -28,19 +28,19 @@ A atualização inclui os comandos de manutenção e a correção de compatibili
 ## 2. Simular sem apagar
 
 ```bash
-./limpar_para_importacao.sh --simular
+sudo bash deploy.sh ferramentas   # opção 4, responda S para simular
 ```
 
-A simulação verifica o artefato instalado, o clone do contêiner, a existência de exatamente um banco Supabase Docker e a correspondência dos IDs do banco com a API realmente usada pela aplicação. Exibe as contagens das seis tabelas a limpar. Não para serviços nem cria backup/marcadores e não apaga nada.
+A simulação verifica o artefato instalado, o clone do contêiner, a existência de exatamente um banco local em Docker e a correspondência dos IDs do banco com a API realmente usada pela aplicação. Exibe as contagens das seis tabelas a limpar. Não para serviços nem cria backup/marcadores e não apaga nada.
 
-O script recusa ambientes com múltiplos bancos Supabase, app apontando a Supabase remoto ou artefato diferente do checkout. Nessas situações, revise a topologia antes de adaptar o procedimento; não remova as verificações para forçar a limpeza.
+O script recusa ambientes com múltiplos bancos locais, app apontando a banco externo ou artefato diferente do checkout. Nessas situações, revise a topologia antes de adaptar o procedimento; não remova as verificações para forçar a limpeza.
 
 ## 3. Executar a limpeza
 
 Reserve uma pequena janela de manutenção: a aplicação ficará parada durante o backup e a limpeza.
 
 ```bash
-./limpar_para_importacao.sh
+sudo bash deploy.sh ferramentas   # opção 4, responda N para executar
 ```
 
 O comando apresenta o escopo e exige digitar exatamente **LIMPAR PARA IMPORTAR**. Em seguida, pausa a ingestão, para app/coletor, salva o ambiente e faz um dump completo do banco, validando o formato e a soma de verificação antes de limpar.
@@ -72,7 +72,7 @@ Durante a importação, o painel mostra aviso de ingestão pausada. Após import
 Configure novamente a IA se precisar de extração/classificação de e-mails de Ouvidoria e de relatórios por IA. Depois de conferir a importação:
 
 ```bash
-./retomar_ingestao.sh
+sudo bash deploy.sh ferramentas   # opção 5
 ```
 
 O comando explica que a coleta usará os cursores existentes e pede **RETOMAR INGESTAO** antes de reativar. Aguarda a aplicação responder e verifica a presença de cursores das contas ativas. Se houver conta sem cursor, mantém a pausa até uma confirmação adicional explícita do risco de reler mensagens antigas (**RETOMAR COM RISCO DE RELEITURA**); falha de prontidão não permite retomar. Contas, credenciais e cursores não são apagados nem zerados. Mensagens novas na caixa poderão ser processadas; mensagens antigas podem ser lidas novamente se a conta não tiver cursor ou o servidor não disponibilizar seu histórico. Não reative antes de revisar o backup e a deduplicação.

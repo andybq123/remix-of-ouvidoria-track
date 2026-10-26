@@ -65,7 +65,7 @@ Anexos binários de e-mail não ganham um novo fluxo de download/armazenamento n
 
    ```bash
    cd ~/controle-seta
-   ./atualizar_front.sh
+   sudo bash deploy.sh atualizar
    ```
 
 O procedimento existente cria backup e aplica as atualizações de banco antes de reiniciar a aplicação. `018_esic_numero_interno.sql` também corrige os números internos dos e-SIC existentes, mantendo os IDs, o histórico e a triagem. Conflitos de numeração geram um aviso para revisão individual, sem apagar ou mesclar pedidos. As migrations são idempotentes.

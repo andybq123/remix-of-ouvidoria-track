@@ -2,9 +2,9 @@
 
 ## 1. Arquitetura identificada
 - App: TanStack Start (React 19 + SSR), servidor Node (`.output/server/index.mjs`) no container `app` (imagem `node:24.22.1-bookworm`), porta `127.0.0.1:8080`.
-- Banco/autenticação: Supabase local (Postgres 15, GoTrue, PostgREST, Realtime) via `supabase start`, API em `127.0.0.1:54321`.
+- Banco/autenticação: banco local local (Postgres 15, GoTrue, PostgREST, Realtime) via `supabase start`, API em `127.0.0.1:54321`.
 - Caddy (no host) termina HTTPS e encaminha `/auth/v1`, `/rest/v1`, `/realtime/v1`, `/storage/v1`, `/functions/v1` para 54321 e o resto para 8080.
-- Autorização: RLS no Postgres + papéis em `user_roles` (`admin`/`user`) verificados por `has_role()`; funções de servidor usam `requireSupabaseAuth` (token do usuário).
+- Autorização: RLS no Postgres + papéis em `user_roles` (`admin`/`user`) verificados por `has_role()`; funções de servidor usam `requirebanco localAuth` (token do usuário).
 - Rotas públicas: `/`, `/ouvidoria` (formulário anônimo), `/consulta` (número + hash), `/auth`, e `/api/public/*` (protegidas por token).
 - Anexos: o sistema **não tem upload de arquivos** (nenhum uso de storage encontrado). Fase 7 não se aplica além dos links do 1doc.
 
@@ -24,7 +24,7 @@ Verificado sem problema: rotas `/api/public/*` exigem `INGEST_TOKEN`/`CRON_SECRE
 - `src/lib/admin-guard.server.ts` (novo) + `admin-guard.test.ts`
 - `src/lib/gmail-sync.functions.ts`, `geocode-bulk.functions.ts`, `protocolo-extract.functions.ts`, `location-ia.functions.ts`, `geocode.functions.ts`
 - `src/routes/api/public/inbound-email.$token.ts`
-- `local-docker/atualizacoes-banco/002_seguranca_triagem.sql` (aplicado automaticamente pelo `atualizar.sh`)
+- `local-docker/atualizacoes-banco/002_seguranca_triagem.sql` (aplicado automaticamente pelo `deploy.sh atualizar`)
 - `local-docker/caddy/Caddyfile.seguranca.exemplo`, este arquivo.
 
 ## 4. Testes executados (reais)
@@ -56,13 +56,13 @@ mkdir -p backups && docker exec "$DBC" pg_dump -U postgres -d postgres -Fc > bac
 git -C .. rev-parse HEAD > backups/versao-anterior.txt
 
 # 2. Atualizar (aplica 002_seguranca_triagem.sql e reinicia)
-./atualizar.sh
+sudo bash ../deploy.sh atualizar
 
 # 3. Cabeçalhos: copie o bloco "header" do exemplo para /etc/caddy/Caddyfile
 sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
 
 # Rollback do app: volte o código para a versão anterior e reinicie
-git -C .. reset --hard "$(cat backups/versao-anterior.txt)" && SETA_REEXEC=1 ./atualizar.sh
+git -C .. reset --hard "$(cat backups/versao-anterior.txt)" && SETA_REEXEC=1 bash ../deploy.sh atualizar
 # Rollback do banco (só se necessário):
 # docker exec -i "$DBC" pg_restore -U postgres -d postgres --clean --if-exists < backups/ARQUIVO.dump
 ```

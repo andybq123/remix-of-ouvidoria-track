@@ -1,6 +1,6 @@
 # Trocar o domínio da instalação VPS
 
-O comando `alterar_dominio.sh` foi feito para a instalação **existente em produção** deste projeto: Caddy instalado na VPS, Supabase local iniciado pela CLI e app Node via Docker Compose com `.output` pronta. Não é um instalador e não executa migrations, limpeza, importação nem atualização do código.
+A opção **Alterar o domínio** do `deploy.sh` foi feito para a instalação **existente em produção** deste projeto: Caddy instalado na VPS, banco e login locais em Docker e app Node via Docker Compose com `.output` pronta. Não é um instalador e não executa migrations, limpeza, importação nem atualização do código.
 
 ## 1. Receber o script
 
@@ -8,7 +8,7 @@ Depois do merge do PR e de o build VPS do GitHub terminar com sucesso:
 
 ```bash
 cd ~/controle-seta
-./atualizar_front.sh
+sudo bash deploy.sh atualizar
 ```
 
 O script deve estar na **raiz** do clone, não em `local-docker`. Execute o comando pelo arquivo, nunca por `curl | bash`, pois ele precisa de perguntas/confirmacões no terminal.
@@ -28,8 +28,8 @@ O IPv4 sugerido é consultado em `https://api.ipify.org`; confira e corrija o va
 
 ```bash
 cd ~/controle-seta
-sudo ./alterar_dominio.sh --simular
-sudo ./alterar_dominio.sh
+sudo bash deploy.sh dominio --simular
+sudo bash deploy.sh dominio
 ```
 
 Na simulação e na execução real, o script pergunta:
@@ -50,7 +50,7 @@ Na execução real, depois de mostrar o escopo, exige a frase **ALTERAR DOMINIO*
 
 ### O que permanece
 
-Banco e volumes do Supabase; usuários/senhas/permissões; protocolos/e-SIC; secretarias/assuntos; logs; IA; contas, cursores e tokens de e-mail; `.env` da raiz; chaves pública/service-role/JWT; tokens cron e ingestão; regras dos demais sites; configurações locais de pausa da ingestão.
+Banco e volumes do banco local; usuários/senhas/permissões; protocolos/e-SIC; secretarias/assuntos; logs; IA; contas, cursores e tokens de e-mail; `.env` da raiz; chaves pública/service-role/JWT; tokens cron e ingestão; regras dos demais sites; configurações locais de pausa da ingestão.
 
 **Haverá uma breve interrupção de app e login.** Como o hostname muda, você deverá entrar novamente no novo domínio. O banco não é parado nem recriado.
 
@@ -111,7 +111,7 @@ Em falha detectada ou Ctrl+C após começar a alteração, o comando **tenta res
 Após uma troca bem-sucedida, o comando mostra:
 
 ```bash
-sudo ./alterar_dominio.sh --restaurar "/caminho/real/mostrado/pelo/script"
+sudo bash deploy.sh dominio --restaurar "/caminho/real/mostrado/pelo/script"
 ```
 
 O rollback manual exige a palavra **RESTAURAR** e recusa sobrescrever mudanças posteriores de configuração, versão do front ou contêiner GoTrue. O contêiner GoTrue anterior fica **parado, sem reinício automático**, com nome contendo `_dominio_`, para viabilizar essa restauração. Não o exclua enquanto quiser preservar o rollback.
@@ -120,17 +120,17 @@ O rollback manual exige a palavra **RESTAURAR** e recusa sobrescrever mudanças 
 
 ## 7. Atualizações futuras
 
-`./atualizar_front.sh` continua lendo `local-docker/.env.local`; por isso, novos builds apontarão ao novo domínio. A troca não gera alterações em arquivos rastreados nem interfere no preflight do atualizador.
+`sudo bash deploy.sh atualizar` continua lendo `local-docker/.env.local`; por isso, novos builds apontarão ao novo domínio. A troca não gera alterações em arquivos rastreados nem interfere no preflight do atualizador.
 
-O contêiner GoTrue novo mantém sua configuração em reinícios normais do Docker e da VPS. O script **não edita o `supabase/config.toml` rastreado**: ele serve como modelo do instalador, não como configuração ativa do contêiner já criado. **Não rode `deploy-vps.sh` novamente nem faça `supabase stop/start` para trocar domínio**, pois esses procedimentos podem recriar a autenticação com as URLs do modelo antigo. Se precisar recriar a stack Supabase, revise o modelo/configuração de implantação e reaplique a troca de domínio antes de liberar o acesso.
+O contêiner GoTrue novo mantém sua configuração em reinícios normais do Docker e da VPS. O script **não edita o `local-docker/supabase/config.toml` rastreado**: ele serve como modelo do instalador, não como configuração ativa do contêiner já criado. **Não rode `deploy.sh instalar` novamente nem faça reiniciar o banco do zero para trocar domínio**, pois esses procedimentos podem recriar a autenticação com as URLs do modelo antigo. Se precisar recriar a pilha do banco local, revise o modelo/configuração de implantação e reaplique a troca de domínio antes de liberar o acesso.
 
 ## 8. Testes de desenvolvimento
 
 Sem VPS ou credenciais reais:
 
 ```bash
-bash -n alterar_dominio.sh
-shellcheck alterar_dominio.sh
+bash -n local-docker/deploy/dominio.sh
+shellcheck local-docker/deploy/dominio.sh
 node --test tests/dominio/*.node.mjs
 ```
 
