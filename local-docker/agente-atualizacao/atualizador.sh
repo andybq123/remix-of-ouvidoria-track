@@ -14,6 +14,9 @@
 main() {
   set -uo pipefail
   export HOME="${HOME:-/root}"
+  # Nunca perguntar nada nem reiniciar serviços durante o apt (needrestart
+  # reiniciaria este próprio serviço e mataria a atualização no meio).
+  export DEBIAN_FRONTEND=noninteractive NEEDRESTART_SUSPEND=1 OUVIDESK_AGENTE_ATUALIZACAO=1
   cd "$(dirname "$0")/.."   # pasta local-docker
 
   exec 9>/tmp/ouvidesk-agente-atualizacao.lock
@@ -25,8 +28,12 @@ main() {
   limpo() { sed 's/\x1b\[[0-9;]*m//g' | tr '\r' '\n' | grep -av '^[[:space:]]*$'; }
 
   echo "Agente de atualização OuviDesk iniciado em $(pwd)."
+  # Espera o banco subir (após reiniciar a VPS o Docker pode demorar).
+  for _ in $(seq 1 60); do sql "select 1" >/dev/null 2>&1 && break; sleep 5; done
   # Pedido que ficou "rodando" porque o serviço reiniciou no meio: encerra.
   sql "update atualizacao_jobs set status='erro', mensagem='Serviço da VPS reiniciou durante a atualização', updated_at=now() where status='rodando'" >/dev/null 2>&1 || true
+  # Pedido esquecido na fila (ex.: serviço não estava instalado): não executa de surpresa.
+  sql "update atualizacao_jobs set status='erro', mensagem='Pedido antigo cancelado: o serviço da VPS não estava ativo. Clique em atualizar novamente.', updated_at=now() where status='pendente' and created_at < now() - interval '15 minutes'" >/dev/null 2>&1 || true
 
   while true; do
     ID="$(sql "update atualizacao_jobs set status='rodando', etapa=0, mensagem='Iniciando a atualização', updated_at=now() where id = (select id from atualizacao_jobs where status='pendente' order by created_at limit 1 for update skip locked) returning id" 2>/dev/null | head -1 || true)"
@@ -35,7 +42,8 @@ main() {
       echo "Atualização $ID iniciada."
       LOGF="/tmp/ouvidesk-update-$ID.log"
       : > "$LOGF"
-      ( ./atualizar.sh </dev/null >"$LOGF" 2>&1 ) &
+      # Limite de 60 min: uma atualização presa nunca deixa a tela travada para sempre.
+      ( timeout --kill-after=30s 60m ./atualizar.sh </dev/null >"$LOGF" 2>&1 ) &
       PID=$!
       while kill -0 "$PID" 2>/dev/null; do
         sleep 2
@@ -52,7 +60,8 @@ main() {
         if [ "$RC" -eq 0 ]; then
           sql "update atualizacao_jobs set status='concluido', etapa=etapas_total, mensagem='Sistema atualizado e no ar', log='$(esc "$TAIL")', updated_at=now() where id='$ID'" >/dev/null 2>&1 && break
         else
-          sql "update atualizacao_jobs set status='erro', mensagem='A atualização falhou (código $RC)', log='$(esc "$TAIL")', updated_at=now() where id='$ID'" >/dev/null 2>&1 && break
+          [ "$RC" -eq 124 ] && FALHA='A atualização passou de 60 minutos e foi interrompida' || FALHA="A atualização falhou (código $RC)"
+          sql "update atualizacao_jobs set status='erro', mensagem='$(esc "$FALHA")', log='$(esc "$TAIL")', updated_at=now() where id='$ID'" >/dev/null 2>&1 && break
         fi
         sleep 3
       done

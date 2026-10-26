@@ -198,6 +198,11 @@ else
   done; echo
 fi
 ok "Sistema no ar em modo produção"
+if bash ./agente-atualizacao/instalar.sh >>"$LOG" 2>&1; then
+  ok "Botão de atualização do sistema ativado"
+else
+  aviso "Botão de atualização não ativou. Rode depois: bash $DIR/agente-atualizacao/instalar.sh"
+fi
 
 # ---------- 10. Admin ----------
 etapa "Criando acesso de administrador"

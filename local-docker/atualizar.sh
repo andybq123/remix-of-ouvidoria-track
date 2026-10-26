@@ -94,9 +94,18 @@ rodar_node() {
 }
 
 cd local-docker
+export DEBIAN_FRONTEND=noninteractive NEEDRESTART_SUSPEND=1
 source ./node-runtime.sh
 info "Conferindo Node da VPS (LTS com correções de segurança)."
 atualizar_node_host >>"$LOG" 2>&1 || falha "Não consegui atualizar o Node da VPS." "Execute como root (sudo -i) e confira o registro."
+# Garante o serviço que atende o botão "Atualizar" do sistema (instalações novas
+# não o tinham e o pedido ficava parado na fila). Não roda quando o próprio
+# serviço chamou esta atualização, para não reiniciá-lo no meio.
+if [ "$(id -u)" -eq 0 ] && [ -z "${OUVIDESK_AGENTE_ATUALIZACAO:-}" ] && command -v systemctl >/dev/null 2>&1; then
+  bash ./agente-atualizacao/instalar.sh >>"$LOG" 2>&1 \
+    && info "Serviço do botão de atualização ativo." \
+    || aviso "Não consegui ativar o serviço do botão de atualização (veja $LOG)."
+fi
 PRONTO=0; LOCAL_BUILD=0; TOTAL=120
 
 # ---------- 2. compilação ----------

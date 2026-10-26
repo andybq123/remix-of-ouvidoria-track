@@ -45,8 +45,10 @@ export function AtualizacaoOverlay() {
 
   const concluindo = job?.status === "concluido" && acompanhando.current === job.id;
   if (!job || (!ativo && !concluindo)) return null;
-  // Pedido na fila há muito tempo sem o serviço responder: não bloqueia a tela.
   if (fechado === job.id && !concluindo) return null;
+  // Pedido na fila há mais de 1 min sem o serviço da VPS pegar: não bloqueia a tela
+  // (a página Atualização mostra como ativar o serviço).
+  if (job.status === "pendente" && Date.now() - new Date(job.created_at).getTime() > 60_000) return null;
   // Sem notícia da VPS há mais de 3 min: considera travado e não bloqueia a tela.
   if (!concluindo && Date.now() - new Date(job.updated_at).getTime() > 180_000) return null;
 
