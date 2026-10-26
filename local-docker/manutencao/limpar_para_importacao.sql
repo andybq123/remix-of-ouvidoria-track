@@ -1,5 +1,5 @@
 -- OPERAÇÃO MANUAL DESTRUTIVA. NÃO colocar na pasta de migrations.
--- Executado apenas por limpar_para_importacao.sh após backup e confirmação.
+-- Executado apenas por local-docker/deploy/limpar-para-importacao.sh após backup e confirmação.
 BEGIN;
 SET LOCAL lock_timeout = '15s';
 

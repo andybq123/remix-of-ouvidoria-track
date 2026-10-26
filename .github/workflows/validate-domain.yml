@@ -3,7 +3,8 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - alterar_dominio.sh
+      - deploy.sh
+      - local-docker/deploy/**
       - local-docker/manutencao/dominio-*.mjs
       - local-docker/corrigir-tamanhos.mjs
       - tests/dominio/**
@@ -26,8 +27,8 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq caddy shellcheck
       - name: Sintaxe e ShellCheck
         run: |
-          bash -n alterar_dominio.sh
-          shellcheck alterar_dominio.sh
+          bash -n deploy.sh local-docker/deploy/dominio.sh
+          shellcheck -S error deploy.sh local-docker/deploy/*.sh
           node --check local-docker/manutencao/dominio-config.mjs
           node --check local-docker/manutencao/dominio-auth.mjs
       - name: Configuração, proxy HTTP real e GoTrue simulado

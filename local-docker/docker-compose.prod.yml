@@ -1,5 +1,5 @@
 # Modo produção. Se existir uma compilação pronta (baixada do GitHub pelo
-# atualizar.sh), apenas inicia em segundos. Senão, compila localmente (lento).
+# deploy.sh atualizar), apenas inicia em segundos. Senão, compila localmente (lento).
 # Uso: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 services:
   app:

@@ -35,8 +35,10 @@ jobs:
         run: bash tests/esic/run.sh
       - name: Testar limpeza restrita, rollback e importação
         run: bash tests/limpeza/run.sh
-      - name: Validar sintaxe dos comandos de manutenção
-        run: bash -n limpar_para_importacao.sh && bash -n retomar_ingestao.sh && node --check local-docker/manutencao/conferir-banco.mjs && node --check local-docker/manutencao/conferir-retomada.mjs
+      - name: Testar instalação nova do banco (duas vezes), usuários e permissões
+        run: bash tests/instalacao/run.sh
+      - name: Validar sintaxe dos comandos do deploy
+        run: for f in deploy.sh local-docker/deploy/*.sh local-docker/atualizar.sh local-docker/agente-atualizacao/*.sh; do bash -n "$f"; done && node --check local-docker/manutencao/conferir-banco.mjs && node --check local-docker/manutencao/conferir-retomada.mjs
       - name: Conferir migrations VPS e Supabase equivalentes
         run: cmp local-docker/atualizacoes-banco/006_esic_importacao_backup.sql local-docker/supabase/migrations/20261013160000_esic_importacao_backup.sql
       - name: Build no mesmo preset da VPS

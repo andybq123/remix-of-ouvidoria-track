@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Instala (ou confere) o agente de atualização como serviço permanente.
-# Rode como root:  bash instalar.sh
+# Rode como root:  bash deploy.sh ferramentas  (opção "Reinstalar o serviço")
 # Idempotente: só reinicia o serviço quando a configuração mudou ou ele não
 # está rodando — assim nunca interrompe uma atualização em andamento.
 set -euo pipefail
