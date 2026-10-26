@@ -182,8 +182,18 @@ async function processar(job) {
 log("aguardando pedidos…");
 // pedidos que ficaram "executando" de uma queda anterior voltam para a fila
 await patch("onedoc_jobs", "status=eq.executando", { status: "pendente" }).catch(() => {});
+async function licencaBloqueada() {
+  try { return (await rest("rpc/licenca_bloqueada", { method: "POST", body: "{}" })) === true; }
+  catch { return false; } // sem leitura não bloqueia; o banco recusa gravações de qualquer forma
+}
+let avisouBloqueio = false;
 for (;;) {
   try {
+    if (await licencaBloqueada()) {
+      if (!avisouBloqueio) log("licença bloqueada: agente parado (somente consulta)");
+      avisouBloqueio = true; await sleep(30000); continue;
+    }
+    if (avisouBloqueio) { log("licença liberada: agente retomando"); avisouBloqueio = false; }
     const [job] = await rest("onedoc_jobs?status=eq.pendente&order=created_at.asc&limit=1&select=*");
     if (job) await processar(job); else await sleep(3000);
   } catch (e) { log("erro:", e?.message || e); await sleep(10000); }

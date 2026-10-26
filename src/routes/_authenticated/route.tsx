@@ -23,6 +23,7 @@ import { AtualizacaoOverlay } from "@/components/atualizacao-overlay";
 import { usePodeEditar } from "@/hooks/use-pode-editar";
 import { useSomenteSaude } from "@/hooks/use-somente-saude";
 import { useSomenteVigilancia } from "@/hooks/use-somente-vigilancia";
+import { LicencaAviso } from "@/components/licenca-aviso";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -42,7 +43,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthLayout() {
   const { user } = Route.useRouteContext();
-  return <OnedocBackgroundProvider key={user.id} userId={user.id}><AuthLayoutContent /><AtualizacaoOverlay /></OnedocBackgroundProvider>;
+  return <OnedocBackgroundProvider key={user.id} userId={user.id}><LicencaAviso /><AuthLayoutContent /><AtualizacaoOverlay /></OnedocBackgroundProvider>;
 }
 
 function AuthLayoutContent() {

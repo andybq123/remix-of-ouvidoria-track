@@ -210,6 +210,7 @@ else
   done; echo
 fi
 ok "Sistema no ar em modo produção"
+instalar_timer_licenca
 if bash ./agente-atualizacao/instalar.sh >>"$LOG" 2>&1; then
   ok "Botão de atualização do sistema ativado"
 else

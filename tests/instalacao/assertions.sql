@@ -51,3 +51,22 @@ BEGIN
   ASSERT NOT public.pode_triar(), 'usuário somente leitura pode triar';
 END $$;
 RESET ROLE;
+
+-- Licença bloqueada: gravação recusada pelo banco, leitura continua; liberada volta ao normal.
+UPDATE public.licenca_estado SET bloqueado = true, motivo = 'teste' WHERE id = 1;
+SET ROLE service_role;
+DO $$
+BEGIN
+  BEGIN
+    UPDATE public.secretarias SET nome = nome;
+    RAISE EXCEPTION 'gravação aceita com licença bloqueada';
+  EXCEPTION WHEN raise_exception THEN
+    ASSERT SQLERRM = 'Sistema bloqueado pela licença: somente consulta', 'mensagem errada: ' || SQLERRM;
+  END;
+  ASSERT (SELECT count(*) FROM public.secretarias) >= 1, 'leitura falhou com licença bloqueada';
+END $$;
+RESET ROLE;
+UPDATE public.licenca_estado SET bloqueado = false, motivo = NULL WHERE id = 1;
+SET ROLE service_role;
+UPDATE public.secretarias SET nome = nome;
+RESET ROLE;

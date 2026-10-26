@@ -91,6 +91,7 @@ if [ "$(id -u)" -eq 0 ] && [ -z "${OUVIDESK_AGENTE_ATUALIZACAO:-}" ] && command 
     && info "Serviço do botão de atualização ativo." \
     || aviso "Não consegui ativar o serviço do botão de atualização (veja $LOG)."
 fi
+instalar_timer_licenca >>"$LOG" 2>&1 || true
 PRONTO=0; LOCAL_BUILD=0; TOTAL=120
 
 # ---------- 2. compilação ----------

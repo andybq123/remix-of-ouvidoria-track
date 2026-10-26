@@ -1,3 +1,4 @@
+import { licencaBloqueadaAdmin, respostaBloqueada } from "@/lib/licenca-guard";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 
@@ -69,6 +70,7 @@ export const Route = createFileRoute("/api/public/ingest-protocolos")({
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: corsHeaders() }),
       POST: async ({ request }) => {
+        if (await licencaBloqueadaAdmin()) return respostaBloqueada();
         const inicio = Date.now();
         const expected = process.env.INGEST_TOKEN;
         if (!expected) {

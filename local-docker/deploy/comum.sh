@@ -141,3 +141,34 @@ validar_licenca() {
   [ "$valida" = "true" ] || falha "Licença inválida ou expirada${msg:+: $msg}." "Rode: bash $RAIZ/deploy.sh ferramentas  e escolha 'Trocar a licença'."
   ok "Licença válida.${msg:+ $msg}"
 }
+
+# Timer systemd que roda o heartbeat da licença a cada 5 minutos.
+instalar_timer_licenca() {
+  command -v systemctl >/dev/null 2>&1 || { aviso "Sem systemd: heartbeat da licença não agendado."; return 0; }
+  [ "$(id -u)" -eq 0 ] || return 0
+  cat > /etc/systemd/system/ouvidesk-licenca.service <<UNIT
+[Unit]
+Description=OuviDesk - heartbeat da licença
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash $DEPLOY_DIR/heartbeat-licenca.sh
+UNIT
+  cat > /etc/systemd/system/ouvidesk-licenca.timer <<UNIT
+[Unit]
+Description=OuviDesk - heartbeat da licença a cada 5 minutos
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+UNIT
+  systemctl daemon-reload && systemctl enable --now ouvidesk-licenca.timer >/dev/null 2>&1 \
+    && info "Heartbeat da licença agendado (a cada 5 min)." \
+    || aviso "Não consegui agendar o heartbeat da licença."
+  systemctl start ouvidesk-licenca.service >/dev/null 2>&1 || true
+}
