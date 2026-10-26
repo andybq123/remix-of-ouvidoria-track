@@ -102,6 +102,9 @@ function AgentePage() {
                   <Badge variant={j.status === "erro" ? "destructive" : j.status === "concluido" ? "default" : "secondary"}>{STATUS[j.status] ?? j.status}</Badge>
                   {j.tipo !== "teste" && <span>{j.processados}/{j.total} conferidas · {j.atualizados} concluídas · {j.erros} erros</span>}
                   {j.mensagem && <span className="text-muted-foreground">— {j.mensagem}</span>}
+                  {(j.resultados ?? []).filter((r) => r.erro).slice(0, 3).map((r) => (
+                    <span key={r.id} className="basis-full text-xs text-destructive break-words">Erro na ouvidoria {r.numero ?? r.id}: {r.erro}</span>
+                  ))}
                 </div>
               ))}
             </div>
