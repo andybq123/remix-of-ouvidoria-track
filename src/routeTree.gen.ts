@@ -23,10 +23,12 @@ import { Route as AuthenticatedAssuntosRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAtrasadosRouteImport } from './routes/_authenticated/atrasados'
 import { Route as AuthenticatedAtualizacaoRouteImport } from './routes/_authenticated/atualizacao'
 import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated/backup'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDebugRouteImport } from './routes/_authenticated/debug'
 import { Route as AuthenticatedEmailInboxRouteImport } from './routes/_authenticated/email-inbox'
 import { Route as AuthenticatedIaConfigRouteImport } from './routes/_authenticated/ia-config'
+import { Route as AuthenticatedLicencaRouteImport } from './routes/_authenticated/licenca'
 import { Route as AuthenticatedMapaRouteImport } from './routes/_authenticated/mapa'
 import { Route as AuthenticatedProtocolosRouteImport } from './routes/_authenticated/protocolos'
 import { Route as AuthenticatedRegistroRouteImport } from './routes/_authenticated/registro'
@@ -116,6 +118,12 @@ const AuthenticatedBackupRoute = AuthenticatedBackupRouteImport.update({
   path: '/backup',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -134,6 +142,11 @@ const AuthenticatedEmailInboxRoute = AuthenticatedEmailInboxRouteImport.update({
 const AuthenticatedIaConfigRoute = AuthenticatedIaConfigRouteImport.update({
   id: '/ia-config',
   path: '/ia-config',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLicencaRoute = AuthenticatedLicencaRouteImport.update({
+  id: '/licenca',
+  path: '/licenca',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMapaRoute = AuthenticatedMapaRouteImport.update({
@@ -250,10 +263,12 @@ export interface FileRoutesByFullPath {
   '/atrasados': typeof AuthenticatedAtrasadosRoute
   '/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/backup': typeof AuthenticatedBackupRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
   '/email-inbox': typeof AuthenticatedEmailInboxRoute
   '/ia-config': typeof AuthenticatedIaConfigRoute
+  '/licenca': typeof AuthenticatedLicencaRoute
   '/mapa': typeof AuthenticatedMapaRoute
   '/protocolos': typeof AuthenticatedProtocolosRoute
   '/registro': typeof AuthenticatedRegistroRoute
@@ -287,10 +302,12 @@ export interface FileRoutesByTo {
   '/atrasados': typeof AuthenticatedAtrasadosRoute
   '/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/backup': typeof AuthenticatedBackupRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
   '/email-inbox': typeof AuthenticatedEmailInboxRoute
   '/ia-config': typeof AuthenticatedIaConfigRoute
+  '/licenca': typeof AuthenticatedLicencaRoute
   '/mapa': typeof AuthenticatedMapaRoute
   '/protocolos': typeof AuthenticatedProtocolosRoute
   '/registro': typeof AuthenticatedRegistroRoute
@@ -325,10 +342,12 @@ export interface FileRoutesById {
   '/_authenticated/atrasados': typeof AuthenticatedAtrasadosRoute
   '/_authenticated/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/_authenticated/backup': typeof AuthenticatedBackupRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/debug': typeof AuthenticatedDebugRoute
   '/_authenticated/email-inbox': typeof AuthenticatedEmailInboxRoute
   '/_authenticated/ia-config': typeof AuthenticatedIaConfigRoute
+  '/_authenticated/licenca': typeof AuthenticatedLicencaRoute
   '/_authenticated/mapa': typeof AuthenticatedMapaRoute
   '/_authenticated/protocolos': typeof AuthenticatedProtocolosRoute
   '/_authenticated/registro': typeof AuthenticatedRegistroRoute
@@ -364,10 +383,12 @@ export interface FileRouteTypes {
     | '/atrasados'
     | '/atualizacao'
     | '/backup'
+    | '/configuracoes'
     | '/dashboard'
     | '/debug'
     | '/email-inbox'
     | '/ia-config'
+    | '/licenca'
     | '/mapa'
     | '/protocolos'
     | '/registro'
@@ -401,10 +422,12 @@ export interface FileRouteTypes {
     | '/atrasados'
     | '/atualizacao'
     | '/backup'
+    | '/configuracoes'
     | '/dashboard'
     | '/debug'
     | '/email-inbox'
     | '/ia-config'
+    | '/licenca'
     | '/mapa'
     | '/protocolos'
     | '/registro'
@@ -438,10 +461,12 @@ export interface FileRouteTypes {
     | '/_authenticated/atrasados'
     | '/_authenticated/atualizacao'
     | '/_authenticated/backup'
+    | '/_authenticated/configuracoes'
     | '/_authenticated/dashboard'
     | '/_authenticated/debug'
     | '/_authenticated/email-inbox'
     | '/_authenticated/ia-config'
+    | '/_authenticated/licenca'
     | '/_authenticated/mapa'
     | '/_authenticated/protocolos'
     | '/_authenticated/registro'
@@ -579,6 +604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBackupRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -605,6 +637,13 @@ declare module '@tanstack/react-router' {
       path: '/ia-config'
       fullPath: '/ia-config'
       preLoaderRoute: typeof AuthenticatedIaConfigRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/licenca': {
+      id: '/_authenticated/licenca'
+      path: '/licenca'
+      fullPath: '/licenca'
+      preLoaderRoute: typeof AuthenticatedLicencaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/mapa': {
@@ -759,10 +798,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAtrasadosRoute: typeof AuthenticatedAtrasadosRoute
   AuthenticatedAtualizacaoRoute: typeof AuthenticatedAtualizacaoRoute
   AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDebugRoute: typeof AuthenticatedDebugRoute
   AuthenticatedEmailInboxRoute: typeof AuthenticatedEmailInboxRoute
   AuthenticatedIaConfigRoute: typeof AuthenticatedIaConfigRoute
+  AuthenticatedLicencaRoute: typeof AuthenticatedLicencaRoute
   AuthenticatedMapaRoute: typeof AuthenticatedMapaRoute
   AuthenticatedProtocolosRoute: typeof AuthenticatedProtocolosRoute
   AuthenticatedRegistroRoute: typeof AuthenticatedRegistroRoute
@@ -782,10 +823,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAtrasadosRoute: AuthenticatedAtrasadosRoute,
   AuthenticatedAtualizacaoRoute: AuthenticatedAtualizacaoRoute,
   AuthenticatedBackupRoute: AuthenticatedBackupRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDebugRoute: AuthenticatedDebugRoute,
   AuthenticatedEmailInboxRoute: AuthenticatedEmailInboxRoute,
   AuthenticatedIaConfigRoute: AuthenticatedIaConfigRoute,
+  AuthenticatedLicencaRoute: AuthenticatedLicencaRoute,
   AuthenticatedMapaRoute: AuthenticatedMapaRoute,
   AuthenticatedProtocolosRoute: AuthenticatedProtocolosRoute,
   AuthenticatedRegistroRoute: AuthenticatedRegistroRoute,
