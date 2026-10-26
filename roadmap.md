@@ -26,3 +26,10 @@
 - [x] Elevar o corte da tela "Sem link 1Doc" para 583/2026 inclusive; 6 testes passaram.
 - [x] Botão "Atualizar sistema agora" em Configurações → Atualização: enfileira em atualizacao_jobs, barra de progresso por etapa e histórico; tela testada com sessão admin (pedido entrou na fila e foi removido).
 - [ ] Instalar o serviço na VPS (`sudo local-docker/agente-atualizacao/instalar.sh`) e validar uma atualização real disparada pela tela — depende de acesso à VPS; sem o serviço, o pedido fica "Na fila".
+
+## Deploy unificado (out/2026)
+- [ ] deploy.sh único (instalar / atualizar / domínio / ferramentas); remover scripts antigos
+- [ ] Botão Atualizar do sistema roda pelo deploy.sh
+- [ ] Banco confiável em instalação nova (migrações reconciliadas + conferência)
+- [ ] README refeito explicando o sistema, sem menções a Lovable/Supabase/nuvem
+- [ ] Importação de backup sem erro "responsável inexistente"
