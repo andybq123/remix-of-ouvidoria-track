@@ -1,80 +1,49 @@
-# OuviDesk — rodando localmente
+# OuviDesk — pasta do servidor
 
-Requisitos: **Docker Desktop** e **Node.js 24.22.1+ (linha 24 LTS)**.
+Tudo o que roda na VPS fica aqui. O ponto de entrada é sempre o comando da raiz do projeto:
 
-## 1. Subir o banco local (Postgres + login + tempo real)
+```bash
+sudo bash deploy.sh          # menu: instalar, atualizar, domínio, ferramentas
+```
+
+## Conteúdo
+
+| Pasta/arquivo | O que é |
+|---|---|
+| `deploy/` | Instalação, atualização, troca de domínio, ferramentas e funções comuns usadas pelo `deploy.sh`. |
+| `deploy/conferir-instalacao.sql` | Conferência do banco ao final de cada instalação/atualização. |
+| `deploy/licenca.conf` | Endereço do servidor de licenças (vazio = verificação desligada). |
+| `atualizacoes-banco/` | Mudanças do banco, numeradas, aplicadas em ordem a cada atualização. Todas podem rodar mais de uma vez sem erro. |
+| `supabase/` | Estrutura inicial do banco e configuração do login local. |
+| `agente-1doc/` | Agente que confere as ouvidorias no 1Doc (fila de pedidos). |
+| `agente-atualizacao/` | Serviço que atende o botão "Atualizar" do sistema e executa `deploy.sh atualizar`. |
+| `manutencao/` | Auxiliares da troca de domínio e da limpeza para importação. |
+| `docker-compose*.yml` | Sistema, coletor de e-mails e agente 1Doc. |
+| `.env.local` | Configuração desta VPS (gerada na instalação, protegida, fora do Git). |
+| `backups/` | Cópias automáticas do banco antes de atualizar, importar ou trocar domínio (as 5 mais recentes de cada tipo). |
+
+## Uso em computador de desenvolvimento
+
+Requisitos: Docker e Node.js 24 LTS.
+
 ```bash
 cd local-docker
-npx supabase start          # baixa e sobe os containers e cria todas as tabelas
-npx supabase status         # mostra a "anon key" e a "service_role key"
-```
-Painel do banco: http://localhost:54323
-
-## 2. Configurar o app
-```bash
-cp .env.local.example .env.local   # cole as chaves do passo anterior
+npx supabase start            # banco + login locais, já com a estrutura
+cp .env.local.example .env.local   # cole as chaves mostradas por: npx supabase status
+for f in atualizacoes-banco/*.sql; do docker exec -i "$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | head -1)" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$f"; done
+node create-admin.mjs admin@exemplo.local 'SenhaForte#2026' admin
+docker compose up             # http://localhost:8080
 ```
 
-## 3. Criar o admin local
-```bash
-SUPABASE_SERVICE_ROLE_KEY=<service_role> node create-admin.mjs admin@seta.local MinhaSenha123
-```
+## Coleta de e-mails
 
-## 4. Subir o app
-```bash
-docker compose up
-```
-Acesse http://localhost:8080
+- O coletor chama `/api/public/email-sync` a cada 3 minutos com `Authorization: Bearer $CRON_SECRET`.
+- Gmail usa cursor de histórico; IMAP usa UID/UIDVALIDITY. Se alguma mensagem falhar, o cursor não avança e a mensagem é tentada de novo.
+- Se o servidor IMAP trocar UIDVALIDITY, a conta pausa e mostra o motivo em **Último erro**.
 
-Sem Docker para o app: na raiz do projeto, copie `local-docker/.env.local` para `.env` (troque `host.docker.internal` por `localhost`) e rode `npm install && npm run dev`.
+## Guias
 
-## Limitações
-- O banco local começa **vazio** (estrutura completa, sem dados). Cadastre secretarias/assuntos ou importe um backup.
-- **IA da Lovable** não funciona localmente: use Gemini ou Groq na tela de IA.
-- **Login Google** usa o serviço da Lovable; localmente use e-mail e senha.
-- **Gmail / coleta automática** precisam de internet e das suas credenciais; o agendamento (cron) não roda sozinho — chame os endpoints `/api/public/email-sync` com `Authorization: Bearer $CRON_SECRET`.
-- A coleta Gmail percorre as páginas da janela inicial e, quando o gateway oferece `historyId`, passa a buscar somente alterações desde o último cursor. Se o histórico expirar, reconstrói a janela desde a última sincronização bem-sucedida, com sobreposição de 15 minutos; contas legadas sem esse marcador fazem bootstrap de 2 dias (ou 30 dias se a última tentativa registrava falhas). O IMAP usa UID/UIDVALIDITY: na primeira coleta mantém o limite histórico de 20 mensagens recentes; depois busca apenas UIDs novos.
-- Mensagens com falha mantêm o registro original no histórico e podem ser tentadas de novo na sincronização seguinte. Se alguma mensagem falhar, o cursor não avança. Se o servidor IMAP trocar UIDVALIDITY, a conta pausa e exibe o motivo em **Último erro** em vez de avançar e arriscar perda/duplicação; revise o histórico antes de reconfigurar o cursor. A migration `003_email_sync_cursors.sql` adiciona os campos de cursor/diagnóstico e é aplicada pelo atualizador seguro da VPS.
-
-## Parar
-```bash
-docker compose down && npx supabase stop
-```
-
-## Atualizar uma instalação existente na VPS
-
-Depois que a alteração for integrada em `main` e a ação **Compilar versão da VPS** terminar com sucesso, execute na raiz do clone na VPS:
-
-```bash
-./atualizar_front.sh
-```
-
-Na primeira execução, se o script ainda não existir no clone antigo, execute a partir da raiz do projeto:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/andybq123/remix-of-ouvidoria-track/main/atualizar_front.sh | bash
-```
-
-O comando exige que a branch local seja `main`, interrompe se houver outras alterações locais, salva e restaura o `.env` rastreado, gera um backup verificado do banco em `local-docker/backups/` e chama o atualizador de produção existente. O atualizador valida o hash do build publicado e espera a aplicação responder em `127.0.0.1:8080`. Mantenha os backups protegidos e copie-os para fora da VPS. A aplicação é reiniciada durante a atualização.
-
-## Pedidos e-SIC
-
-Notificações de pedido e-SIC/LAI recebidas por e-mail passam a ter número oficial próprio, triagem obrigatória, categoria/cor distintas e prazo 20 + 10 dias mediante justificativa. A migration `005_esic_campos_triagem.sql` é aplicada pelo mesmo atualizador acima, sem remover dados. Consulte [o guia completo de e-SIC](../docs/esic.md) para comportamento, compatibilidade dos legados e testes. O coletor Python 1Doc não é utilizado por esse novo fluxo.
-
-## Limpeza para importar outro backup
-
-O procedimento separado `./limpar_para_importacao.sh` zera protocolos/relatórios, logs/coletas e IA do banco, preservando usuários, secretarias, locais, responsáveis, assuntos e contas de e-mail. Exige backup validado e confirmação digitada; não é executado pelo atualizador. Consulte [o guia de limpeza e importação](../docs/limpeza-importacao.md) para simular primeiro, importar com ingestão pausada e retomar depois.
-
-## Alterar o domínio (cinza ou laranja)
-
-Na raiz do clone, após receber esta versão via `./atualizar_front.sh`:
-
-```bash
-cd ~/controle-seta
-sudo ./alterar_dominio.sh --simular
-sudo ./alterar_dominio.sh
-```
-
-O comando pergunta o novo domínio e se o proxy Cloudflare final será **laranja** ou **cinza**. Para emitir o HTTPS com segurança, deixe o novo DNS cinza inicialmente; se escolher laranja, o script pedirá para ativá-lo depois de validar o certificado, com **Full (strict)**. Não usa Flexible, não altera o painel Cloudflare sozinho e não reinstala/limpa o banco.
-
-Inclui backup das configurações/artefato, verificação de login/API e tentativa de rollback em falha. Leia o [procedimento completo de domínio e Cloudflare](../docs/alterar-dominio.md) antes de executar, incluindo DNS, portas 80/443, renovação do certificado, callbacks Gmail e restauração.
+- [e-SIC](../docs/esic.md)
+- [Limpeza e importação de backup](../docs/limpeza-importacao.md)
+- [Troca de domínio e Cloudflare](../docs/alterar-dominio.md)
+- [Segurança](SEGURANCA.md)
