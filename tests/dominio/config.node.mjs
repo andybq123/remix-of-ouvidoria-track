@@ -96,3 +96,11 @@ test('artefato não reconhecido ou com symlink aborta sem editar alvo externo', 
   assert.throws(() => atualizarArtefato(dir, 'a', 'b'), /simbólicos/);
   assert.equal(fs.readFileSync(target, 'utf8'), 'secreto');
 });
+
+test('aceita o bloco com cache de arquivos criado pelo instalador', () => {
+  const instalador = `{\n  email a@example.com\n}\nold.example.com {\n  encode zstd gzip\n  @assets path /assets/* /favicon.png /icons/*\n  header @assets Cache-Control "public, max-age=31536000, immutable"\n  @supabase path /auth/v1/* /rest/v1/* /realtime/v1/* /storage/v1/* /functions/v1/*\n  reverse_proxy @supabase 127.0.0.1:54321\n  reverse_proxy 127.0.0.1:8080\n}\n`;
+  const out = substituirSite(instalador, 'old.example.com', 'new.example.com', 'cinza');
+  assert.match(out, /new\.example\.com \{/);
+  assert.match(out, /email a@example\.com/);
+  assert.doesNotMatch(out, /old\.example\.com/);
+});
