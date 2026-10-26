@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { enfileirarOnedoc, type OnedocJob } from "@/lib/onedoc.functions";
 import { useOnedocBackground } from "@/components/onedoc-background-provider";
 import { onedocScope } from "@/lib/onedoc-monitor";
+import { useLicencaBloqueada } from "@/hooks/use-licenca-bloqueada";
 
 export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, secretariaId, incluirConcluidos, escopo, confirmacao, disabled = false, label, size = "sm", onDone }: {
   tipo: "teste" | "unitario" | "lote"; protocoloId?: string; protocoloIds?: string[]; secretariaId?: string; confirmacao?: string; disabled?: boolean; label: string;
   size?: "sm" | "default"; onDone?: (job: OnedocJob) => void;
   incluirConcluidos?: boolean; escopo?: string;
 }) {
+  const licencaBloqueada = useLicencaBloqueada();
   const enfileirar = useServerFn(enfileirarOnedoc);
   const qc = useQueryClient();
   const { tracked, jobs, track } = useOnedocBackground();
@@ -47,7 +49,7 @@ export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, secretariaI
 
   const prog = rodando && job && job.total > 1 ? ` ${job.processados}/${job.total}` : "";
   return (
-    <Button size={size} variant="outline" onClick={iniciar} disabled={rodando || disabled}>
+    <Button size={size} variant="outline" onClick={iniciar} disabled={rodando || disabled || licencaBloqueada}>
       {rodando ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Bot className="h-4 w-4 mr-1" />}
       {rodando ? (job?.status === "pendente" ? "Aguardando agente…" : `Conferindo…${prog}`) : label}
     </Button>

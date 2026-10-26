@@ -26,3 +26,4 @@
 - Triage access = admin OR posso_editar() (pode_triar() in DB, usePodeTriar in UI); read-only users never see triage, and deleting protocols stays admin-only.
 - Every business-table change is audited by the generic registrar_alteracao() trigger into registro_sistema (admin-only read); add the trigger to any new business table.
 - Area access = area_permitida(secretaria, local): user_secretarias grants a department minus locais.area_propria; user_locais grants only that local (UI id "local:<uuid>"); no links = everything.
+- License lock: VPS heartbeat (local-docker/deploy/heartbeat-licenca.sh, systemd timer) writes public.licenca_estado; the generic statement trigger bloquear_se_licenca() refuses writes from app roles while blocked (re-run public.aplicar_bloqueio_licenca() after creating tables), ingestion routes/agent check it explicitly, and UI uses useLicencaBloqueada() — keep the decision rule in src/lib/licenca-estado.ts in sync with the shell script.
