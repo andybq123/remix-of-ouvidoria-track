@@ -60,14 +60,22 @@ export const enfileirarOnedoc = createServerFn({ method: "POST" })
       if (!data.protocoloId) throw new Error("Protocolo não informado");
       ids = [data.protocoloId];
     } else if (data.tipo === "lote") {
-      let query = context.supabase.from("protocolos")
-        .select("id, secretaria_id, secretarias(nome)").ilike("url", "%1doc%");
-      if (!data.incluirConcluidos) query = query.neq("status", "concluido");
-      if (data.protocoloIds) query = query.in("id", data.protocoloIds).eq("tipo", "ouvidoria");
-      if (data.secretariaId) query = query.eq("secretaria_id", data.secretariaId);
       const { fetchAllPaginated } = await import("@/lib/fetch-all");
-      const rows = await fetchAllPaginated((from, to) => query.order("id").range(from, to));
-      ids = (rows ?? []).map((r: any) => r.id);
+      const consulta = (lista?: string[]) => {
+        let query = context.supabase.from("protocolos")
+          .select("id, secretaria_id, secretarias(nome)").ilike("url", "%1doc%");
+        if (!data.incluirConcluidos) query = query.neq("status", "concluido");
+        if (lista) query = query.in("id", lista).eq("tipo", "ouvidoria");
+        if (data.secretariaId) query = query.eq("secretaria_id", data.secretariaId);
+        return fetchAllPaginated((from, to) => query.order("id").range(from, to));
+      };
+      // Os IDs vão no endereço da consulta: em blocos de 100 para não estourar
+      // o limite de tamanho ("URL too long") em listas grandes, como a de atrasados.
+      const rows: any[] = [];
+      if (data.protocoloIds) {
+        for (let i = 0; i < data.protocoloIds.length; i += 100) rows.push(...await consulta(data.protocoloIds.slice(i, i + 100)));
+      } else rows.push(...await consulta());
+      ids = [...new Set(rows.map((r: any) => r.id as string))];
       const secretarias = new Map<string | null, { id: string | null; nome: string }>();
       for (const r of rows) secretarias.set(r.secretaria_id, { id: r.secretaria_id, nome: r.secretarias?.nome ?? "Sem secretaria" });
       contexto = { escopo: data.protocoloIds ? "selecionadas" : "todas", secretarias: [...secretarias.values()] };
