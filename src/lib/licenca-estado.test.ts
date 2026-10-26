@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { decidirEstado, MENSAGEM_BLOQUEIO } from "./licenca-estado";
-import { assertLicencaLiberada } from "./licenca.server";
+import { assertLicencaLiberada } from "./licenca-guard";
 
 const livre = { bloqueado: false, motivo: null, codigo: null };
 const preso = { bloqueado: true, motivo: "Expirou", codigo: "expired" };

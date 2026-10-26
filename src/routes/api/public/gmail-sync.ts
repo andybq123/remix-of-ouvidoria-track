@@ -1,4 +1,4 @@
-import { licencaBloqueadaAdmin, respostaBloqueada } from "@/lib/licenca.server";
+import { licencaBloqueadaAdmin, respostaBloqueada } from "@/lib/licenca-guard";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/api/public/gmail-sync")({
