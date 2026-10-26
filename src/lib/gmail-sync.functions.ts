@@ -1,9 +1,10 @@
+import { requireLicencaLiberada } from "@/lib/licenca-middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { exigirAdmin } from "./admin-guard.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const sincronizarGmail = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireLicencaLiberada])
   .handler(async ({ context }) => {
     await exigirAdmin(context);
     const { sincronizarGmailContas, sincronizarImapContas } = await import("@/lib/protocolo-ingest.server");
@@ -18,7 +19,7 @@ export const sincronizarGmail = createServerFn({ method: "POST" })
   });
 
 export const ressincronizarGmail = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireLicencaLiberada])
   .inputValidator((d: { dias?: number }) => ({ dias: Math.min(Math.max(d?.dias ?? 30, 1), 90) }))
   .handler(async ({ data, context }) => {
     await exigirAdmin(context);
@@ -27,7 +28,7 @@ export const ressincronizarGmail = createServerFn({ method: "POST" })
   });
 
 export const reverificarEmails = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireLicencaLiberada])
   .inputValidator((d: { dias?: number }) => ({ dias: Math.min(Math.max(d?.dias ?? 60, 1), 180) }))
   .handler(async ({ data, context }) => {
     await exigirAdmin(context);
@@ -36,7 +37,7 @@ export const reverificarEmails = createServerFn({ method: "POST" })
   });
 
 export const sincronizarImap = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireLicencaLiberada])
   .handler(async ({ context }) => {
     await exigirAdmin(context);
     const { sincronizarImapContas } = await import("@/lib/protocolo-ingest.server");
@@ -44,7 +45,7 @@ export const sincronizarImap = createServerFn({ method: "POST" })
   });
 
 export const backfillUrls1Doc = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireLicencaLiberada])
   .inputValidator((d: { dias?: number }) => ({ dias: Math.min(Math.max(d?.dias ?? 180, 1), 365) }))
   .handler(async ({ data, context }) => {
     await exigirAdmin(context);
@@ -53,7 +54,7 @@ export const backfillUrls1Doc = createServerFn({ method: "POST" })
   });
 
 export const reprocessarEmail = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireLicencaLiberada])
   .inputValidator((d: { logId: string }) => ({ logId: String(d.logId) }))
   .handler(async ({ data, context }) => {
     await exigirAdmin(context);
@@ -62,7 +63,7 @@ export const reprocessarEmail = createServerFn({ method: "POST" })
   });
 /** Testa login IMAP (Gmail com senha de app) sem gravar nada. */
 export const testarContaImap = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireLicencaLiberada])
   .inputValidator((d: { host?: string; port?: number; user: string; pass: string }) => ({
     host: String(d.host || "imap.gmail.com").trim(),
     port: Number(d.port || 993),

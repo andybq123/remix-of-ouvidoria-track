@@ -1,10 +1,11 @@
+import { requireLicencaLiberada } from "@/lib/licenca-middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { exigirAdmin } from "./admin-guard.server";
 import { esicMailboxCursorSchema, esicNumerosBuscaSchema } from "./esic-mailbox";
 
 export const rechecarEsic = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireLicencaLiberada])
   .inputValidator((input: unknown) => esicMailboxCursorSchema.parse(input))
   .handler(async ({ data, context }) => {
     await exigirAdmin(context);
@@ -13,7 +14,7 @@ export const rechecarEsic = createServerFn({ method: "POST" })
   });
 
 export const buscarEsicNumeros = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireLicencaLiberada])
   .inputValidator((input: unknown) => esicNumerosBuscaSchema.parse(input))
   .handler(async ({ data, context }) => {
     await exigirAdmin(context);
