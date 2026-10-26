@@ -53,3 +53,18 @@ export function OnedocAgentButton({ tipo, protocoloId, protocoloIds, secretariaI
     </Button>
   );
 }
+
+/** Explica a falha mesmo quando o servidor não devolve um erro comum (sessão expirada, servidor fora do ar). */
+function motivoErro(e: unknown): string {
+  if (e instanceof Response) {
+    if (e.status === 401 || e.status === 403) return "Sua sessão expirou. Saia e entre novamente.";
+    return `O servidor respondeu com erro ${e.status}.`;
+  }
+  if (e instanceof Error && e.message) {
+    if (/schema cache|does not exist|onedoc_jobs/i.test(e.message)) return "O banco da VPS ainda não tem a fila do agente. Rode a atualização do sistema na VPS.";
+    if (/Failed to fetch|NetworkError/i.test(e.message)) return "Sem conexão com o servidor. Tente novamente.";
+    return e.message;
+  }
+  if (e && typeof e === "object" && "message" in e && typeof (e as { message: unknown }).message === "string") return (e as { message: string }).message;
+  return typeof e === "string" && e ? e : "Erro desconhecido. Recarregue a página e tente de novo.";
+}
