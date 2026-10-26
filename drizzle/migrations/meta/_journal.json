@@ -169,6 +169,13 @@
       "when": 1793044973927,
       "tag": "0023_licenca_bloqueio_invoker",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793044993968,
+      "tag": "0024_licenca_bloqueio_role_sessao",
+      "breakpoints": true
     }
   ]
 }

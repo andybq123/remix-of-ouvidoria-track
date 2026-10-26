@@ -24,7 +24,10 @@ GRANT EXECUTE ON FUNCTION public.licenca_bloqueada() TO authenticated, service_r
 CREATE OR REPLACE FUNCTION public.bloquear_se_licenca()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = public AS $$
 BEGIN
-  IF current_user NOT IN ('postgres', 'supabase_admin') AND public.licenca_bloqueada() THEN
+  -- role da sessão (não muda dentro de funções SECURITY DEFINER); deploy como postgres segue livre
+  IF (current_user IN ('authenticated', 'anon', 'service_role')
+      OR current_setting('role', true) IN ('authenticated', 'anon', 'service_role'))
+     AND public.licenca_bloqueada() THEN
     RAISE EXCEPTION 'Sistema bloqueado pela licença: somente consulta' USING ERRCODE = 'P0001';
   END IF;
   RETURN NULL;
