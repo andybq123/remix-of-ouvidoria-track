@@ -106,7 +106,7 @@ licenca_url() {
 }
 instalacao_id() {
   local f="$LD/.instalacao-id"
-  [ -s "$f" ] || { cat /proc/sys/kernel/random/uuid > "$f"; chmod 600 "$f"; }
+  [ -s "$f" ] || { { cat /proc/sys/kernel/random/uuid 2>/dev/null || openssl rand -hex 16; } > "$f"; chmod 600 "$f"; }
   cat "$f"
 }
 salvar_licenca() {
