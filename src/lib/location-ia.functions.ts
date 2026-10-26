@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const NOMINATIM_HEADERS = {
-  "User-Agent": "OuvidoriaBrusque/1.0 (controleseta.lovable.app)",
+  "User-Agent": "OuviDesk/1.0 (Ouvidoria Brusque)",
   "Accept-Language": "pt-BR",
 };
 

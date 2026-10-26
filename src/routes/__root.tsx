@@ -84,16 +84,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "OuviDesk" },
       { name: "description", content: "Sistema de Controle interno de Protocolos de Ouvidoria" },
-      { name: "author", content: "Lovable" },
+      { name: "author", content: "OuviDesk" },
       { property: "og:title", content: "OuviDesk" },
       { property: "og:description", content: "Sistema de Controle interno de Protocolos de Ouvidoria" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "OuviDesk" },
       { name: "twitter:description", content: "Sistema de Controle interno de Protocolos de Ouvidoria" },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7481a2c6-7cf3-4ac5-ab4c-5c1f8a7e8867/id-preview-6d7ee5e2--3c8fcc86-0901-46c9-8796-de8a493f7bde.lovable.app-1780950252196.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7481a2c6-7cf3-4ac5-ab4c-5c1f8a7e8867/id-preview-6d7ee5e2--3c8fcc86-0901-46c9-8796-de8a493f7bde.lovable.app-1780950252196.png" },
     ],
     links: [
       {

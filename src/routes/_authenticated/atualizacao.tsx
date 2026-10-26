@@ -81,7 +81,7 @@ function AtualizacaoPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><RefreshCw className="h-5 w-5" /> Atualização do sistema</CardTitle>
           <CardDescription>
-            Dispara a atualização na VPS, igual ao comando <code>./atualizar.sh</code>. O sistema pode ficar alguns segundos fora do ar durante a troca.
+            Dispara a atualização na VPS, igual ao comando <code>sudo bash deploy.sh atualizar</code>. O sistema pode ficar alguns segundos fora do ar durante a troca.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -104,8 +104,8 @@ function AtualizacaoPage() {
               {atual.mensagem && <p className="text-xs text-muted-foreground">{atual.mensagem}</p>}
               {atual.status === "pendente" && Date.now() - new Date(atual.created_at).getTime() > 60_000 && (
                 <p className="text-xs text-destructive">
-                  O serviço de atualização da VPS não respondeu. Na VPS, como root, entre na pasta <code>local-docker</code> do sistema e rode{" "}
-                  <code>bash agente-atualizacao/instalar.sh</code>. O pedido é atendido assim que o serviço iniciar.
+                  O serviço de atualização da VPS não respondeu. Na VPS, como root, entre na pasta do sistema e rode{" "}
+                  <code>bash deploy.sh ferramentas</code> (opção "Reinstalar o serviço do botão Atualizar"). O pedido é atendido assim que o serviço iniciar.
                 </p>
               )}
             </div>
