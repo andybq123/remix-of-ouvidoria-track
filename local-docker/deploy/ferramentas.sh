@@ -43,7 +43,7 @@ case "$OP" in
     else bash "$DEPLOY_DIR/limpar-para-importacao.sh"; fi
     ;;
   5) bash "$DEPLOY_DIR/retomar-ingestao.sh" ;;
-  6) pedir_licenca; validar_licenca ;;
+  6) pedir_licenca; validar_licenca; instalar_timer_licenca ;;
   7) bash "$LD/agente-atualizacao/instalar.sh" ;;
   *) exit 0 ;;
 esac
