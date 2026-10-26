@@ -28,9 +28,10 @@
 - [ ] Instalar o serviço na VPS (`sudo local-docker/agente-atualizacao/instalar.sh`) e validar uma atualização real disparada pela tela — depende de acesso à VPS; sem o serviço, o pedido fica "Na fila".
 
 ## Deploy unificado (out/2026)
-- [ ] deploy.sh único (instalar / atualizar / domínio / ferramentas); remover scripts antigos
-- [ ] Botão Atualizar do sistema roda pelo deploy.sh
-- [ ] Banco confiável em instalação nova (migrações reconciliadas + conferência)
-- [ ] README refeito explicando o sistema, sem menções a Lovable/Supabase/nuvem
-- [ ] Importação de backup sem erro "responsável inexistente"
-- [ ] Licença pedida na instalação, salva na VPS e validada antes de instalar/atualizar (servidor de licenças em projeto separado)
+- [x] deploy.sh único (instalar / atualizar / domínio / ferramentas); remover scripts antigos
+- [x] Botão Atualizar do sistema roda pelo deploy.sh
+- [x] Banco confiável em instalação nova (migrações reconciliadas + conferência)
+- [x] README refeito explicando o sistema, sem menções a Lovable/Supabase/nuvem
+- [x] Importação de backup sem erro "responsável inexistente"
+- [x] Licença pedida na instalação, salva na VPS e validada antes de instalar/atualizar (servidor de licenças em projeto separado)
+- [ ] Servidor de licenças (outro projeto) — depois preencher LICENCA_URL em local-docker/deploy/licenca.conf

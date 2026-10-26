@@ -35,3 +35,5 @@ local-docker/backups/
 local-docker/.ingestao-pausada
 local-docker/.ia-restauracao-bloqueada
 .output.antiga
+local-docker/.licenca
+local-docker/.instalacao-id

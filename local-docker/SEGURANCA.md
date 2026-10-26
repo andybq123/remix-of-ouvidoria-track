@@ -2,7 +2,7 @@
 
 ## 1. Arquitetura identificada
 - App: TanStack Start (React 19 + SSR), servidor Node (`.output/server/index.mjs`) no container `app` (imagem `node:24.22.1-bookworm`), porta `127.0.0.1:8080`.
-- Banco/autenticação: banco local local (Postgres 15, GoTrue, PostgREST, Realtime) via `supabase start`, API em `127.0.0.1:54321`.
+- Banco/autenticação: banco local (Postgres 15, GoTrue, PostgREST, Realtime) via `supabase start`, API em `127.0.0.1:54321`.
 - Caddy (no host) termina HTTPS e encaminha `/auth/v1`, `/rest/v1`, `/realtime/v1`, `/storage/v1`, `/functions/v1` para 54321 e o resto para 8080.
 - Autorização: RLS no Postgres + papéis em `user_roles` (`admin`/`user`) verificados por `has_role()`; funções de servidor usam `requirebanco localAuth` (token do usuário).
 - Rotas públicas: `/`, `/ouvidoria` (formulário anônimo), `/consulta` (número + hash), `/auth`, e `/api/public/*` (protegidas por token).
