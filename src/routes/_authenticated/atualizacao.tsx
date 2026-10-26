@@ -102,9 +102,10 @@ function AtualizacaoPage() {
               </div>
               <Progress value={(atual.etapa / atual.etapas_total) * 100} />
               {atual.mensagem && <p className="text-xs text-muted-foreground">{atual.mensagem}</p>}
-              {atual.status === "pendente" && Date.now() - new Date(atual.created_at).getTime() > 120_000 && (
-                <p className="text-xs text-amber-600">
-                  O serviço de atualização não respondeu. Confira na VPS: <code>bash /home/ubuntu/controle-seta/local-docker/agente-atualizacao/instalar.sh</code>
+              {atual.status === "pendente" && Date.now() - new Date(atual.created_at).getTime() > 60_000 && (
+                <p className="text-xs text-destructive">
+                  O serviço de atualização da VPS não respondeu. Na VPS, como root, entre na pasta <code>local-docker</code> do sistema e rode{" "}
+                  <code>bash agente-atualizacao/instalar.sh</code>. O pedido é atendido assim que o serviço iniciar.
                 </p>
               )}
             </div>
