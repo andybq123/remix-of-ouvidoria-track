@@ -21,6 +21,7 @@ for volta in 1 2; do
     echo "volta $volta: $(basename "$f")"; "${PSQL[@]}" -c "SET client_min_messages=warning" -f "$f" >/dev/null
   done
 done
+[ -n "${INVENTARIO:-}" ] && "${PSQL[@]}" -At -f "$INVENTARIO" > /tmp/inv-vps.txt
 "${PSQL[@]}" -f "$ROOT/local-docker/deploy/conferir-instalacao.sql"
 "${PSQL[@]}" -f "$ROOT/tests/instalacao/assertions.sql"
 echo "Instalação limpa do banco: OK"
