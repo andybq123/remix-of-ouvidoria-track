@@ -210,9 +210,9 @@ function EmailInboxPage() {
       <Badge
         variant="outline"
         className="bg-fuchsia-500/10 text-fuchsia-700 border-fuchsia-500/30 dark:text-fuchsia-300"
-        title="Processado pela IA da Lovable"
+        title="Processado pela IA integrada"
       >
-        <Bot className="h-3 w-3 mr-1" /> Lovable AI
+        <Bot className="h-3 w-3 mr-1" /> IA
       </Badge>
     );
   };

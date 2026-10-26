@@ -240,7 +240,7 @@ function BackupPage() {
 
       {manutencao?.ingestaoPausada && (
         <div role="status" className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
-          <strong>Ingestão pausada para importação.</strong> As contas de e-mail foram preservadas, mas novas coletas estão bloqueadas. Importe e confira o backup; depois execute <code>./retomar_ingestao.sh</code> na VPS.
+          <strong>Ingestão pausada para importação.</strong> As contas de e-mail foram preservadas, mas novas coletas estão bloqueadas. Importe e confira o backup; depois, na VPS, rode <code>sudo bash deploy.sh ferramentas</code> e escolha "Retomar a coleta de e-mails".
           {manutencao.iaBloqueada && <p className="mt-2">A configuração de IA foi limpa. As chaves antigas do arquivo não serão restauradas automaticamente; configure a IA novamente quando necessário.</p>}
         </div>
       )}

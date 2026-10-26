@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------
 #  EXEMPLO — NÃO substitui o /etc/caddy/Caddyfile automaticamente.
 #  Copie apenas o bloco "header" para dentro do bloco do seu domínio
-#  (o arquivo atual foi criado pelo deploy-vps.sh). Caddy v2.
+#  (o arquivo atual foi criado pelo "deploy.sh instalar"). Caddy v2.
 #
 #  Fase 1: CSP em modo Report-Only (só avisa no console do navegador).
 #  Fase 2: depois de validar todas as telas, troque

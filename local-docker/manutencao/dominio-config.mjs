@@ -109,7 +109,10 @@ export function substituirSite(text, oldDomain, domain, proxy) {
     const expected = ['laranja', 'cinza'].map(mode => tokensCaddy(siteCaddy(oldDomain, mode)).map(t => t.value));
     if (!expected.some(t => JSON.stringify(t) === JSON.stringify(originalTokens))) throw new Error('Bloco gerenciado foi personalizado. Não sobrescreverei alterações locais.');
   } else {
-    const allowed = new Set([oldDomain, `https://${oldDomain}`, '{', '}', 'encode', 'gzip', 'zstd', '@supabase', 'path', '/auth/v1/*', '/rest/v1/*', '/realtime/v1/*', '/storage/v1/*', '/functions/v1/*', 'reverse_proxy', '127.0.0.1:54321', '127.0.0.1:8080']);
+    const allowed = new Set([oldDomain, `https://${oldDomain}`, '{', '}', 'encode', 'gzip', 'zstd', '@supabase', 'path', '/auth/v1/*', '/rest/v1/*', '/realtime/v1/*', '/storage/v1/*', '/functions/v1/*', 'reverse_proxy', '127.0.0.1:54321', '127.0.0.1:8080',
+      // Cache de arquivos estáticos criado pelo instalador (deploy.sh instalar).
+      '@assets', '/assets/*', '/favicon.png', '/icons/*', 'header', 'Cache-Control',
+      '"public, max-age=31536000, immutable"', 'public, max-age=31536000, immutable']);
     if (originalTokens.some(t => !allowed.has(t))) throw new Error('Bloco SETA tem personalizações não reconhecidas. Nada será sobrescrito; revise o Caddyfile manualmente.');
   }
   return text.slice(0, b.start) + siteCaddy(domain, proxy) + text.slice(b.end);

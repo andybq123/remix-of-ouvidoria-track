@@ -7,7 +7,7 @@ ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 cd "$ROOT"
 [[ -f local-docker/.env.local ]] || fail 'Configuração VPS não encontrada.'
 command -v flock >/dev/null || fail 'flock ausente.'
-exec 9>/tmp/controle-seta-atualizar-front.lock
+exec 9>/tmp/ouvidesk-deploy.lock
 flock -n 9 || fail 'Uma atualização/limpeza está em andamento.'
 if [[ ! -f local-docker/.ingestao-pausada ]]; then
   printf 'A ingestão não está pausada por este procedimento. Nenhuma alteração feita.\n'

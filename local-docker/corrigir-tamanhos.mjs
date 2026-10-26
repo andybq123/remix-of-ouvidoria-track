@@ -1,4 +1,4 @@
-// Atualiza o "mapa de arquivos" da compilação depois que o atualizar.sh troca
+// Atualiza o "mapa de arquivos" da compilação depois que o "deploy.sh atualizar" troca
 // o endereço/chave do banco dentro dos arquivos. Sem isso o servidor continua
 // enviando os arquivos com o tamanho antigo e o navegador recebe código cortado
 // (tela em branco com "Unexpected end of input").

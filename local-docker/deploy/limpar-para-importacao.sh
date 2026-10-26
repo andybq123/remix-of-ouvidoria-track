@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# Limpeza MANUAL. Nunca é chamada por atualizar_front.sh ou por migrations.
+# Limpeza MANUAL antes de importar backup (deploy.sh ferramentas). Nunca roda sozinha.
 set -Eeuo pipefail
 fail() { printf 'ERRO: %s\n' "$*" >&2; exit 1; }
 MODE="${1:-}"
-[[ "$MODE" == "" || "$MODE" == "--simular" ]] || fail 'Uso: ./limpar_para_importacao.sh [--simular]'
+[[ "$MODE" == "" || "$MODE" == "--simular" ]] || fail 'Uso: bash deploy.sh ferramentas'
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 [[ -n "$ROOT" ]] || fail 'Execute de dentro do clone da aplicação na VPS.'
 cd "$ROOT"
 for cmd in docker flock sha256sum; do command -v "$cmd" >/dev/null || fail "Comando ausente: $cmd"; done
 [[ -f local-docker/.env.local && -f local-docker/manutencao/limpar_para_importacao.sql ]] || fail 'Clone/configuração VPS incompletos.'
-[[ -f .output/VERSION && -f .output/server/index.mjs ]] || fail 'Atualize primeiro a aplicação com ./atualizar_front.sh.'
-[[ "$(cat .output/VERSION)" == "$(git rev-parse HEAD)" ]] || fail 'O artefato instalado não corresponde ao checkout. Execute ./atualizar_front.sh antes.'
+[[ -f .output/VERSION && -f .output/server/index.mjs ]] || fail 'Atualize primeiro com: bash deploy.sh atualizar'
+git merge-base --is-ancestor "$(cat .output/VERSION)" HEAD 2>/dev/null || fail 'Versão instalada desconhecida. Atualize antes com: bash deploy.sh atualizar'
 [[ "$(git branch --show-current)" == main ]] || fail 'Execute somente no clone de produção na branch main.'
-[[ -z "$(git diff --name-only -- src local-docker/manutencao limpar_para_importacao.sh)" ]] || fail 'Há código local alterado. Revise antes de limpar.'
+[[ -z "$(git diff --name-only -- src local-docker/manutencao local-docker/deploy)" ]] || fail 'Há código local alterado. Revise antes de limpar.'
 # Mesma trava do atualizador: impede atualização e limpeza concorrentes.
-exec 9>/tmp/controle-seta-atualizar-front.lock
+exec 9>/tmp/ouvidesk-deploy.lock
 flock -n 9 || fail 'Há atualização/limpeza em andamento.'
 COMPOSE=(docker compose --project-directory "$ROOT/local-docker" -f "$ROOT/local-docker/docker-compose.yml" -f "$ROOT/local-docker/docker-compose.prod.yml")
 APP_ID="$("${COMPOSE[@]}" ps -q app)"
@@ -90,5 +90,5 @@ printf '==> Iniciando somente a aplicação; ingestão permanece pausada...\n'
 "${COMPOSE[@]}" up -d app
 STOPPED=0
 printf '\nLimpeza concluída. Backup protegido: %s\n' "$BACKUP"
-printf 'Importe seu backup pela tela Backup. A ingestão não voltará até executar ./retomar_ingestao.sh.\n'
+printf 'Importe seu backup pela tela Backup. A ingestão só volta em: bash deploy.sh ferramentas > Retomar a coleta de e-mails.\n'
 printf 'As chaves/modelos IA do banco foram removidos; configure novamente quando necessário.\n'

@@ -1044,6 +1044,7 @@ export type Database = {
       }
       liberar_triagem: { Args: { p_id: string }; Returns: undefined }
       liberar_triagem_admin: { Args: { p_id: string }; Returns: undefined }
+      limpar_vinculos_usuarios_inexistentes: { Args: never; Returns: number }
       normalizar_numero_esic: { Args: { p_numero: string }; Returns: string }
       pode_editar_area: { Args: { _secretaria: string }; Returns: boolean }
       pode_editar_local: {

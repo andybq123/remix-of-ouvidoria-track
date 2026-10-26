@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { aiChat } from "./ai-chat.server";
 
 const NOMINATIM_HEADERS = {
-  "User-Agent": "OuvidoriaBrusque/1.0 (controleseta.lovable.app)",
+  "User-Agent": "OuviDesk/1.0 (Ouvidoria Brusque)",
   "Accept-Language": "pt-BR",
 };
 

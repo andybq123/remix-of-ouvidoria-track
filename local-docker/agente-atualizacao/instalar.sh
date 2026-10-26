@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Instala (ou confere) o agente de atualização como serviço permanente.
-# Rode como root:  bash instalar.sh
+# Rode como root:  bash deploy.sh ferramentas  (opção "Reinstalar o serviço")
 # Idempotente: só reinicia o serviço quando a configuração mudou ou ele não
 # está rodando — assim nunca interrompe uma atualização em andamento.
 set -euo pipefail
 [ "$(id -u)" -eq 0 ] || { echo "Execute como root:  sudo bash $0"; exit 1; }
 DIR="$(cd "$(dirname "$0")" && pwd)"
-chmod +x "$DIR/atualizador.sh" "$DIR/instalar.sh" "$DIR/../atualizar.sh" 2>/dev/null || true
+chmod +x "$DIR/atualizador.sh" "$DIR/instalar.sh" "$DIR/../../deploy.sh" 2>/dev/null || true
 
 UNIT=/etc/systemd/system/ouvidesk-atualizador.service
 NOVO="$(mktemp)"

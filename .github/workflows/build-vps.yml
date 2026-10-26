@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     # Mudanças que não alteram o sistema compilado não precisam de nova compilação.
-    # Mantenha esta lista igual a IGNORAR_BUILD em local-docker/atualizar.sh.
+    # Mantenha esta lista igual a IGNORAR_BUILD em local-docker/deploy/atualizar.sh.
     paths-ignore:
       - "local-docker/**"
       - "**/*.md"

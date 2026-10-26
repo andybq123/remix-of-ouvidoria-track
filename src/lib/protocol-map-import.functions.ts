@@ -13,7 +13,7 @@ import {
 
 const INPUT = z.object({ text: z.string().trim().min(1).max(30_000) });
 const NOMINATIM_HEADERS = {
-  "User-Agent": "OuvidoriaBrusque/1.0 (controleseta.lovable.app)",
+  "User-Agent": "OuviDesk/1.0 (Ouvidoria Brusque)",
   "Accept-Language": "pt-BR",
 };
 

@@ -17,7 +17,8 @@ if (!email || !password || !key) {
   console.error("Uso: node create-admin.mjs email senha [admin|user] [Nome]");
   process.exit(1);
 }
-if (password.length < 6) { console.error("A senha precisa ter pelo menos 6 caracteres."); process.exit(1); }
+const forte = password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password);
+if (!forte) { console.error("Senha fraca: use pelo menos 8 caracteres com maiúscula, minúscula, número e símbolo."); process.exit(1); }
 const h = { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
 const nome = nomeArg || email.split("@")[0];
 
@@ -26,7 +27,7 @@ let r = await fetch(`${url}/rest/v1/allowed_emails?on_conflict=email`, {
   method: "POST", headers: { ...h, Prefer: "resolution=merge-duplicates" },
   body: JSON.stringify({ email: email.toLowerCase(), nome, role }),
 });
-if (!r.ok) console.error("Aviso (lista de e-mails):", await r.text());
+if (!r.ok) { console.error("Erro ao autorizar o e-mail:", await r.text()); process.exit(1); }
 
 // 2. Procura usuário existente
 let userId = null;
@@ -56,12 +57,18 @@ if (userId) {
 }
 
 // 3. Garante perfil e papel
-await fetch(`${url}/rest/v1/profiles?on_conflict=id`, {
+r = await fetch(`${url}/rest/v1/profiles?on_conflict=id`, {
   method: "POST", headers: { ...h, Prefer: "resolution=merge-duplicates" },
-  body: JSON.stringify({ id: userId, nome, email }),
+  body: JSON.stringify({ id: userId, nome, email: email.toLowerCase() }),
 });
-await fetch(`${url}/rest/v1/user_roles?on_conflict=user_id,role`, {
+if (!r.ok) { console.error("Erro ao gravar o perfil:", await r.text()); process.exit(1); }
+r = await fetch(`${url}/rest/v1/user_roles?on_conflict=user_id,role`, {
   method: "POST", headers: { ...h, Prefer: "resolution=ignore-duplicates" },
   body: JSON.stringify({ user_id: userId, role }),
 });
+if (!r.ok) { console.error("Erro ao gravar o perfil de acesso:", await r.text()); process.exit(1); }
+// Confere de volta: o usuário precisa sair daqui com o papel pedido.
+r = await fetch(`${url}/rest/v1/user_roles?user_id=eq.${userId}&role=eq.${role}&select=role`, { headers: h });
+const papeis = r.ok ? await r.json() : [];
+if (!Array.isArray(papeis) || papeis.length === 0) { console.error("O perfil de acesso não foi confirmado no banco."); process.exit(1); }
 console.log(`Pronto! Perfil: ${role}. Já pode entrar no sistema.`);
