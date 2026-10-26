@@ -1186,10 +1186,11 @@ function DrillDialog({
             Clique em um protocolo para abrir os detalhes.
           </DialogDescription>
         </DialogHeader>
-        {isAdmin && data?.title.startsWith("Local: ") && <div className="flex flex-wrap items-center gap-2">
-          <OnedocAgentButton tipo="lote" protocoloIds={ids1doc} incluirConcluidos escopo={`local:${data.title.replace(/ \(\d+\)$/, "")}`} disabled={!ids1doc.length}
+        {isAdmin && (data?.title.startsWith("Local: ") || data?.title.startsWith("Protocolos atrasados")) && <div className="flex flex-wrap items-center gap-2">
+          <OnedocAgentButton tipo="lote" protocoloIds={ids1doc} incluirConcluidos
+            escopo={data.title.startsWith("Local: ") ? `local:${data.title.replace(/ \(\d+\)$/, "")}` : "atrasados"} disabled={!ids1doc.length}
             label={`Conferir pelo 1Doc (${ids1doc.length})`}
-            confirmacao={`Conferir as ${ids1doc.length} ouvidorias com link deste local? Assunto, categoria e endereço serão atualizados conforme o 1Doc, com histórico individual.`} />
+            confirmacao={`Conferir as ${ids1doc.length} ouvidorias com link ${data.title.startsWith("Local: ") ? "deste local" : "atrasadas"}? Assunto, categoria e endereço serão atualizados conforme o 1Doc, com histórico individual.`} />
         </div>}
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
