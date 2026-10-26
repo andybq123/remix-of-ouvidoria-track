@@ -1,3 +1,4 @@
+import { licencaBloqueadaAdmin, respostaBloqueada } from "@/lib/licenca.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { ingerirEmail } from "@/lib/protocolo-ingest.server";
 
@@ -13,6 +14,7 @@ function stripHtml(html: string): string {
 }
 
 async function processInbound(token: string, request: Request) {
+  if (await licencaBloqueadaAdmin()) return respostaBloqueada();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   let payload: any = {};

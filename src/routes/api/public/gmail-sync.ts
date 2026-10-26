@@ -1,9 +1,11 @@
+import { licencaBloqueadaAdmin, respostaBloqueada } from "@/lib/licenca.server";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/api/public/gmail-sync")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        if (await licencaBloqueadaAdmin()) return respostaBloqueada();
         const expected = [process.env.CRON_SECRET, process.env.INGEST_TOKEN].filter(Boolean) as string[];
         if (expected.length === 0) {
           return Response.json({ ok: false, error: "CRON_SECRET não configurado" }, { status: 500 });
