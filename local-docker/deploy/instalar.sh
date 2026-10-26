@@ -4,10 +4,11 @@
 #  Instala tudo 100% local (app + banco + login) em MODO PRODUÇÃO,
 #  com domínio próprio e HTTPS automático.
 #
-#  Uso:  sudo bash deploy-vps.sh                 (modo interativo)
-#        sudo bash deploy-vps.sh dominio email   (direto)
+#  Uso:  sudo bash deploy.sh instalar                 (modo interativo)
+#        sudo bash deploy.sh instalar dominio email   (direto)
 # ============================================================
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/comum.sh"
 
 # ---------- Visual ----------
 if [ -t 1 ]; then
@@ -16,7 +17,7 @@ if [ -t 1 ]; then
 else B=""; D=""; R=""; AZ=""; VD=""; AM=""; VM=""; fi
 
 TOTAL_ETAPAS=10; ETAPA=0
-LOG=/tmp/controle-seta-instalacao.log; : > "$LOG"
+export LOG=/tmp/ouvidesk-instalacao.log; : > "$LOG"
 
 linha()  { printf "${AZ}%s${R}\n" "────────────────────────────────────────────────────────────"; }
 etapa()  { ETAPA=$((ETAPA+1)); echo; printf "${B}${AZ}[%d/%d]${R} ${B}%s${R}\n" "$ETAPA" "$TOTAL_ETAPAS" "$1"; }
@@ -36,7 +37,13 @@ rodar()  { # rodar "descrição" comando...
 
 trap 'printf "\n${VM}Instalação interrompida.${R} Log: %s\n" "$LOG"' INT
 
-[ "$(id -u)" -eq 0 ] || { echo "Execute como root:  sudo bash $0"; exit 1; }
+[ "$(id -u)" -eq 0 ] || { echo "Execute como root:  sudo bash deploy.sh instalar"; exit 1; }
+if [ -f "$LD/.env.local" ] && [ -d "$RAIZ/.output" ]; then
+  printf "\n  ${AM}!${R} Este servidor já tem o OuviDesk instalado.\n"
+  printf "    Para atualizar use: ${B}bash deploy.sh atualizar${R}\n"
+  read -rp "  Reinstalar mesmo assim (os dados do banco são mantidos)? [s/N]: " RESP0
+  [[ "${RESP0:-N}" =~ ^[SsYy]$ ]] || exit 0
+fi
 
 clear 2>/dev/null || true
 cat <<EOF
@@ -82,7 +89,13 @@ echo
 read -rp "  Tudo certo? Iniciar instalação [S/n]: " RESP
 [[ "${RESP:-S}" =~ ^[SsYy]$ ]] || { echo "  Cancelado."; exit 0; }
 
-cd "$(dirname "$0")"; DIR="$(pwd)"
+cd "$LD"; DIR="$(pwd)"
+# Licença: pedida e conferida antes de mexer no servidor.
+if [ -n "$(licenca_url)" ]; then
+  [ -s "$LICENCA_ARQ" ] || pedir_licenca
+  validar_licenca "$DOMAIN"
+fi
+conferir_espaco 8192
 INICIO=$(date +%s)
 
 # ---------- 1. Pacotes ----------
@@ -123,9 +136,8 @@ rodar "Iniciando banco de dados (pode levar alguns minutos)" npx --yes supabase 
 eval "$(npx --yes supabase status -o env 2>>"$LOG" | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
 [ -n "${ANON_KEY:-}" ] || falha "Não consegui ler as chaves do banco local."
 DBC="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | head -1 || true)"
-if [ -n "$DBC" ] && ls ./atualizacoes-banco/*.sql >/dev/null 2>&1; then
-  rodar "Aplicando otimizações e índices do banco" bash -c "for f in ./atualizacoes-banco/*.sql; do docker exec -i $DBC psql -v ON_ERROR_STOP=1 -q -U postgres -d postgres < \"\$f\" || exit 1; done"
-fi
+[ -n "$DBC" ] || falha "O banco local não iniciou."
+rodar "Aplicando e conferindo todas as mudanças do banco" aplicar_banco
 
 # ---------- 7. Configuração ----------
 etapa "Gerando configuração segura"
@@ -179,9 +191,9 @@ ok "Portas internas bloqueadas para acesso externo"
 
 # ---------- 9. App em produção ----------
 etapa "Instalando o sistema em MODO PRODUÇÃO"
-if [ -d ../.git ] && [ -x ./atualizar.sh ]; then
+if [ -d ../.git ]; then
   info "Usando a versão compilada do GitHub (mais rápido)..."
-  ./atualizar.sh || falha "Falha ao instalar a versão de produção."
+  SETA_REEXEC=1 DEPLOY_INSTALANDO=1 bash "$DEPLOY_DIR/atualizar.sh" || falha "Falha ao instalar a versão de produção."
 else
   info "Compilando na VPS (pode levar 5–10 minutos na primeira vez)..."
   rm -rf ../.output 2>/dev/null || true
@@ -201,19 +213,22 @@ ok "Sistema no ar em modo produção"
 if bash ./agente-atualizacao/instalar.sh >>"$LOG" 2>&1; then
   ok "Botão de atualização do sistema ativado"
 else
-  aviso "Botão de atualização não ativou. Rode depois: bash $DIR/agente-atualizacao/instalar.sh"
+  aviso "Botão de atualização não ativou. Rode depois: bash deploy.sh ferramentas"
 fi
 
 # ---------- 10. Admin ----------
 etapa "Criando acesso de administrador"
 ADMIN_PASS=""
 if [ ! -f .admin-criado ]; then
-  ADMIN_PASS="$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-16)"
+  # Senha forte (maiúscula, minúscula, número e símbolo), como exige o sistema.
+  ADMIN_PASS="$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-12)Aa7!"
   sleep 3
   SUPABASE_URL=http://localhost:54321 SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
     node create-admin.mjs "$EMAIL" "$ADMIN_PASS" >>"$LOG" 2>&1 || falha "Não consegui criar o administrador."
+  PERFIL="$(sql "select string_agg(r.role::text, ',') from auth.users u join public.user_roles r on r.user_id = u.id where lower(u.email) = lower('$EMAIL')" 2>>"$LOG" || true)"
+  [[ "$PERFIL" == *admin* ]] || falha "O administrador foi criado sem o perfil de administrador."
   touch .admin-criado
-  ok "Administrador criado"
+  ok "Administrador criado com perfil de administrador"
 else ok "Administrador já existia (senha mantida)"; fi
 
 DUR=$(( $(date +%s) - INICIO ))
@@ -239,8 +254,8 @@ printf "  ${B}Cloudflare (nuvem laranja):${R}\n"
 echo "   • SSL/TLS: Full (strict)    • WebSockets: ativado"
 echo "   • Rocket Loader: desativado"
 linha
-printf "  ${B}Comandos úteis${R} (em %s):\n" "$DIR"
-echo "   ./atualizar.sh                      atualizar o sistema"
+printf "  ${B}Comandos úteis${R} (em %s):\n" "$RAIZ"
+echo "   sudo bash deploy.sh                 menu (atualizar, domínio, ferramentas)"
 echo "   docker compose logs -f app          ver logs do sistema"
 echo "   docker compose logs -f coletor-email  ver coleta de e-mails"
 linha
