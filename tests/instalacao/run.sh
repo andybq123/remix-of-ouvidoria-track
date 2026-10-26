@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PG_BIN="${PG_BIN:-$(dirname "$(command -v initdb || echo /usr/lib/postgresql/16/bin/initdb)")}"
 TEMP="$(mktemp -d /tmp/ouvidesk-instalacao.XXXXXX)"; chmod 777 "$TEMP"
-RUN=(); [ "$(id -u)" = 0 ] && RUN=(setpriv --reuid=7001 --regid=7001 --clear-groups bash -c)
+RUN=(); [ "$(id -u)" = 0 ] && RUN=(setpriv --reuid=${PG_TEST_UID:-7001} --regid=${PG_TEST_UID:-7001} --clear-groups bash -c)
 pg() { if [ ${#RUN[@]} -gt 0 ]; then "${RUN[@]}" "$(printf '%q ' "$@")"; else "$@"; fi; }
 cleanup() { pg "$PG_BIN/pg_ctl" -D "$TEMP/data" -m immediate stop >/dev/null 2>&1 || true; rm -rf "$TEMP"; }
 trap cleanup EXIT
