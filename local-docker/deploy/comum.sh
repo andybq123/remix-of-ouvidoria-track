@@ -96,9 +96,14 @@ compose_prod() { docker compose --project-directory "$LD" -f "$LD/docker-compose
 
 # ---------- licença ----------
 # Chave salva em local-docker/.licenca (fora do Git). O endereço do servidor de
-# licenças vem de LICENCA_URL em local-docker/.env.local; sem ele, não verifica.
+# licenças vem de LICENCA_URL (ambiente, .env.local ou deploy/licenca.conf); sem ele, não verifica.
 LICENCA_ARQ="$LD/.licenca"
-licenca_url() { grep -sE '^LICENCA_URL=' "$LD/.env.local" | head -1 | cut -d= -f2- | tr -d '"' || true; }
+licenca_url() {
+  local u="${LICENCA_URL:-}"
+  [ -n "$u" ] || u="$(grep -shE '^LICENCA_URL=' "$LD/.env.local" | head -1 | cut -d= -f2- | tr -d '"' || true)"
+  [ -n "$u" ] || u="$(grep -shE '^LICENCA_URL=' "$DEPLOY_DIR/licenca.conf" | head -1 | cut -d= -f2- | tr -d '"' || true)"
+  printf '%s' "$u"
+}
 instalacao_id() {
   local f="$LD/.instalacao-id"
   [ -s "$f" ] || { cat /proc/sys/kernel/random/uuid > "$f"; chmod 600 "$f"; }

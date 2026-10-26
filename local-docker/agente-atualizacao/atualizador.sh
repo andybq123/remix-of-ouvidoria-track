@@ -4,11 +4,11 @@
 #
 #  Roda na VPS (fora do Docker), como serviço. A cada 3 s confere
 #  a fila (atualizacao_jobs); se houver pedido, executa
-#  ./atualizar.sh exatamente como no terminal e grava etapa,
+#  "deploy.sh atualizar" exatamente como no terminal e grava etapa,
 #  mensagem e as últimas linhas do registro de volta na fila.
 #
 #  Tudo fica dentro de main(): o bash lê o arquivo inteiro antes
-#  de executar, então o "git reset" do atualizar.sh pode trocar
+#  de executar, então o "git reset" da atualização pode trocar
 #  este arquivo sem quebrar o serviço em execução.
 # ============================================================
 main() {
@@ -43,7 +43,7 @@ main() {
       LOGF="/tmp/ouvidesk-update-$ID.log"
       : > "$LOGF"
       # Limite de 60 min: uma atualização presa nunca deixa a tela travada para sempre.
-      ( timeout --kill-after=30s 60m ./atualizar.sh </dev/null >"$LOGF" 2>&1 ) &
+      ( timeout --kill-after=30s 60m bash ../deploy.sh atualizar </dev/null >"$LOGF" 2>&1 ) &
       PID=$!
       while kill -0 "$PID" 2>/dev/null; do
         sleep 2
