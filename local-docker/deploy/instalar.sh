@@ -109,6 +109,11 @@ INICIO=$(date +%s)
 # ---------- 1. Pacotes ----------
 etapa "Preparando o sistema operacional"
 export DEBIAN_FRONTEND=noninteractive
+# Repositório do Caddy quebrado de tentativa anterior trava o apt inteiro: remove antes (é refeito no passo do Caddy).
+if [ -f /etc/apt/sources.list.d/caddy-stable.list ] && ! gpg --show-keys /usr/share/keyrings/caddy-stable-archive-keyring.gpg >/dev/null 2>&1; then
+  rm -f /etc/apt/sources.list.d/caddy-stable.list /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+fi
+chmod 644 /usr/share/keyrings/caddy-stable-archive-keyring.gpg 2>/dev/null || true
 rodar "Atualizando lista de pacotes" apt-get update -y
 rodar "Instalando ferramentas básicas" apt-get install -y ca-certificates curl gnupg openssl git debian-keyring debian-archive-keyring apt-transport-https
 
