@@ -1071,6 +1071,14 @@ export type Database = {
       liberar_triagem_admin: { Args: { p_id: string }; Returns: undefined }
       licenca_bloqueada: { Args: never; Returns: boolean }
       limpar_vinculos_usuarios_inexistentes: { Args: never; Returns: number }
+      listar_protocolos_pagina: { Args: { p_filtros?: Json }; Returns: Json }
+      meses_protocolos_listagem: {
+        Args: never
+        Returns: {
+          mes: string
+        }[]
+      }
+      normalizar_busca_protocolo: { Args: { p_texto: string }; Returns: string }
       normalizar_numero_esic: { Args: { p_numero: string }; Returns: string }
       pode_editar_area: { Args: { _secretaria: string }; Returns: boolean }
       pode_editar_local: {

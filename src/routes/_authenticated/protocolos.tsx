@@ -4,7 +4,7 @@ import { useIsAdmin as useIsAdminGuard } from "@/hooks/use-is-admin";
 import { formatarNumeroEsic } from "@/lib/esic";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,12 +19,11 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { calcularPrazo, situacaoProtocolo, situacaoClasses, situacaoLabel, formatDate, gerarNumeroProtocolo, PRAZOS, CATEGORIAS, categoriaLabel, categoriaSigla, categoriaBadgeClass, categoriaDoProtocolo, categoriaPersistida, type TipoProtocolo, type CategoriaProtocolo } from "@/lib/prazo";
-import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
-import { termosBusca, matchProtocolo, matchNumero } from "@/lib/search-protocolos";
+import { termosBusca } from "@/lib/search-protocolos";
+import { validarFiltrosProtocolos, protocolosPaginaOptions, PROTOCOLOS_PAGE_SIZE, type FiltrosProtocolos } from "@/lib/protocolos-listagem";
 import { SlaBadge } from "@/components/sla-badge";
-import { Plus, Calendar, RotateCw, CheckCircle2, Trash2, Sparkles, Eye, Download } from "lucide-react";
+import { Plus, Calendar, RotateCw, CheckCircle2, Trash2, Sparkles, Eye, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { fetchAllPaginated } from "@/lib/fetch-all";
 import { extrairProtocolo } from "@/lib/protocolo-extract.functions";
 import { geocodeAddress } from "@/lib/geocode.functions";
 import { useServerFn } from "@tanstack/react-start";
@@ -32,11 +31,12 @@ import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { MapPointPicker } from "@/components/map-point-picker";
 import { mapDepartmentOf } from "@/lib/map-departments";
-import { currentMonthValue, monthOptionsFromDates, isInMonth } from "@/lib/month-filter";
+import { monthOptionsFromDates } from "@/lib/month-filter";
 import { importarProtocolosAntigos } from "@/lib/protocolos-antigos-import.functions";
 import { invalidateProtocoloCaches } from "@/hooks/use-protocolos-realtime";
 
 export const Route = createFileRoute("/_authenticated/protocolos")({
+  validateSearch: validarFiltrosProtocolos,
   head: () => ({ meta: [
     { title: "Protocolos e triagem | OuviDesk" },
     { name: "description", content: "Protocolos e triagem no sistema de gestão da Ouvidoria Municipal de Brusque." },
@@ -62,47 +62,41 @@ function ProtocolosGuard() {
 function ProtocolosPage() {
   const qc = useQueryClient();
   const [detail, setDetail] = useState<any | null>(null);
-  const [filtroStatus, setFiltroStatus] = useState<string>("todos");
-  const [filtroTipo, setFiltroTipo] = useState<string>("todos");
-  const [filtroCategoria, setFiltroCategoria] = useState<string>("todos");
-  const [filtroSec, setFiltroSec] = useState<string>("todos");
-  const [busca, setBusca] = useState("");
-  const [dataIni, setDataIni] = useState<string>("");
-  const [dataFim, setDataFim] = useState<string>("");
-  const [mes, setMes] = useState<string>(currentMonthValue());
+  const filtros = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const { status: filtroStatus, tipo: filtroTipo, categoria: filtroCategoria, secretaria: filtroSec, dataIni, dataFim, mes } = filtros;
+  const [busca, setBusca] = useState(filtros.busca);
+  const alterarFiltros = (patch: Partial<FiltrosProtocolos>) => {
+    void navigate({ search: (prev) => ({ ...prev, ...patch, pagina: 1 }), replace: true });
+  };
+  useEffect(() => { setBusca(filtros.busca); }, [filtros.busca]);
+  useEffect(() => {
+    if (busca === filtros.busca) return;
+    const timer = window.setTimeout(() => {
+      void navigate({ search: (prev) => ({ ...prev, busca, pagina: 1 }), replace: true });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [busca, filtros.busca, navigate]);
 
-  const { data: protocolos = [] } = useQuery({
-    queryKey: ["protocolos", "atuais"],
-    queryFn: async () => {
-      const rows = await fetchAllPaginated((from, to) =>
-        supabase
-          .from("protocolos")
-          .select("*, secretarias(nome, sigla), locais(nome)")
-          .eq("triagem_pendente", false)
-          .or("origem.is.null,origem.not.like.antigo:%")
-          .order("data_abertura", { ascending: false })
-          .range(from, to),
-      );
-      return [...rows].sort(sortProtocolosPorNumero);
-    },
-  });
+  const soVigilancia = useSomenteVigilancia();
+  const { data: resultado, isPending, isFetching, error, refetch } = useQuery(protocolosPaginaOptions(filtros, soVigilancia));
+  const filtrados = resultado?.items ?? [];
+  const total = resultado?.total ?? 0;
+  const pagina = resultado?.pagina ?? filtros.pagina;
+  const totalPaginas = Math.max(1, Math.ceil(total / PROTOCOLOS_PAGE_SIZE));
+  useEffect(() => {
+    if (resultado && resultado.pagina !== filtros.pagina) {
+      void navigate({ search: (prev) => ({ ...prev, pagina: resultado.pagina }), replace: true });
+    }
+  }, [resultado, filtros.pagina, navigate]);
 
-  // Antigos só carregam sob demanda (mês "antigos"), para manter a listagem principal rápida.
   const carregarAntigos = mes === "antigos";
-  const { data: antigos = [], isFetching: antigosFetching } = useQuery({
-    queryKey: ["protocolos", "antigos"],
-    enabled: carregarAntigos,
-    staleTime: 5 * 60_000,
+  const { data: meses = [] } = useQuery({
+    queryKey: ["protocolos", "meses"],
     queryFn: async () => {
-      const rows = await fetchAllPaginated((from, to) =>
-        supabase
-          .from("protocolos")
-          .select("*, secretarias(nome, sigla), locais(nome)")
-          .like("origem", "antigo:%")
-          .order("data_abertura", { ascending: false })
-          .range(from, to),
-      );
-      return [...rows].sort(sortProtocolosPorNumero);
+      const { data, error } = await supabase.rpc("meses_protocolos_listagem");
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
@@ -123,16 +117,6 @@ function ProtocolosPage() {
   const { data: secretarias = [] } = useQuery({
     queryKey: ["secretarias"],
     queryFn: async () => (await supabase.from("secretarias").select("*").order("nome")).data ?? [],
-  });
-
-  // ID da secretaria de Saúde — protocolos dessa secretaria aparecem só na aba Saúde
-  const soVigilancia = useSomenteVigilancia();
-  const { data: saudeSecId } = useQuery({
-    queryKey: ["secretaria-saude-id"],
-    queryFn: async () => {
-      const { data } = await supabase.from("secretarias").select("id").eq("nome", "Saúde").maybeSingle();
-      return data?.id ?? null;
-    },
   });
 
   const { data: locais = [] } = useQuery({
@@ -157,55 +141,18 @@ function ProtocolosPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["protocolos"] }); toast.success("Protocolo removido"); },
   });
 
-  const protocolosComAntigos = useMemo(
-    () => (carregarAntigos ? antigos : protocolos),
-    [carregarAntigos, protocolos, antigos],
-  );
-
-  const isAntigo = (p: any) =>
-    typeof p?.origem === "string" && p.origem.startsWith("antigo:");
-
-  // Busca global (motor compartilhado com a Saúde): sem acentos, multi-termo,
-  // cobrindo número, assunto, relato, resolução, endereço, secretaria, unidade,
-  // categoria, tipo, status e solicitante.
-  const termos = termosBusca(busca);
-  const buscando = termos.length > 0;
-
-  const filtrados = protocolosComAntigos.filter(p => {
-    if (!isAntigo(p) && !soVigilancia && saudeSecId && p.secretaria_id === saudeSecId) return false;
-    // Concluídos só aparecem quando filtrados explicitamente, buscados pelo número
-    // ou quando estamos vendo os Protocolos Antigos (a maioria já está concluída).
-    if (p.status === "concluido"
-        && mes !== "antigos"
-        && filtroStatus !== "concluido"
-        && !(buscando && matchNumero(p, busca))) {
-      return false;
-    }
-    if (filtroStatus !== "todos" && p.status !== filtroStatus) return false;
-    if (filtroTipo !== "todos" && p.tipo !== filtroTipo) return false;
-    if (filtroCategoria !== "todos" && categoriaDoProtocolo(p.tipo, p.categoria) !== filtroCategoria) return false;
-    if (filtroSec !== "todos" && p.secretaria_id !== filtroSec) return false;
-    if (dataIni || dataFim) {
-      if (dataIni && (p.data_abertura ?? "") < dataIni) return false;
-      if (dataFim && (p.data_abertura ?? "") > dataFim) return false;
-    } else if (mes !== "all" && mes !== "antigos" && !buscando) {
-      if (!isInMonth(p.data_abertura, mes)) return false;
-    }
-    if (!matchProtocolo(p, termos)) return false;
-    return true;
-  });
-
-  const opcoesMes = monthOptionsFromDates(protocolos.map(p => p.data_abertura));
+  const buscando = termosBusca(busca).length > 0;
+  const opcoesMes = monthOptionsFromDates(meses.map(p => `${p.mes}-01`));
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Protocolos</h1>
-          <p className="text-sm text-muted-foreground">{filtrados.length} de {protocolosComAntigos.length}</p>
+          <p className="text-sm text-muted-foreground" aria-live="polite">{isFetching ? "Carregando…" : total === 0 ? "0 protocolos" : `${(pagina - 1) * PROTOCOLOS_PAGE_SIZE + 1}–${(pagina - 1) * PROTOCOLOS_PAGE_SIZE + filtrados.length} de ${total} protocolos`}</p>
         </div>
         <div className="flex items-center gap-2">
-          {mes === "antigos" && !antigosFetching && antigos.length === 0 && (
+          {carregarAntigos && !isFetching && !error && total === 0 && !buscando && filtroStatus === "todos" && filtroTipo === "todos" && filtroCategoria === "todos" && filtroSec === "todos" && !dataIni && !dataFim && (
             <Button variant="secondary" onClick={() => importMutation.mutate()} disabled={importMutation.isPending}>
               <Download className="h-4 w-4 mr-1" />
               {importMutation.isPending ? "Importando…" : "Importar antigos"}
@@ -220,7 +167,7 @@ function ProtocolosPage() {
         {buscando && (
           <span className="self-center text-[11px] text-muted-foreground">buscando em todo o período</span>
         )}
-        <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+        <Select value={filtroTipo} onValueChange={tipo => alterarFiltros({ tipo })}>
           <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos os tipos</SelectItem>
@@ -228,7 +175,7 @@ function ProtocolosPage() {
             <SelectItem value="esic">e-SIC</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
+        <Select value={filtroCategoria} onValueChange={categoria => alterarFiltros({ categoria })}>
           <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todas as categorias</SelectItem>
@@ -239,7 +186,7 @@ function ProtocolosPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+        <Select value={filtroStatus} onValueChange={status => alterarFiltros({ status })}>
           <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos os status</SelectItem>
@@ -248,14 +195,14 @@ function ProtocolosPage() {
             <SelectItem value="concluido">Concluído</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={filtroSec} onValueChange={setFiltroSec}>
+        <Select value={filtroSec} onValueChange={secretaria => alterarFiltros({ secretaria })}>
           <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todas as secretarias</SelectItem>
             {secretarias.map(s => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={mes} onValueChange={setMes}>
+        <Select value={mes} onValueChange={mes => alterarFiltros({ mes })}>
           <SelectTrigger className="w-[170px]"><SelectValue placeholder="Mês" /></SelectTrigger>
           <SelectContent className="max-h-[320px]">
             <SelectItem value="all">Todos os meses</SelectItem>
@@ -265,11 +212,11 @@ function ProtocolosPage() {
         </Select>
         <div className="flex items-center gap-1">
           <Label className="text-xs text-muted-foreground">De</Label>
-          <Input type="date" value={dataIni} onChange={e => setDataIni(e.target.value)} className="w-[150px]" />
+          <Input type="date" value={dataIni} onChange={e => alterarFiltros({ dataIni: e.target.value })} className="w-[150px]" />
           <Label className="text-xs text-muted-foreground">até</Label>
-          <Input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="w-[150px]" />
+          <Input type="date" value={dataFim} onChange={e => alterarFiltros({ dataFim: e.target.value })} className="w-[150px]" />
           {(dataIni || dataFim) && (
-            <Button size="sm" variant="ghost" onClick={() => { setDataIni(""); setDataFim(""); }}>Limpar</Button>
+            <Button size="sm" variant="ghost" onClick={() => alterarFiltros({ dataIni: "", dataFim: "" })}>Limpar</Button>
           )}
         </div>
         {(dataIni || dataFim) && (
@@ -277,8 +224,10 @@ function ProtocolosPage() {
         )}
       </div>
 
-      <div className="grid gap-3">
-        {filtrados.length === 0 && (
+      <div className="grid gap-3" aria-busy={isFetching}>
+        {error && <div role="alert" className="text-sm text-destructive">Não foi possível carregar os protocolos. <Button variant="outline" size="sm" onClick={() => void refetch()}>Tentar novamente</Button></div>}
+        {isPending && <p className="py-12 text-center text-sm text-muted-foreground">Carregando protocolos…</p>}
+        {!isPending && !error && filtrados.length === 0 && (
           <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Nenhum protocolo encontrado.</CardContent></Card>
         )}
         {filtrados.map(p => {
@@ -360,6 +309,14 @@ function ProtocolosPage() {
           );
         })}
       </div>
+
+      <nav aria-label="Paginação de protocolos" className="flex flex-wrap items-center justify-between gap-3">
+        <span className="text-sm text-muted-foreground">Página {pagina} de {totalPaginas}</span>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" disabled={isFetching || pagina <= 1} onClick={() => void navigate({ search: prev => ({ ...prev, pagina: pagina - 1 }) })}><ChevronLeft className="h-4 w-4" />Anterior</Button>
+          <Button variant="outline" disabled={isFetching || pagina >= totalPaginas} onClick={() => void navigate({ search: prev => ({ ...prev, pagina: pagina + 1 }) })}>Próxima<ChevronRight className="h-4 w-4" /></Button>
+        </div>
+      </nav>
 
       <ProtocoloDetailDialog protocolo={detail} open={!!detail} onOpenChange={(v) => !v && setDetail(null)} />
     </div>

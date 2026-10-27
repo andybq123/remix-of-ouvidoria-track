@@ -176,6 +176,13 @@
       "when": 1793044993968,
       "tag": "0024_licenca_bloqueio_role_sessao",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793108740573,
+      "tag": "0025_protocolos_listagem_paginada",
+      "breakpoints": true
     }
   ]
 }

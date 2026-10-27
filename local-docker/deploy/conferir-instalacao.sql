@@ -17,7 +17,8 @@ BEGIN
   FOREACH f IN ARRAY ARRAY[
     'has_role(uuid,app_role)','posso_editar()','pode_triar()','area_permitida(uuid,uuid)',
     'registrar_alteracao()','handle_new_user()','limpar_vinculos_usuarios_inexistentes()',
-    'backup_importar(text,jsonb)','backup_importar_usuarios(jsonb)','licenca_bloqueada()','bloquear_se_licenca()'
+    'backup_importar(text,jsonb)','backup_importar_usuarios(jsonb)','licenca_bloqueada()','bloquear_se_licenca()',
+    'listar_protocolos_pagina(jsonb)','meses_protocolos_listagem()','normalizar_busca_protocolo(text)'
   ] LOOP
     IF to_regprocedure('public.' || f) IS NULL THEN faltando := faltando || ('função ' || f); END IF;
   END LOOP;

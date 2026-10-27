@@ -24,4 +24,5 @@ done
 [ -n "${INVENTARIO:-}" ] && "${PSQL[@]}" -At -f "$INVENTARIO" > /tmp/inv-vps.txt
 "${PSQL[@]}" -f "$ROOT/local-docker/deploy/conferir-instalacao.sql"
 "${PSQL[@]}" -f "$ROOT/tests/instalacao/assertions.sql"
+"${PSQL[@]}" -f "$ROOT/tests/instalacao/protocolos-paginacao.sql"
 echo "Instalação limpa do banco: OK"
