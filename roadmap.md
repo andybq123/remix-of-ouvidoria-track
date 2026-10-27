@@ -1,4 +1,5 @@
 # Tarefas
+- [ ] Ofuscar endereço padrão de licença nos scripts, manter validação obrigatória quando configurado e testar instalação/atualização e heartbeat.
 - [x] Otimizar Protocolos com campos exibidos, filtros globais e páginas de 50, preservando autenticação; 13 testes unitários e instalação limpa com regras de acesso passaram; duas páginas reais (50 + 15), detalhes e busca conferidos com login, registros temporários removidos; melhoria incluída na atualização da VPS.
 - [x] Ocultar endereço do servidor na página Licença e mostrar conectividade por ícone; página conferida com sessão real, sem erro no navegador.
 - [x] Aplicar ofuscação seletiva nos arquivos de licença do navegador apenas na distribuição, mantendo fontes editáveis; testes de comportamento, exportações e URLs de configuração.
