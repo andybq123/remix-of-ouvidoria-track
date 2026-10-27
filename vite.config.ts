@@ -5,7 +5,7 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
-import { licenseObfuscation } from "./build/obfuscation";
+import { licenseObfuscation } from "./tooling/obfuscation";
 
 export default defineConfig({
   tanstackStart: {

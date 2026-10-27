@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runInNewContext } from "node:vm";
-import { obfuscateBrowserChunk, shouldObfuscateChunk } from "../build/obfuscation";
+import { obfuscateBrowserChunk, shouldObfuscateChunk } from "../tooling/obfuscation";
 
 const licenseModule = "/project/src/routes/_authenticated/licenca.tsx";
 describe("ofuscação seletiva da distribuição", () => {
