@@ -15,6 +15,7 @@ import { termosBusca, matchProtocolo } from "@/lib/search-protocolos";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { currentMonthValue } from "@/lib/month-filter";
+import { validarFiltrosProtocolos } from "@/lib/protocolos-listagem";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 import { ChartTooltipContent } from "@/components/chart-tooltip";
 import { HealthUnitChart } from "@/components/health-unit-chart";
@@ -40,7 +41,7 @@ function SaudeGuard() {
   const soVigilancia = useSomenteVigilancia();
   if (soVigilancia && !isAdmin) {
     return <div className="py-10 text-center text-sm text-muted-foreground">
-      Suas ouvidorias ficam na aba <Link to="/protocolos" className="underline">Protocolos</Link>.
+      Suas ouvidorias ficam na aba <Link to="/protocolos" search={validarFiltrosProtocolos({})} className="underline">Protocolos</Link>.
     </div>;
   }
   return <SaudePage />;
