@@ -37,3 +37,7 @@ local-docker/.ia-restauracao-bloqueada
 .output.antiga
 local-docker/.licenca
 local-docker/.instalacao-id
+
+# Metadados locais da plataforma (planos ficam fora do repositório)
+.lovable/
+.staycloud/
