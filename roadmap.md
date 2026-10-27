@@ -1,4 +1,6 @@
 # Tarefas
+- [x] Ocultar endereço do servidor na página Licença e mostrar conectividade por ícone; página conferida com sessão real, sem erro no navegador.
+- [x] Aplicar ofuscação seletiva nos arquivos de licença do navegador apenas na distribuição, mantendo fontes editáveis; testes de comportamento, exportações e URLs de configuração.
 - [x] Atualizar Node de instalação, atualização, app, agente e CI para 24.22.1 LTS corrigido; checksum oficial e imagens confirmados, sintaxe e configuração validadas, 206 testes unitários e 17 testes de domínio passaram executados no Node 24.22.1.
 - [ ] Validar atualização real do Node e do agente na VPS — depende da execução de ./atualizar.sh como root; Docker não está disponível no ambiente acessível. A primeira reconstrução do agente baixa Chromium e pode demorar; posteriores usam cache.
 - [ ] Corrigir vulnerabilidades adicionais de bibliotecas — varredura apontou xlsx, dependências de jspdf e processamento de e-mail, entre outras; exige atualização/substituição compatível e nova validação, fora da correção do runtime Node feita neste turno.
