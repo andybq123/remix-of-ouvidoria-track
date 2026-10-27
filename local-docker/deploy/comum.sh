@@ -119,34 +119,60 @@ instalacao_id() {
 salvar_licenca() {
   umask 077; printf '%s\n' "$1" > "$LICENCA_ARQ"; chmod 600 "$LICENCA_ARQ"
 }
-pedir_licenca() {
+# Lê a chave digitada (não grava; só é salva depois de validada).
+ler_chave_licenca() {
   local chave=""
   while [ -z "$chave" ]; do
     read -rp "  Chave de licença do OuviDesk: " chave </dev/tty
     chave="$(printf '%s' "$chave" | tr -d '[:space:]')"
   done
-  salvar_licenca "$chave"
+  printf '%s' "$chave"
 }
-# validar_licenca [dominio]  — retorna 0 se pode seguir.
+pedir_licenca() { LICENCA_PENDENTE="$(ler_chave_licenca)"; }
+interativo() { [ -r /dev/tty ] && [ -t 0 ]; }
+# consultar_licenca chave dominio url -> 0 válida, 1 inválida, 2 servidor fora. Mensagem em LICENCA_MSG.
+consultar_licenca() {
+  local resp valida
+  LICENCA_MSG=""
+  resp="$(curl -fsS --max-time 10 -H 'Content-Type: application/json' \
+    -d "{\"chave\":\"$1\",\"dominio\":\"$2\",\"instalacao_id\":\"$(instalacao_id)\",\"versao\":\"$(git -C "$RAIZ" rev-parse --short HEAD 2>/dev/null)\"}" \
+    "${3%/}/api/public/validar" 2>/dev/null)" || return 2
+  valida="$(printf '%s' "$resp" | grep -oE '"valida" *: *(true|false)' | grep -oE 'true|false' || true)"
+  LICENCA_MSG="$(printf '%s' "$resp" | grep -oE '"mensagem" *: *"[^"]*"' | sed -E 's/.*: *"(.*)"/\1/' || true)"
+  [ "$valida" = "true" ]
+}
+# validar_licenca [dominio]  — retorna 0 se pode seguir. Chave inválida nunca fica salva:
+# em modo interativo pede outra (até 5 tentativas); a chave só é gravada após ser aceita.
 validar_licenca() {
-  local url chave dominio resp valida msg
+  local url chave dominio tentativa=0 r
   url="$(licenca_url)" || falha "Configuração de licença inválida." "Restaure a configuração fornecida pelo fornecedor."
   if [ -z "$url" ]; then
     info "Verificação de licença desligada (LICENCA_URL não configurada)."
     return 0
   fi
-  [ -s "$LICENCA_ARQ" ] || { [ -r /dev/tty ] && [ -t 0 ] && pedir_licenca; }
-  [ -s "$LICENCA_ARQ" ] || falha "Licença não cadastrada." "Rode: bash $RAIZ/deploy.sh ferramentas  e escolha 'Trocar a licença'."
-  chave="$(cat "$LICENCA_ARQ")"
   dominio="${1:-$(grep -sE '^APP_DOMAIN=' "$LD/.env.local" | cut -d= -f2-)}"
-  resp="$(curl -fsS --max-time 10 -H 'Content-Type: application/json' \
-    -d "{\"chave\":\"$chave\",\"dominio\":\"$dominio\",\"instalacao_id\":\"$(instalacao_id)\",\"versao\":\"$(git -C "$RAIZ" rev-parse --short HEAD 2>/dev/null)\"}" \
-    "${url%/}/api/public/validar" 2>/dev/null)" \
-    || falha "Não consegui falar com o servidor de licenças." "Confira a internet da VPS e tente de novo. O sistema em uso continua funcionando."
-  valida="$(printf '%s' "$resp" | grep -oE '"valida" *: *(true|false)' | grep -oE 'true|false' || true)"
-  msg="$(printf '%s' "$resp" | grep -oE '"mensagem" *: *"[^"]*"' | sed -E 's/.*: *"(.*)"/\1/' || true)"
-  [ "$valida" = "true" ] || falha "Licença inválida ou expirada${msg:+: $msg}." "Rode: bash $RAIZ/deploy.sh ferramentas  e escolha 'Trocar a licença'."
-  ok "Licença válida.${msg:+ $msg}"
+  chave="${LICENCA_PENDENTE:-}"
+  [ -n "$chave" ] || chave="$(cat "$LICENCA_ARQ" 2>/dev/null | tr -d '[:space:]')"
+  if [ -z "$chave" ]; then
+    interativo || falha "Licença não cadastrada." "Rode: bash $RAIZ/deploy.sh ferramentas  e escolha 'Trocar a licença'."
+    chave="$(ler_chave_licenca)"
+  fi
+  while :; do
+    r=0; consultar_licenca "$chave" "$dominio" "$url" || r=$?
+    if [ "$r" = 0 ]; then
+      salvar_licenca "$chave"; LICENCA_PENDENTE=""
+      ok "Licença válida.${LICENCA_MSG:+ $LICENCA_MSG}"; return 0
+    fi
+    [ "$r" = 2 ] && falha "Não consegui falar com o servidor de licenças." "Confira a internet da VPS e tente de novo. O sistema em uso continua funcionando."
+    # Inválida: descarta a chave salva para não travar a próxima tentativa.
+    [ -f "$LICENCA_ARQ" ] && [ "$(tr -d '[:space:]' < "$LICENCA_ARQ")" = "$chave" ] && rm -f "$LICENCA_ARQ"
+    tentativa=$((tentativa+1))
+    if ! interativo || [ "$tentativa" -ge 5 ]; then
+      falha "Licença inválida ou expirada${LICENCA_MSG:+: $LICENCA_MSG}." "Rode de novo e informe a chave correta, ou: bash $RAIZ/deploy.sh ferramentas  → 'Trocar a licença'."
+    fi
+    aviso "Licença inválida${LICENCA_MSG:+: $LICENCA_MSG}. Digite a chave novamente."
+    chave="$(ler_chave_licenca)"
+  done
 }
 
 # Timer systemd que roda o heartbeat da licença a cada 5 minutos.
