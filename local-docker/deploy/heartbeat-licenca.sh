@@ -7,7 +7,7 @@ source "$(dirname "$0")/comum.sh"
 LOG=/var/log/ouvidesk-licenca.log
 registrar() { printf '%s %s\n' "$(date -Is)" "$1" >>"$LOG" 2>/dev/null || true; }
 
-url="$(licenca_url)"
+url="$(licenca_url)" || { registrar "configuração de licença inválida; estado mantido"; exit 1; }
 [ -n "$url" ] || { registrar "LICENCA_URL vazia; heartbeat desligado"; exit 0; }
 [ -s "$LICENCA_ARQ" ] || { registrar "sem chave de licença em $LICENCA_ARQ"; exit 0; }
 [ -n "$(banco_container)" ] || { registrar "banco não está rodando"; exit 0; }
@@ -17,8 +17,8 @@ dominio="$(grep -sE '^APP_DOMAIN=' "$LD/.env.local" | head -1 | cut -d= -f2- | t
 versao="$(git -C "$RAIZ" rev-parse --short HEAD 2>/dev/null || echo desconhecida)"
 corpo="{\"chave\":\"$chave\",\"dominio\":\"$dominio\",\"instalacao_id\":\"$(instalacao_id)\",\"versao\":\"$versao\"}"
 
-if ! resp="$(curl -fsS --max-time 15 -H 'Content-Type: application/json' -d "$corpo" "${url%/}/api/public/heartbeat" 2>&1)"; then
-  registrar "servidor de licenças indisponível; estado mantido ($resp)"; exit 0
+if ! resp="$(curl -fsS --max-time 15 -H 'Content-Type: application/json' -d "$corpo" "${url%/}/api/public/heartbeat" 2>/dev/null)"; then
+  registrar "servidor de licenças indisponível; estado mantido"; exit 0
 fi
 valida="$(printf '%s' "$resp" | grep -oE '"valida" *: *(true|false)' | grep -oE 'true|false' || true)"
 codigo="$(printf '%s' "$resp" | grep -oE '"codigo" *: *"[^"]*"' | sed -E 's/.*: *"(.*)"/\1/' | tr -cd 'a-zA-Z0-9_-' || true)"

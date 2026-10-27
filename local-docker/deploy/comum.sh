@@ -96,12 +96,19 @@ compose_prod() { docker compose --project-directory "$LD" -f "$LD/docker-compose
 
 # ---------- licença ----------
 # Chave salva em local-docker/.licenca (fora do Git). O endereço do servidor de
-# licenças vem de LICENCA_URL (ambiente, .env.local ou deploy/licenca.conf); sem ele, não verifica.
+# licenças usa LICENCA_URL local ou LICENCA_URL_B64 versionada; sem endereço, não verifica.
 LICENCA_ARQ="$LD/.licenca"
 licenca_url() {
-  local u="${LICENCA_URL:-}"
+  local u="${LICENCA_URL:-}" codificado
   [ -n "$u" ] || u="$(grep -shE '^LICENCA_URL=' "$LD/.env.local" | head -1 | cut -d= -f2- | tr -d '"' || true)"
   [ -n "$u" ] || u="$(grep -shE '^LICENCA_URL=' "$DEPLOY_DIR/licenca.conf" | head -1 | cut -d= -f2- | tr -d '"' || true)"
+  if [ -z "$u" ]; then
+    codificado="$(grep -shE '^LICENCA_URL_B64=' "$DEPLOY_DIR/licenca.conf" | head -1 | cut -d= -f2- | tr -d '\r"' || true)"
+    if [ -n "$codificado" ]; then
+      u="$(printf '%s' "$codificado" | base64 --decode 2>/dev/null)" || return 1
+      [ -n "$u" ] || return 1
+    fi
+  fi
   printf '%s' "$u"
 }
 instalacao_id() {
@@ -123,7 +130,7 @@ pedir_licenca() {
 # validar_licenca [dominio]  — retorna 0 se pode seguir.
 validar_licenca() {
   local url chave dominio resp valida msg
-  url="$(licenca_url)"
+  url="$(licenca_url)" || falha "Configuração de licença inválida." "Restaure a configuração fornecida pelo fornecedor."
   if [ -z "$url" ]; then
     info "Verificação de licença desligada (LICENCA_URL não configurada)."
     return 0
@@ -134,7 +141,7 @@ validar_licenca() {
   dominio="${1:-$(grep -sE '^APP_DOMAIN=' "$LD/.env.local" | cut -d= -f2-)}"
   resp="$(curl -fsS --max-time 10 -H 'Content-Type: application/json' \
     -d "{\"chave\":\"$chave\",\"dominio\":\"$dominio\",\"instalacao_id\":\"$(instalacao_id)\",\"versao\":\"$(git -C "$RAIZ" rev-parse --short HEAD 2>/dev/null)\"}" \
-    "${url%/}/api/public/validar" 2>>"$LOG")" \
+    "${url%/}/api/public/validar" 2>/dev/null)" \
     || falha "Não consegui falar com o servidor de licenças." "Confira a internet da VPS e tente de novo. O sistema em uso continua funcionando."
   valida="$(printf '%s' "$resp" | grep -oE '"valida" *: *(true|false)' | grep -oE 'true|false' || true)"
   msg="$(printf '%s' "$resp" | grep -oE '"mensagem" *: *"[^"]*"' | sed -E 's/.*: *"(.*)"/\1/' || true)"

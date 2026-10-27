@@ -12,7 +12,7 @@ sudo bash deploy.sh          # menu: instalar, atualizar, domínio, ferramentas
 |---|---|
 | `deploy/` | Instalação, atualização, troca de domínio, ferramentas e funções comuns usadas pelo `deploy.sh`. |
 | `deploy/conferir-instalacao.sql` | Conferência do banco ao final de cada instalação/atualização. |
-| `deploy/licenca.conf` | Endereço do servidor de licenças (vazio = verificação desligada). |
+| `deploy/licenca.conf` | Endereço padrão de licença codificado em `LICENCA_URL_B64`, lido pelos comandos e heartbeat. Configurado = licença exigida para instalar/atualizar; sem endereço = verificação desligada. |
 | `atualizacoes-banco/` | Mudanças do banco, numeradas, aplicadas em ordem a cada atualização. Todas podem rodar mais de uma vez sem erro. |
 | `supabase/` | Estrutura inicial do banco e configuração do login local. |
 | `agente-1doc/` | Agente que confere as ouvidorias no 1Doc (fila de pedidos). |

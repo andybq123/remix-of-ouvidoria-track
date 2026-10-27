@@ -91,7 +91,8 @@ read -rp "  Tudo certo? Iniciar instalação [S/n]: " RESP
 
 cd "$LD"; DIR="$(pwd)"
 # Licença: pedida e conferida antes de mexer no servidor.
-if [ -n "$(licenca_url)" ]; then
+LICENCA_ENDPOINT="$(licenca_url)" || falha "Configuração de licença inválida."
+if [ -n "$LICENCA_ENDPOINT" ]; then
   [ -s "$LICENCA_ARQ" ] || pedir_licenca
   validar_licenca "$DOMAIN"
 fi
