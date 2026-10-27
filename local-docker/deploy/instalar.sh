@@ -132,7 +132,26 @@ rodar "Conferindo/atualizando Node.js LTS corrigido" atualizar_node_host
 # ---------- 5. Caddy ----------
 etapa "Servidor web com HTTPS (Caddy)"
 if ! command -v caddy >/dev/null; then
-  rodar "Instalando Caddy" bash -c "curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --batch --yes --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg && curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list && apt-get update -y && apt-get install -y caddy"
+  # Chave baixada para arquivo temporário, conferida e gravada legível (644);
+  # repositório antigo/quebrado é removido antes. Se falhar, usa o pacote do Ubuntu.
+  rodar "Instalando Caddy" bash -c '
+    set -e
+    KR=/usr/share/keyrings/caddy-stable-archive-keyring.gpg
+    LST=/etc/apt/sources.list.d/caddy-stable.list
+    rm -f "$KR" "$LST"
+    TMPK=$(mktemp)
+    if curl -fsSL --retry 3 https://dl.cloudsmith.io/public/caddy/stable/gpg.key -o "$TMPK" && [ -s "$TMPK" ] \
+       && gpg --batch --yes --dearmor -o "$KR" "$TMPK" && [ -s "$KR" ]; then
+      chmod 0644 "$KR"
+      echo "deb [signed-by=$KR] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main" > "$LST"
+      chmod 0644 "$LST"
+      if apt-get update -y && apt-get install -y caddy; then rm -f "$TMPK"; exit 0; fi
+    fi
+    rm -f "$TMPK" "$KR" "$LST"
+    echo "Repositório oficial do Caddy falhou; usando o pacote do Ubuntu."
+    apt-get update -y
+    apt-get install -y caddy
+  '
 else ok "Caddy já instalado"; fi
 
 # ---------- 6. Banco ----------
