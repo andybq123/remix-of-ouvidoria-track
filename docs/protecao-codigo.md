@@ -10,6 +10,10 @@ Para editar, altere os arquivos originais e gere a distribuição novamente; nun
 
 ## Limites
 
+O endereço padrão de licença em `local-docker/deploy/licenca.conf` usa `LICENCA_URL_B64` (Base64), decodificado em memória pelos comandos de instalação, atualização e heartbeat. Não aparece em texto legível nesse arquivo e erros de comunicação não registram o endereço. Isso é ofuscação reversível, não criptografia: o administrador da VPS pode inspecionar a conexão ou alterar os scripts, e versões anteriores do repositório podem conter o endereço legível.
+
+Para trocar o endereço padrão, gere seu valor com `printf '%s' 'ENDEREÇO-HTTPS' | base64 -w 0` e altere apenas `LICENCA_URL_B64`. Configurações locais existentes de `LICENCA_URL` continuam tendo prioridade. Um valor codificado inválido interrompe a operação, em vez de desligar silenciosamente a licença. Quando há endereço configurado, instalação e atualização exigem chave válida; sem endereço em todas as fontes, permanece o comportamento de verificação desligada.
+
 Ofuscação dificulta a leitura do JavaScript distribuído, mas não impede engenharia reversa nem protege segredos. Um repositório público expõe os arquivos originais, e a implantação atual mantém uma cópia desses arquivos na VPS. Para restringir acesso aos fontes, é necessário controlar o acesso ao repositório e à distribuição — isso não foi alterado nesta implementação.
 
 O ícone de conexão da página Licença usa a última confirmação automática: até dez minutos indica online; sem confirmação recente, indica offline. É um sinal da última comunicação registrada, não uma consulta direta ao servidor ao abrir a página. Esse indicador não altera o bloqueio da licença.
