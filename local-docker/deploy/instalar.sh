@@ -93,7 +93,7 @@ cd "$LD"; DIR="$(pwd)"
 # Licença: pedida e conferida antes de mexer no servidor.
 LICENCA_ENDPOINT="$(licenca_url)" || falha "Configuração de licença inválida."
 if [ -n "$LICENCA_ENDPOINT" ]; then
-  [ -s "$LICENCA_ARQ" ] || pedir_licenca
+  interativo && pedir_licenca   # instalação nova sempre pede a chave; inválida não fica salva
   validar_licenca "$DOMAIN"
 fi
 conferir_espaco 8192
