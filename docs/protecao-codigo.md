@@ -2,7 +2,7 @@
 
 O código original continua editável. Não ofusque manualmente arquivos de `src/`, scripts de implantação ou agentes.
 
-O comando habitual `bun run build` aplica automaticamente uma ofuscação conservadora aos arquivos JavaScript de carregamento separado da página Licença e dos seus auxiliares no navegador. `bun run dev` permanece sem ofuscação. A seleção e as opções ficam em `build/obfuscation.ts`.
+O comando habitual `bun run build` aplica automaticamente uma ofuscação conservadora aos arquivos JavaScript de carregamento separado da página Licença e dos seus auxiliares no navegador. `bun run dev` permanece sem ofuscação. A seleção e as opções ficam em `tooling/obfuscation.ts`.
 
 O processo renomeia identificadores internos na distribuição, mantendo exportações, propriedades e textos de configuração. Isso preserva a troca de endereço e configuração feita pelo deploy da VPS. Os mapas de código-fonte do navegador ficam desabilitados. O servidor, os agentes e as bibliotecas não recebem essa transformação.
 
