@@ -18,9 +18,16 @@ describe("ofuscação seletiva da distribuição", () => {
     expect(protegido).not.toMatch(/\beval\s*\(|sourceMappingURL/);
     expect(obfuscateBrowserChunk(original)).toBe(protegido);
   });
-  it("mantém as exportações ES modules", () => {
+  it("mantém as exportações ES modules", async () => {
     const protegido = obfuscateBrowserChunk("const status = (v) => v === 'valid'; export { status };");
     expect(protegido).toMatch(/export\s*\{/);
     expect(protegido).toMatch(/\bas status\b|\{status\}/);
+    const modulo = await import(/* @vite-ignore */ `data:text/javascript;base64,${Buffer.from(protegido).toString("base64")}`);
+    expect(modulo.status("valid")).toBe(true);
+    expect(modulo.status("expired")).toBe(false);
+  });
+  it("preserva URLs literais utilizadas na troca de domínio da VPS", () => {
+    const protegido = obfuscateBrowserChunk("export const endpoint = 'https://original.example/rest/v1';");
+    expect(protegido).toContain("https://original.example/rest/v1");
   });
 });
