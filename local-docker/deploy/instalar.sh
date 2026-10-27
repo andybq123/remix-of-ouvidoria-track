@@ -86,8 +86,14 @@ if [ -z "$IP_DNS" ]; then aviso "O domínio ainda não responde no DNS. O HTTPS 
 elif [ "$IP_DNS" != "$IP_PUBLICO" ]; then aviso "DNS aponta para $IP_DNS (normal se usar Cloudflare laranja)."
 else ok "DNS já aponta para esta VPS."; fi
 echo
+INSTALACAO_NOVA=1
+registrar_evento_instalacao iniciada "$DOMAIN"
 read -rp "  Tudo certo? Iniciar instalação [S/n]: " RESP
-[[ "${RESP:-S}" =~ ^[SsYy]$ ]] || { echo "  Cancelado."; exit 0; }
+[[ "${RESP:-S}" =~ ^[SsYy]$ ]] || { registrar_evento_instalacao cancelada "$DOMAIN"; echo "  Cancelado."; exit 0; }
+
+# Avisa o painel de licenças se a instalação parar no meio.
+INSTALACAO_OK=0
+trap '[ $? -ne 0 ] && [ "$INSTALACAO_OK" = 0 ] && registrar_evento_instalacao falhou "$DOMAIN"' EXIT
 
 cd "$LD"; DIR="$(pwd)"
 # Licença: pedida e conferida antes de mexer no servidor.
@@ -95,6 +101,7 @@ LICENCA_ENDPOINT="$(licenca_url)" || falha "Configuração de licença inválida
 if [ -n "$LICENCA_ENDPOINT" ]; then
   interativo && pedir_licenca   # instalação nova sempre pede a chave; inválida não fica salva
   validar_licenca "$DOMAIN"
+  registrar_evento_instalacao licenca_aceita "$DOMAIN"
 fi
 conferir_espaco 8192
 INICIO=$(date +%s)
@@ -234,6 +241,8 @@ if [ ! -f .admin-criado ]; then
 else ok "Administrador já existia (senha mantida)"; fi
 
 DUR=$(( $(date +%s) - INICIO ))
+INSTALACAO_OK=1
+registrar_evento_instalacao concluida "$DOMAIN" "duracao=${DUR}s"
 echo
 printf "${VD}${B}"
 cat <<EOF

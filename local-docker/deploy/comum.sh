@@ -141,6 +141,26 @@ consultar_licenca() {
   LICENCA_MSG="$(printf '%s' "$resp" | grep -oE '"mensagem" *: *"[^"]*"' | sed -E 's/.*: *"(.*)"/\1/' || true)"
   [ "$valida" = "true" ]
 }
+# registrar_evento_instalacao evento [dominio] [detalhe]
+# Avisa o painel de licenças sobre tentativas de instalação (iniciada, chave_invalida,
+# licenca_aceita, concluida, falhou, cancelada). Nunca envia a chave inteira, nunca
+# trava nem derruba a instalação e nunca registra o endereço do servidor.
+registrar_evento_instalacao() {
+  local url ev="$1" dom="${2:-}" det="${3:-}" chave="${LICENCA_PENDENTE:-}" final="" host so
+  url="$(licenca_url 2>/dev/null)" || return 0
+  [ -n "$url" ] || return 0
+  [ -n "$chave" ] || chave="$(cat "$LICENCA_ARQ" 2>/dev/null | tr -d '[:space:]')"
+  [ -n "$chave" ] && final="${chave: -4}"
+  host="$(hostname 2>/dev/null | tr -cd 'A-Za-z0-9._-')"
+  so="$(. /etc/os-release 2>/dev/null && printf '%s' "${PRETTY_NAME:-}" | tr -cd 'A-Za-z0-9 ._-')"
+  ev="$(printf '%s' "$ev" | tr -cd 'a-z_')"
+  dom="$(printf '%s' "$dom" | tr -cd 'A-Za-z0-9.-')"
+  det="$(printf '%s' "$det" | tr -d '"\\' | tr -cd '[:print:]' | cut -c1-200)"
+  curl -fsS --max-time 5 -o /dev/null -H 'Content-Type: application/json' \
+    -d "{\"evento\":\"$ev\",\"dominio\":\"$dom\",\"instalacao_id\":\"$(instalacao_id)\",\"ip\":\"${IP_PUBLICO:-}\",\"hostname\":\"$host\",\"sistema\":\"$so\",\"chave_final\":\"$final\",\"detalhe\":\"$det\",\"versao\":\"$(git -C "$RAIZ" rev-parse --short HEAD 2>/dev/null)\"}" \
+    "${url%/}/api/public/instalacao-evento" >/dev/null 2>&1 || true
+  return 0
+}
 # validar_licenca [dominio]  — retorna 0 se pode seguir. Chave inválida nunca fica salva:
 # em modo interativo pede outra (até 5 tentativas); a chave só é gravada após ser aceita.
 validar_licenca() {
@@ -164,6 +184,7 @@ validar_licenca() {
       ok "Licença válida.${LICENCA_MSG:+ $LICENCA_MSG}"; return 0
     fi
     [ "$r" = 2 ] && falha "Não consegui falar com o servidor de licenças." "Confira a internet da VPS e tente de novo. O sistema em uso continua funcionando."
+    [ "${INSTALACAO_NOVA:-}" = 1 ] && LICENCA_PENDENTE="$chave" registrar_evento_instalacao chave_invalida "$dominio" "$LICENCA_MSG"
     # Inválida: descarta a chave salva para não travar a próxima tentativa.
     [ -f "$LICENCA_ARQ" ] && [ "$(tr -d '[:space:]' < "$LICENCA_ARQ")" = "$chave" ] && rm -f "$LICENCA_ARQ"
     tentativa=$((tentativa+1))
