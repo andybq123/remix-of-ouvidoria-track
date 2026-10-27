@@ -4,11 +4,11 @@ import type { TipoProtocolo, StatusProtocolo } from "@/lib/prazo";
 
 export const PROTOCOLOS_PAGE_SIZE = 50;
 
-export function validarFiltrosProtocolos(search: Record<string, unknown>) {
-  const text = (key: string, fallback = "") => typeof search[key] === "string" ? String(search[key]) : fallback;
-  const option = (key: string, options: string[]) => options.includes(text(key)) ? text(key) : "todos";
+export function validarFiltrosProtocolos(search: Partial<Record<"busca" | "status" | "tipo" | "categoria" | "secretaria" | "mes" | "dataIni" | "dataFim" | "pagina", unknown>>) {
+  const text = (key: keyof typeof search, fallback = "") => typeof search[key] === "string" ? String(search[key]) : fallback;
+  const option = (key: keyof typeof search, options: string[]) => options.includes(text(key)) ? text(key) : "todos";
   const mes = text("mes", currentMonthValue());
-  const date = (key: string) => /^\d{4}-\d{2}-\d{2}$/.test(text(key)) ? text(key) : "";
+  const date = (key: keyof typeof search) => /^\d{4}-\d{2}-\d{2}$/.test(text(key)) ? text(key) : "";
   const pagina = Number(search.pagina);
   return {
     busca: text("busca"),
