@@ -232,12 +232,34 @@ O procedimento geral é:
 5. Configurar e validar a licença, quando exigido pelo fluxo de implantação.
 6. Configurar os serviços necessários e conferir o funcionamento do sistema.
 
-Exemplo de execução, considerando que o código autorizado já esteja disponível no servidor:
+### Comando completo de instalação (Ubuntu/Debian)
+
+Antes de executar, configure o registro DNS **A** do domínio para o IP público da VPS e libere as portas **80 e 443** no firewall do servidor e do provedor, mantendo o acesso SSH liberado.
+
+Conecte-se à VPS por SSH e execute os comandos abaixo. Execute primeiro `sudo -i`; depois, cole as demais linhas no terminal como root:
 
 ```bash
 sudo -i
-cd /caminho/do/projeto
+apt-get update && apt-get install -y git curl ca-certificates && \
+git clone https://github.com/andybq123/remix-of-ouvidoria-track.git /root/controle-seta && \
+cd /root/controle-seta && \
 bash deploy.sh instalar
+```
+
+O repositório é público: o download não exige login no GitHub. O acesso ao código não dispensa a licença de uso.
+
+O assistente solicita o domínio, o e-mail do administrador e a chave de licença quando a validação estiver habilitada. Ele prepara os serviços locais, o banco e o HTTPS. Ao terminar, siga os dados de acesso exibidos no terminal e abra `https://SEU-DOMINIO`.
+
+**Use esse comando em uma VPS nova**, onde `/root/controle-seta` ainda não existe. Para abrir o menu de manutenção de uma instalação existente:
+
+```bash
+sudo bash /root/controle-seta/deploy.sh
+```
+
+Se a instalação falhar, consulte o final do registro de execução (revise e oculte credenciais antes de compartilhar):
+
+```bash
+tail -n 40 /tmp/ouvidesk-instalacao.log
 ```
 
 **Atenção:** os comandos, requisitos e opções disponíveis podem variar conforme a versão distribuída. Consulte as instruções e os arquivos de implantação correspondentes à versão licenciada.
