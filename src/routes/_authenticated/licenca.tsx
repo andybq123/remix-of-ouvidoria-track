@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, KeyRound, ShieldCheck, ShieldAlert, Clock, Server } from "lucide-react";
+import { ArrowLeft, KeyRound, ShieldCheck, ShieldAlert, Clock, Server, Wifi, WifiOff, LoaderCircle } from "lucide-react";
 import { getLicencaEstado } from "@/lib/licenca.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { conexaoLicenca } from "@/lib/licenca-conexao";
 
 export const Route = createFileRoute("/_authenticated/licenca")({
   head: () => ({
@@ -20,12 +22,14 @@ export const Route = createFileRoute("/_authenticated/licenca")({
 });
 
 function LicencaPage() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["licenca-estado-detalhe"],
     queryFn: () => getLicencaEstado(),
     refetchInterval: 10_000,
   });
   const bloqueado = !!data?.bloqueado;
+  const online = !isError && conexaoLicenca(data?.verificado_em) === "online";
+  const statusConexao = isLoading ? "Verificando conexão" : online ? "Servidor online" : "Servidor offline";
   const verificado = data?.verificado_em ? new Date(data.verificado_em).toLocaleString("pt-BR") : "Ainda não verificada";
 
   return (
@@ -69,7 +73,18 @@ function LicencaPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><Server className="h-4 w-4" /> Servidor de licenças</CardTitle></CardHeader>
-          <CardContent className="text-base font-medium">licenca.chatizy.com.br</CardContent>
+          <CardContent>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={0} role="img" aria-label={statusConexao} className={`inline-flex h-10 w-10 items-center justify-center rounded-md bg-muted ${isLoading ? "text-muted-foreground" : online ? "text-primary" : "text-destructive"}`}>
+                    {isLoading ? <LoaderCircle className="h-6 w-6 animate-spin motion-reduce:animate-none" /> : online ? <Wifi className="h-6 w-6" /> : <WifiOff className="h-6 w-6" />}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{statusConexao}{!isLoading && " · Conforme última confirmação automática"}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </CardContent>
         </Card>
       </div>
 
