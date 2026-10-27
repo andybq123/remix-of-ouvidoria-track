@@ -1,4 +1,5 @@
 # Tarefas
+- [ ] Otimizar Protocolos com campos necessários, filtros globais e páginas de 50, preservando autenticação; testar paginação e detalhes.
 - [x] Ocultar endereço do servidor na página Licença e mostrar conectividade por ícone; página conferida com sessão real, sem erro no navegador.
 - [x] Aplicar ofuscação seletiva nos arquivos de licença do navegador apenas na distribuição, mantendo fontes editáveis; testes de comportamento, exportações e URLs de configuração.
 - [x] Atualizar Node de instalação, atualização, app, agente e CI para 24.22.1 LTS corrigido; checksum oficial e imagens confirmados, sintaxe e configuração validadas, 206 testes unitários e 17 testes de domínio passaram executados no Node 24.22.1.
