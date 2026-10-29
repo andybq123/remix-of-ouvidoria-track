@@ -16,7 +16,7 @@ import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { currentMonthValue } from "@/lib/month-filter";
 import { validarFiltrosProtocolos } from "@/lib/protocolos-listagem";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts";
 import { ChartTooltipContent } from "@/components/chart-tooltip";
 import { HealthUnitChart } from "@/components/health-unit-chart";
 import { format, startOfMonth, subMonths } from "date-fns";
@@ -147,20 +147,22 @@ function SaudePage() {
     return map;
   }, [saude]);
 
-  // Evolução de solicitações por mês — últimos 12 meses (Saúde)
+  // Evolução de solicitações por mês — últimos 12 meses (Saúde), independente dos filtros de período/busca
   const evolucaoSaude = useMemo(() => {
+    const counts = new Map<string, number>();
+    protocolos.forEach(p => {
+      if (!saudeSec?.id || (p as any).secretaria_id !== saudeSec.id) return;
+      if (unidade !== "todas" && (p as any).local_id !== unidade) return;
+      const chave = (p.data_abertura ?? "").slice(0, 7);
+      counts.set(chave, (counts.get(chave) ?? 0) + 1);
+    });
     const meses: { mes: string; total: number }[] = [];
     for (let i = 11; i >= 0; i--) {
       const inicio = startOfMonth(subMonths(new Date(), i));
-      const fim = startOfMonth(subMonths(new Date(), i - 1));
-      const qtd = saude.filter(p => {
-        const d = new Date(p.data_abertura);
-        return d >= inicio && d < fim;
-      }).length;
-      meses.push({ mes: format(inicio, "MMM/yy", { locale: ptBR }), total: qtd });
+      meses.push({ mes: format(inicio, "MMM/yy", { locale: ptBR }), total: counts.get(format(inicio, "yyyy-MM")) ?? 0 });
     }
     return meses;
-  }, [saude]);
+  }, [protocolos, saudeSec?.id, unidade]);
 
   return (
     <div className="space-y-4">
@@ -310,15 +312,24 @@ function SaudePage() {
             <CardHeader><CardTitle className="text-base">Evolução de solicitações (últimos 12 meses)</CardTitle></CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={evolucaoSaude} margin={{ top: 20, right: 20, bottom: 0, left: -20 }}>
+                <AreaChart data={evolucaoSaude} margin={{ top: 20, right: 20, bottom: 0, left: -20 }}>
+                  <defs>
+                    <linearGradient id="evolucaoSaudeGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.45} />
+                      <stop offset="100%" stopColor="var(--chart-2)" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="mes" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-                  <Tooltip content={<ChartTooltipContent unit="solicitação(ões)" />} cursor={{ stroke: "hsl(var(--border))" }} />
-                  <Line type="monotone" dataKey="total" stroke="#10b981" strokeWidth={2.5}
-                    dot={{ r: 4, fill: "#10b981" }}
-                    label={{ position: "top", fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                </LineChart>
+                  <XAxis dataKey="mes" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} tickLine={false} axisLine={false} />
+                  <Tooltip content={<ChartTooltipContent unit="solicitação(ões)" />} cursor={{ stroke: "var(--chart-2)", strokeDasharray: "4 4" }} />
+                  <Area type="monotone" dataKey="total" stroke="var(--chart-2)" strokeWidth={3}
+                    fill="url(#evolucaoSaudeGradient)"
+                    animationDuration={1400} animationEasing="ease-out"
+                    dot={{ r: 4.5, fill: "var(--chart-2)", stroke: "var(--background)", strokeWidth: 2 }}
+                    activeDot={{ r: 7, stroke: "var(--background)", strokeWidth: 2.5 }}
+                    label={{ position: "top", fontSize: 10, fill: "var(--muted-foreground)" }} />
+                </AreaChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
