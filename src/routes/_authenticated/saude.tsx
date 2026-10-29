@@ -268,36 +268,40 @@ function SaudePage() {
           <CardHeader>
             <CardTitle className="text-base">Manifestações por tipo × unidade de saúde</CardTitle>
           </CardHeader>
-          <CardContent className="p-0 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-secondary/40 text-left">
-                  <th className="py-2 px-3 font-medium">Tipo de manifestação</th>
-                  <th className="py-2 px-3 font-medium text-right">Total</th>
-                  <th className="py-2 px-3 font-medium">Unidades de saúde</th>
-                </tr>
-              </thead>
-              <tbody>
-                {porCategoria.map(c => {
-                  const unidades = unidadesPorCategoria[c.name] ?? [];
-                  return (
-                    <tr key={c.name} className="border-b align-top">
-                      <td className="py-2 px-3 font-medium">{c.name}</td>
-                      <td className="py-2 px-3 text-right font-mono">{c.value}</td>
-                      <td className="py-2 px-3">
-                        <div className="flex flex-wrap gap-1">
-                          {unidades.map(u => (
-                            <Badge key={u.name} variant="outline" className="text-[10px] border-emerald-500/40 text-emerald-700">
-                              {u.name} · {u.value}
-                            </Badge>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              {porCategoria.map(c => {
+                const unidades = unidadesPorCategoria[c.name] ?? [];
+                const maxU = unidades[0]?.value ?? 1;
+                const pct = kpis.total > 0 ? (c.value / kpis.total) * 100 : 0;
+                return (
+                  <div key={c.name} className="rounded-xl border p-4 bg-gradient-to-br from-muted/40 via-transparent to-transparent">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: c.color }} />
+                      <span className="font-semibold text-sm">{c.name}</span>
+                      <span className="ml-auto text-xl font-bold tabular-nums">{c.value}</span>
+                    </div>
+                    <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: c.color }} />
+                    </div>
+                    <p className="mt-1 text-[11px] text-muted-foreground">{pct.toFixed(1)}% das manifestações da Saúde</p>
+                    <ul className="mt-3 space-y-1.5 max-h-[200px] overflow-y-auto pr-1">
+                      {unidades.map(u => (
+                        <li key={u.name} className="text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="min-w-0 flex-1 truncate" title={u.name}>{u.name}</span>
+                            <span className="tabular-nums text-muted-foreground">{u.value}</span>
+                          </div>
+                          <div className="mt-0.5 h-1 w-full rounded-full bg-muted overflow-hidden">
+                            <div className="h-full rounded-full opacity-70" style={{ width: `${(u.value / maxU) * 100}%`, background: c.color }} />
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}
