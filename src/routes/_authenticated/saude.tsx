@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { situacaoProtocolo, formatDate, PRAZOS, categoriaLabel, categoriaSigla, categoriaBadgeClass, categoriaDoProtocolo, CATEGORIAS, type TipoProtocolo } from "@/lib/prazo";
-import { HeartPulse } from "lucide-react";
+import { HeartPulse, Inbox, Activity, CheckCircle2, AlarmClock, AlertTriangle } from "lucide-react";
+import { KpiCard, CAT_COLORS } from "@/components/kpi-card";
 import { fetchAllPaginated } from "@/lib/fetch-all";
 import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
 import { termosBusca, matchProtocolo } from "@/lib/search-protocolos";
@@ -125,9 +126,26 @@ function SaudePage() {
 
   const porCategoria = useMemo(() =>
     CATEGORIAS
-      .map(c => ({ name: c.label, value: saude.filter(p => categoriaDoProtocolo(p.tipo, p.categoria) === c.value).length }))
+      .map(c => ({ name: c.label, value: saude.filter(p => categoriaDoProtocolo(p.tipo, p.categoria) === c.value).length, color: CAT_COLORS[c.value] }))
       .filter(d => d.value > 0),
   [saude]);
+
+  const kpis = useMemo(() => {
+    let concluidas = 0, atrasadas = 0, criticas = 0;
+    saude.forEach(p => {
+      const s = situacaoProtocolo(p as any).situacao;
+      if (s === "concluido") concluidas++;
+      else if (s === "vencido") atrasadas++;
+      else if (s === "critico") criticas++;
+    });
+    return { total: saude.length, concluidas, atrasadas, criticas, andamento: saude.length - concluidas };
+  }, [saude]);
+
+  const porSituacao = useMemo(() => [
+    { name: "Em andamento", value: kpis.andamento - kpis.atrasadas, color: "hsl(217 91% 60%)" },
+    { name: "Concluídas", value: kpis.concluidas, color: "hsl(142 71% 45%)" },
+    { name: "Atrasadas", value: kpis.atrasadas, color: "hsl(0 84% 60%)" },
+  ].filter(d => d.value > 0), [kpis]);
 
   // Para cada categoria, contagem por unidade de saúde (usado no tooltip)
   const unidadesPorCategoria = useMemo(() => {
@@ -221,49 +239,28 @@ function SaudePage() {
         )}
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+        <KpiCard icon={Inbox} label="Total no período" value={kpis.total} tone="primary" />
+        <KpiCard icon={Activity} label="Em andamento" value={kpis.andamento} tone="violet" />
+        <KpiCard icon={CheckCircle2} label="Concluídas" value={kpis.concluidas} tone="success"
+          hint={kpis.total > 0 ? `${((kpis.concluidas / kpis.total) * 100).toFixed(1)}% do total` : undefined} />
+        <KpiCard icon={AlarmClock} label="Vencendo em até 3 dias" value={kpis.criticas} tone="warning" />
+        <KpiCard icon={AlertTriangle} label="Atrasadas" value={kpis.atrasadas} tone="destructive" />
+      </div>
+
       {saude.length > 0 && (
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           <Card>
-            <CardHeader><CardTitle className="text-base">Por unidade de saúde</CardTitle></CardHeader>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Por unidade de saúde</CardTitle>
+              <p className="text-[11px] text-muted-foreground">Distribuição por unidade</p>
+            </CardHeader>
             <CardContent>
               <HealthUnitChart data={porUnidade} />
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader><CardTitle className="text-base">Por tipo de manifestação</CardTitle></CardHeader>
-            <CardContent>
-              {porCategoria.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-12">Sem dados</p>
-              ) : (
-                <ResponsiveContainer width="100%" height={340}>
-                  <PieChart>
-                    <Pie
-                      data={porCategoria}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={120}
-                      minAngle={6}
-                      paddingAngle={2}
-                      stroke="#ffffff"
-                      strokeWidth={2}
-                      labelLine={false}
-                      label={({ value, percent }: any) => `${value} (${(percent * 100).toFixed(0)}%)`}
-                    >
-                      {porCategoria.map((d, i) => (
-                        <Cell key={i} fill={d.name === "Pedido e-SIC" ? "#0f766e" : COLORS[(i + 3) % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<ChartTooltipContent unit="protocolo(s)" />} />
-                    <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => <span className="text-xs">{v}</span>} />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
+          <DonutCard titulo="Categorias" subtitulo="Distribuição das manifestações" dados={porCategoria} />
+          <DonutCard titulo="Situação" subtitulo="Andamento dos prazos" dados={porSituacao} />
         </div>
       )}
 
@@ -384,5 +381,43 @@ function SaudePage() {
 
       <ProtocoloDetailDialog protocolo={detail} open={!!detail} onOpenChange={(v) => !v && setDetail(null)} />
     </div>
+  );
+}
+
+function DonutCard({ titulo, subtitulo, dados }: { titulo: string; subtitulo: string; dados: { name: string; value: number; color: string }[] }) {
+  const total = dados.reduce((s, d) => s + d.value, 0);
+  const vazio = [{ name: "—", value: 1, color: "hsl(var(--muted))" }];
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">{titulo}</CardTitle>
+        <p className="text-[11px] text-muted-foreground">{subtitulo}</p>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[200px] relative">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={dados.length > 0 ? dados : vazio} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2} animationDuration={900}>
+                {(dados.length > 0 ? dados : vazio).map((d, i) => <Cell key={i} fill={d.color} />)}
+              </Pie>
+              <Tooltip content={<ChartTooltipContent unit="protocolo(s)" total={total} />} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <span className="text-2xl font-bold">{total}</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Total</span>
+          </div>
+        </div>
+        <div className="mt-2 space-y-1">
+          {dados.map(d => (
+            <div key={d.name} className="w-full flex items-center gap-2 text-xs px-1 py-0.5">
+              <span className="h-2 w-2 rounded-full shrink-0" style={{ background: d.color }} />
+              <span className="font-medium">{d.name}</span>
+              <span className="ml-auto text-muted-foreground">{total > 0 ? ((d.value / total) * 100).toFixed(1) : "0"}% ({d.value})</span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
