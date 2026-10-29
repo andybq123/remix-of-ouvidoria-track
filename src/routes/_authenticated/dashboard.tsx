@@ -18,6 +18,7 @@ import {
   ArrowUpRight, ArrowDownRight, Users, ThumbsUp, ThumbsDown, AlertCircle, BarChart3,
 } from "lucide-react";
 import { fetchAllPaginated } from "@/lib/fetch-all";
+import { montarProtocolosDashboard } from "@/lib/dashboard-dados";
 import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
 import { ManifestacoesMap, type SecretariaPoint, type LocalPoint } from "@/components/manifestacoes-map";
 import { ChartTooltipContent } from "@/components/chart-tooltip";
@@ -49,7 +50,7 @@ import { MapDepartmentToggle } from "@/components/map-department-toggle";
 import { mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
 
 const DASHBOARD_COLUNAS =
-  "id, numero, numero_esic, tipo, categoria, assunto, status, secretaria_id, local_id, solicitante, endereco, latitude, longitude, data_abertura, data_conclusao, data_prorrogacao, prorrogado, created_at, triagem_concluida_em, triagem_pendente, resolucao, origem, sigilo, url, responsavel_id, secretarias(nome, sigla, icone), locais(nome), secretaria_responsaveis(nome)";
+  "id, numero, numero_esic, tipo, categoria, assunto, status, secretaria_id, local_id, solicitante, endereco, latitude, longitude, data_abertura, data_conclusao, data_prorrogacao, prorrogado, created_at, triagem_concluida_em, triagem_pendente, resolucao, origem, sigilo, responsavel_id, secretarias(nome, sigla, icone), locais(nome), secretaria_responsaveis(nome)";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [
@@ -104,11 +105,13 @@ function Dashboard() {
   const [mes, setMes] = useState<string>(currentMonthValue());
   const [mapScope, setMapScope] = useState<MapDepartmentScope>("saude");
 
-  const { data: protocolos = [] } = useQuery({
-    // Chave própria: o painel busca só as colunas que usa (sem textos longos).
+  const { data: protocolosCompactos } = useQuery({
+    // Uma só chamada em formato compacto (dashboard_protocolos); se falhar, cai na leitura antiga.
     queryKey: ["protocolos-dashboard"],
-    queryFn: () =>
-      fetchAllPaginated((from, to) =>
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("dashboard_protocolos" as any);
+      if (!error && Array.isArray(data)) return { compacto: true as const, linhas: data as unknown[] };
+      const linhas = await fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
           .select(DASHBOARD_COLUNAS)
@@ -116,7 +119,9 @@ function Dashboard() {
           .or("triagem_pendente.eq.false,tipo.eq.esic")
           .order("data_abertura", { ascending: false })
           .range(from, to),
-      ),
+      );
+      return { compacto: false as const, linhas: linhas as unknown[] };
+    },
   });
 
   const { data: triagemStats } = useQuery({
@@ -169,6 +174,13 @@ function Dashboard() {
         .order("nome")
     ).data ?? [],
   });
+
+  const protocolos = useMemo<any[]>(() => {
+    if (!protocolosCompactos) return [];
+    return protocolosCompactos.compacto
+      ? montarProtocolosDashboard(protocolosCompactos.linhas, secretarias as any[])
+      : (protocolosCompactos.linhas as any[]);
+  }, [protocolosCompactos, secretarias]);
 
   const enriched = useMemo(
     () => protocolos.map(p => ({ ...p, _s: situacaoProtocolo(p as any) })),

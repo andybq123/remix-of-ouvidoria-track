@@ -1076,6 +1076,7 @@ export type Database = {
           updated_at: string
         }[]
       }
+      dashboard_protocolos: { Args: never; Returns: Json }
       formatar_numero_esic: { Args: { p_numero: string }; Returns: string }
       has_role: {
         Args: {
