@@ -50,7 +50,7 @@ import { MapDepartmentToggle } from "@/components/map-department-toggle";
 import { mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
 
 const DASHBOARD_COLUNAS =
-  "id, numero, numero_esic, tipo, categoria, assunto, status, secretaria_id, local_id, solicitante, endereco, latitude, longitude, data_abertura, data_conclusao, data_prorrogacao, prorrogado, created_at, triagem_concluida_em, triagem_pendente, resolucao, origem, sigilo, url, responsavel_id, secretarias(nome, sigla, icone), locais(nome), secretaria_responsaveis(nome)";
+  "id, numero, numero_esic, tipo, categoria, assunto, status, secretaria_id, local_id, solicitante, endereco, latitude, longitude, data_abertura, data_conclusao, data_prorrogacao, prorrogado, created_at, triagem_concluida_em, triagem_pendente, resolucao, origem, sigilo, responsavel_id, secretarias(nome, sigla, icone), locais(nome), secretaria_responsaveis(nome)";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [
