@@ -1,4 +1,5 @@
 # Tarefas
+- [ ] Corrigir autoria do registro: usuário real, criação pelo e-mail, licença excluída; entregar atualização VPS e testes.
 - [x] Ofuscar endereço padrão de licença na configuração versionada, preservar validação obrigatória quando configurado e resolver endereço também no heartbeat; 21 testes passaram, sintaxe conferida, sem endereço legível nos arquivos atuais. Execução completa na VPS não realizada.
 - [x] Otimizar Protocolos com campos exibidos, filtros globais e páginas de 50, preservando autenticação; 13 testes unitários e instalação limpa com regras de acesso passaram; duas páginas reais (50 + 15), detalhes e busca conferidos com login, registros temporários removidos; melhoria incluída na atualização da VPS.
 - [x] Ocultar endereço do servidor na página Licença e mostrar conectividade por ícone; página conferida com sessão real, sem erro no navegador.
