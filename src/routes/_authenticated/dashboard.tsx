@@ -104,11 +104,13 @@ function Dashboard() {
   const [mes, setMes] = useState<string>(currentMonthValue());
   const [mapScope, setMapScope] = useState<MapDepartmentScope>("saude");
 
-  const { data: protocolos = [] } = useQuery({
-    // Chave própria: o painel busca só as colunas que usa (sem textos longos).
+  const { data: protocolosCompactos } = useQuery({
+    // Uma só chamada em formato compacto (dashboard_protocolos); se falhar, cai na leitura antiga.
     queryKey: ["protocolos-dashboard"],
-    queryFn: () =>
-      fetchAllPaginated((from, to) =>
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("dashboard_protocolos" as any);
+      if (!error && Array.isArray(data)) return { compacto: true as const, linhas: data as unknown[] };
+      const linhas = await fetchAllPaginated((from, to) =>
         supabase
           .from("protocolos")
           .select(DASHBOARD_COLUNAS)
@@ -116,7 +118,9 @@ function Dashboard() {
           .or("triagem_pendente.eq.false,tipo.eq.esic")
           .order("data_abertura", { ascending: false })
           .range(from, to),
-      ),
+      );
+      return { compacto: false as const, linhas: linhas as unknown[] };
+    },
   });
 
   const { data: triagemStats } = useQuery({
