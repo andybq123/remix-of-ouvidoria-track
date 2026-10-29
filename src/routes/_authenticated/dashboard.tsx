@@ -29,8 +29,8 @@ import { Search } from "lucide-react";
 import { currentMonthValue, monthOptionsFromDates, isInMonth, formatMonthLabel } from "@/lib/month-filter";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -644,14 +644,25 @@ function Dashboard() {
           <CardContent>
             <div className="h-[260px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={evolucao} margin={{ top: 20, right: 20, bottom: 0, left: -20 }}>
+                <AreaChart data={evolucao} margin={{ top: 20, right: 20, bottom: 0, left: -20 }}>
+                  <defs>
+                    <linearGradient id="evolucaoGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.45} />
+                      <stop offset="100%" stopColor="var(--chart-2)" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="mes" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-                  <Tooltip content={<ChartTooltipContent unit="manifestações" />} cursor={{ stroke: "hsl(var(--border))" }} />
-                  <Line type="monotone" dataKey="total" stroke="hsl(217 91% 60%)" strokeWidth={2.5}
-                    dot={{ r: 4, fill: "hsl(217 91% 60%)" }} label={{ position: "top", fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                </LineChart>
+                  <XAxis dataKey="mes" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} dy={6} />
+                  <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} tickLine={false} axisLine={false} />
+                  <Tooltip content={<ChartTooltipContent unit="manifestações" />}
+                    cursor={{ stroke: "var(--chart-2)", strokeWidth: 1.5, strokeDasharray: "4 4" }} />
+                  <Area type="monotone" dataKey="total" stroke="var(--chart-2)" strokeWidth={3}
+                    fill="url(#evolucaoGradient)"
+                    dot={{ r: 4.5, fill: "var(--chart-2)", stroke: "hsl(var(--background))", strokeWidth: 2 }}
+                    activeDot={{ r: 7, fill: "var(--chart-2)", stroke: "hsl(var(--background))", strokeWidth: 2.5 }}
+                    label={{ position: "top", fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                    animationDuration={1400} animationEasing="ease-out" />
+                </AreaChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
