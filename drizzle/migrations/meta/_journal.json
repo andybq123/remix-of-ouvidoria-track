@@ -183,6 +183,13 @@
       "when": 1793108740573,
       "tag": "0025_protocolos_listagem_paginada",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793274329925,
+      "tag": "0026_registro_autoria_real_sem_licenca",
+      "breakpoints": true
     }
   ]
 }

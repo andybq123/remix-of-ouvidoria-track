@@ -136,7 +136,8 @@ export const previsualizarImportacaoProtocolosMapa = createServerFn({ method: "P
       );
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const sb = supabaseAdmin;
     const rows: ProtocolMapPreviewRow[] = [];
 
@@ -319,7 +320,8 @@ export const aplicarImportacaoProtocolosMapa = createServerFn({ method: "POST" }
       throw new Error("O lote contém protocolos repetidos.");
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const sb = supabaseAdmin;
     const atualizados: string[] = [];
     const ignorados: string[] = [];

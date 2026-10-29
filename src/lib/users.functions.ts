@@ -35,7 +35,8 @@ export const listarUsuarios = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const { data: allowed, error: e1 } = await supabaseAdmin
       .from("allowed_emails")
       .select("*")
@@ -74,7 +75,8 @@ export const criarUsuario = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const email = data.email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Email inválido");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
 
     const { error: errIns } = await supabaseAdmin
       .from("allowed_emails")
@@ -127,7 +129,8 @@ export const atualizarUsuario = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string; nome?: string; role: "admin" | "user"; novaSenha?: string; secretaria_ids?: string[]; pode_editar?: boolean }) => d)
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
 
     const { data: allowed, error: e1 } = await supabaseAdmin
       .from("allowed_emails").select("*").eq("id", data.id).single();
@@ -159,7 +162,8 @@ export const removerUsuario = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
 
     const { data: allowed } = await supabaseAdmin
       .from("allowed_emails").select("email").eq("id", data.id).single();
