@@ -39,7 +39,8 @@ export const debugContagens = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const out: Record<string, number> = {};
     for (const t of BACKUP_TABELAS) {
       const { count } = await (supabaseAdmin as any).from(t).select("*", { count: "exact", head: true });
@@ -54,7 +55,8 @@ export const debugListar = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const tabela = validaTabela(data.tabela);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const tam = 50;
     let q = (supabaseAdmin as any).from(tabela).select("*", { count: "exact" });
     const busca = data.busca?.trim();
@@ -95,7 +97,8 @@ export const debugSalvar = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const tabela = validaTabela(data.tabela);
     const { id: _ignora, ...valores } = data.valores;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const { error } = await (supabaseAdmin as any).from(tabela).update(valores).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -110,7 +113,8 @@ export const debugExcluir = createServerFn({ method: "POST" })
     if ((tabela === "profiles" || tabela === "user_roles") && data.id === context.userId) {
       throw new Error("Você não pode apagar o seu próprio acesso.");
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const sb = supabaseAdmin as any;
     if (tabela === "protocolos") {
       await sb.from("protocolo_historico").delete().eq("protocolo_id", data.id);
@@ -134,7 +138,8 @@ export const debugZerar = createServerFn({ method: "POST" })
     if (tabelas.has("secretarias")) {
       ["locais", "secretaria_responsaveis"].forEach((t) => tabelas.add(t as BackupTabela));
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const sb = supabaseAdmin as any;
     const me = context.userId;
     const meEmail = (context.claims as any)?.email?.toLowerCase() ?? "";
@@ -193,7 +198,8 @@ export const excluirProtocolos = createServerFn({ method: "POST" })
   })
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const sb = supabaseAdmin as any;
     await sb.from("email_inbox_log").update({ protocolo_id: null }).in("protocolo_id", data.ids);
     const { error: e1 } = await sb.from("protocolo_historico").delete().in("protocolo_id", data.ids);
@@ -220,7 +226,8 @@ export const corrigirAcentosDados = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await assertAdmin(context);
     const { corrigirAcentos, temAcentoQuebrado } = await import("@/lib/corrigir-acentos");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const sb = supabaseAdmin as any;
     const extra: string[] = [];
     for (const t of ["assuntos", "secretarias", "locais"]) {
@@ -262,7 +269,8 @@ export const debugListarSecretariasMapIcons = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const { data, error } = await supabaseAdmin
       .from("secretarias")
       .select("id, nome, sigla, icone")
@@ -282,7 +290,8 @@ export const debugAtualizarSecretariaMapIcon = createServerFn({ method: "POST" }
   })
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const { error } = await supabaseAdmin
       .from("secretarias")
       .update({ icone: data.icone })

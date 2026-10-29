@@ -30,7 +30,8 @@ export const backupExportarTabela = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const tabela = validaTabela(data.tabela);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const { data: rows, error } = await (supabaseAdmin as any)
       .from(tabela)
       .select("*")
@@ -44,7 +45,8 @@ export const backupExportarUsuarios = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const { data, error } = await (supabaseAdmin as any).rpc("backup_exportar_usuarios");
     if (error) throw new Error(`usuários: ${error.message}`);
     return { rows: (data ?? []) as Record<string, any>[] };
@@ -65,7 +67,8 @@ export const backupImportarUsuarios = createServerFn({ method: "POST" })
   .inputValidator((d: { rows: Record<string, any>[] }) => d)
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
     const { data: r, error } = await (supabaseAdmin as any).rpc("backup_importar_usuarios", {
       p: data.rows,
     });
