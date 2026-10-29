@@ -204,6 +204,13 @@
       "when": 1793294934040,
       "tag": "0028_dashboard_protocolos_compacto",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793295050625,
+      "tag": "0029_dashboard_protocolos_sem_link",
+      "breakpoints": true
     }
   ]
 }
