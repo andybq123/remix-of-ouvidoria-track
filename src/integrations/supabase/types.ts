@@ -1013,9 +1013,26 @@ export type Database = {
         Args: { p_anterior: Json; p_id: string; p_patch: Json }
         Returns: undefined
       }
+      aplicar_conferencia_1doc_job: {
+        Args: {
+          p_anterior: Json
+          p_id: string
+          p_job_id: string
+          p_patch: Json
+        }
+        Returns: undefined
+      }
       area_permitida: {
         Args: { _local: string; _secretaria: string }
         Returns: boolean
+      }
+      autor_registro_sistema: {
+        Args: never
+        Returns: {
+          autor_email: string
+          autor_id: string
+          autor_nome: string
+        }[]
       }
       backup_exportar_usuarios: { Args: never; Returns: Json }
       backup_importar: {
