@@ -49,7 +49,7 @@ import { MapDepartmentToggle } from "@/components/map-department-toggle";
 import { mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
 
 const DASHBOARD_COLUNAS =
-  "id, numero, numero_esic, tipo, categoria, assunto, status, secretaria_id, local_id, solicitante, endereco, latitude, longitude, data_abertura, data_conclusao, data_prorrogacao, prorrogado, created_at, triagem_concluida_em, triagem_pendente, resolucao, origem, sigilo, url, secretarias(nome, sigla, icone), locais(nome)";
+  "id, numero, numero_esic, tipo, categoria, assunto, status, secretaria_id, local_id, solicitante, endereco, latitude, longitude, data_abertura, data_conclusao, data_prorrogacao, prorrogado, created_at, triagem_concluida_em, triagem_pendente, resolucao, origem, sigilo, url, responsavel_id, secretarias(nome, sigla, icone), locais(nome), secretaria_responsaveis(nome)";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [
@@ -88,6 +88,7 @@ function Dashboard() {
     titleBase: string;
     predicate: (p: any) => boolean;
     source: "filtrados" | "all";
+    comFiltros?: boolean;
   } | null>(null);
   const [detail, setDetail] = useState<any | null>(null);
   // O painel carrega dados resumidos; ao abrir, busca o protocolo completo.
@@ -220,7 +221,8 @@ function Dashboard() {
     [mapProtocolos, localCoordById],
   );
   // Resumo operacional (motor de SLA único)
-  const op = useMemo(() => resumoOperacional(filtrados as any), [filtrados]);
+  // "Operação do dia" olha o prazo de hoje, independente do mês de abertura.
+  const op = useMemo(() => resumoOperacional(allEnriched as any), [allEnriched]);
   const total = filtrados.length;
   const ativos = filtrados.filter(p => p.status !== "concluido");
   const concluidos = filtrados.filter(p => p.status === "concluido");
@@ -386,6 +388,9 @@ function Dashboard() {
   const openDrill = (title: string, predicate: (p: any) => boolean) => {
     setDrill({ titleBase: title, predicate, source: "filtrados" });
   };
+  const openDrillDoDia = (title: string, predicate: (p: any) => boolean, comFiltros = false) => {
+    setDrill({ titleBase: title, predicate, source: "all", comFiltros });
+  };
 
   // Live-derived items for the drill dialog so concluding a protocol
   // updates the list without closing it.
@@ -395,7 +400,7 @@ function Dashboard() {
     return base.filter(drill.predicate);
   }, [drill, allEnriched, filtrados]);
   const drillData = useMemo(
-    () => (drill ? { title: `${drill.titleBase} (${drillItems.length})`, items: drillItems } : null),
+    () => (drill ? { title: `${drill.titleBase} (${drillItems.length})`, items: drillItems, comFiltros: !!drill.comFiltros } : null),
     [drill, drillItems],
   );
 
@@ -582,16 +587,16 @@ function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <KpiCard icon={AlertTriangle} tone="destructive" label="Vencidos" value={op.vencidos}
             hint="prazo estourado"
-            onClick={() => openDrill("Protocolos vencidos", p => p.status !== "concluido" && calcularSla(p).dias < 0)} />
+            onClick={() => openDrillDoDia("Protocolos vencidos", p => p.status !== "concluido" && calcularSla(p).dias < 0)} />
           <KpiCard icon={Clock} tone="warning" label="Vencendo hoje" value={op.venceHoje}
             hint="último dia do prazo"
-            onClick={() => openDrill("Vencendo hoje", p => p.status !== "concluido" && calcularSla(p).dias === 0)} />
+            onClick={() => openDrillDoDia("Vencendo hoje", p => p.status !== "concluido" && calcularSla(p).dias === 0, true)} />
           <KpiCard icon={Timer} tone="violet" label="Vencendo em 3 dias" value={op.vence3Dias}
             hint="prazo crítico"
-            onClick={() => openDrill("Vencendo em até 3 dias", p => p.status !== "concluido" && calcularSla(p).venceEm3Dias)} />
+            onClick={() => openDrillDoDia("Vencendo em até 3 dias", p => p.status !== "concluido" && calcularSla(p).venceEm3Dias)} />
           <KpiCard icon={Inbox} tone="info" label="Aguardando resposta" value={op.aguardando}
             hint="sem resolução registrada"
-            onClick={() => openDrill("Aguardando resposta", p => p.status !== "concluido" && calcularSla(p).aguardandoResposta)} />
+            onClick={() => openDrillDoDia("Aguardando resposta", p => p.status !== "concluido" && calcularSla(p).aguardandoResposta)} />
           {podeTriar && <KpiCard icon={Inbox} tone="warning" label="Pendentes de triagem" value={triagemStats?.pendentes ?? 0}
             hint="fila de triagem"
             onClick={() => navigate({ to: "/tarefas" })} />}
@@ -624,6 +629,7 @@ function Dashboard() {
                 : `Protocolos atrasados acumulados · ${formatMonthLabel(mes)}`,
               predicate: (p: any) => estavaAtrasadoNaData(p as any, ref).atrasado,
               source: "all",
+              comFiltros: true,
             });
           }}
         />
@@ -1164,11 +1170,26 @@ function DrillDialog({
   onOpenChange,
   onSelect,
 }: {
-  data: { title: string; items: any[] } | null;
+  data: { title: string; items: any[]; comFiltros?: boolean } | null;
   onOpenChange: (v: boolean) => void;
   onSelect: (p: any) => void;
 }) {
   const [q, setQ] = useState("");
+  const [fSec, setFSec] = useState("all");
+  const [fResp, setFResp] = useState("all");
+  const opcoesSec = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of data?.items ?? []) m.set(p.secretaria_id ?? "none", p.secretarias?.nome ?? "Sem secretaria");
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [data]);
+  const opcoesResp = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of data?.items ?? []) {
+      if (fSec !== "all" && (p.secretaria_id ?? "none") !== fSec) continue;
+      m.set(p.responsavel_id ?? "none", p.secretaria_responsaveis?.nome ?? "Sem responsável");
+    }
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [data, fSec]);
   const isAdmin = useIsAdmin();
   const ids1doc = idsOuvidorias1doc((data?.items ?? []).filter((p) => !p._antigo), true);
   const items = useMemo(() => {
@@ -1180,16 +1201,19 @@ function DrillDialog({
       return ad - bd;
     });
     const term = q.trim().toLowerCase();
-    if (!term) return arr;
-    return arr.filter((p: any) => {
+    const porFiltro = arr.filter((p: any) =>
+      (fSec === "all" || (p.secretaria_id ?? "none") === fSec) &&
+      (fResp === "all" || (p.responsavel_id ?? "none") === fResp));
+    if (!term) return porFiltro;
+    return porFiltro.filter((p: any) => {
       const num = String(p.numero ?? "").toLowerCase();
       const assunto = String(p.assunto ?? "").toLowerCase();
       const sol = String(p.solicitante ?? "").toLowerCase();
       return num.includes(term) || assunto.includes(term) || sol.includes(term);
     });
-  }, [data, q]);
+  }, [data, q, fSec, fResp]);
   return (
-    <Dialog open={!!data} onOpenChange={(v) => { if (!v) setQ(""); onOpenChange(v); }}>
+    <Dialog open={!!data} onOpenChange={(v) => { if (!v) { setQ(""); setFSec("all"); setFResp("all"); } onOpenChange(v); }}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>{data?.title ?? ""}</DialogTitle>
@@ -1203,6 +1227,27 @@ function DrillDialog({
             label={`Conferir pelo 1Doc (${ids1doc.length})`}
             confirmacao={`Conferir as ${ids1doc.length} ouvidorias com link ${data.title.startsWith("Local: ") ? "deste local" : "atrasadas"}? Assunto, categoria e endereço serão atualizados conforme o 1Doc, com histórico individual.`} />
         </div>}
+        {data?.comFiltros && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Select value={fSec} onValueChange={(v) => { setFSec(v); setFResp("all"); }}>
+              <SelectTrigger aria-label="Filtrar por secretaria"><SelectValue placeholder="Secretaria" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as secretarias</SelectItem>
+                {opcoesSec.map(([id, nome]) => <SelectItem key={id} value={id}>{nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={fResp} onValueChange={setFResp}>
+              <SelectTrigger aria-label="Filtrar por responsável"><SelectValue placeholder="Responsável" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os responsáveis</SelectItem>
+                {opcoesResp.map(([id, nome]) => <SelectItem key={id} value={id}>{nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {data?.comFiltros && (fSec !== "all" || fResp !== "all") && (
+          <p className="text-xs text-muted-foreground">Mostrando {items.length} de {data.items.length} com os filtros aplicados.</p>
+        )}
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
