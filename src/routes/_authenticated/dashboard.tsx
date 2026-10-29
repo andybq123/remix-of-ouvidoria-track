@@ -18,6 +18,7 @@ import {
   ArrowUpRight, ArrowDownRight, Users, ThumbsUp, ThumbsDown, AlertCircle, BarChart3,
 } from "lucide-react";
 import { fetchAllPaginated } from "@/lib/fetch-all";
+import { montarProtocolosDashboard } from "@/lib/dashboard-dados";
 import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
 import { ManifestacoesMap, type SecretariaPoint, type LocalPoint } from "@/components/manifestacoes-map";
 import { ChartTooltipContent } from "@/components/chart-tooltip";
@@ -173,6 +174,13 @@ function Dashboard() {
         .order("nome")
     ).data ?? [],
   });
+
+  const protocolos = useMemo<any[]>(() => {
+    if (!protocolosCompactos) return [];
+    return protocolosCompactos.compacto
+      ? montarProtocolosDashboard(protocolosCompactos.linhas, secretarias as any[])
+      : (protocolosCompactos.linhas as any[]);
+  }, [protocolosCompactos, secretarias]);
 
   const enriched = useMemo(
     () => protocolos.map(p => ({ ...p, _s: situacaoProtocolo(p as any) })),
