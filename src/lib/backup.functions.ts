@@ -57,7 +57,7 @@ export const backupImportarTabela = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const tabela = validaTabela(data.tabela);
     const { importarTabelaValidada } = await import("./backup-import.server");
-    return importarTabelaValidada(tabela, data.rows);
+    return importarTabelaValidada(tabela, data.rows, context.userId);
   });
 
 export const backupImportarUsuarios = createServerFn({ method: "POST" })

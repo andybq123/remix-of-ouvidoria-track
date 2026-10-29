@@ -30,6 +30,7 @@ const TABELAS: Record<string, string> = {
   allowed_emails: "Usuários",
   user_secretarias: "Áreas de usuários",
   user_roles: "Perfis de acesso",
+  user_locais: "Locais de usuários",
   secretaria_responsaveis: "Responsáveis",
 };
 const OPERACOES: Record<string, { label: string; cls: string }> = {
@@ -58,6 +59,7 @@ function RegistroPage() {
     placeholderData: keepPreviousData,
     queryFn: async () => {
       let q = supabase.from("registro_sistema").select("*", { count: "exact" })
+        .neq("tabela", "licenca_estado")
         .order("created_at", { ascending: false })
         .range(pagina * POR_PAGINA, pagina * POR_PAGINA + POR_PAGINA - 1);
       if (tabela !== "todas") q = q.eq("tabela", tabela);
@@ -107,7 +109,8 @@ function RegistroPage() {
                 <button type="button" className="w-full text-left flex flex-wrap items-center gap-2 text-sm"
                   onClick={() => setAberto(aberto === r.id ? null : r.id)}>
                   <span className="text-muted-foreground tabular-nums">{new Date(r.created_at).toLocaleString("pt-BR")}</span>
-                  <span className="font-medium">{r.autor_nome || r.autor_email || "Desconhecido"}</span>
+                  <span className="font-medium break-words">{r.autor_nome || r.autor_email || "Autor não identificado"}</span>
+                  {r.autor_nome && r.autor_email && <span className="text-muted-foreground break-all">({r.autor_email})</span>}
                   <Badge variant="outline" className={op.cls}>{op.label}</Badge>
                   <span>{TABELAS[r.tabela] ?? r.tabela}</span>
                   {r.resumo && <span className="font-medium">· {r.resumo}</span>}

@@ -588,6 +588,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
     );
 
     const dadosNovo = {
+      origem: "email",
       numero,
       numero_esic: numeroEsic,
       tipo: extr.tipo,

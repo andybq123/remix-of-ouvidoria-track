@@ -156,7 +156,8 @@ async function processar(job) {
             const end = upd.endereco || p.endereco;
             if (end) { const c = await geocodificar(end); if (c) Object.assign(upd, c); }
           }
-          await rest("rpc/aplicar_conferencia_1doc", { method: "POST", body: JSON.stringify({
+          await rest("rpc/aplicar_conferencia_1doc_job", { method: "POST", body: JSON.stringify({
+            p_job_id: job.id,
             p_id: p.id, p_patch: somenteCamposAgente(upd),
             p_anterior: { assunto: p.assunto, categoria: p.categoria, endereco: p.endereco, latitude: p.latitude, longitude: p.longitude, status: p.status, data_conclusao: p.data_conclusao, url: p.url },
           }) });
