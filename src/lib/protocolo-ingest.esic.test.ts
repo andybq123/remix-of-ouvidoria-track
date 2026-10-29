@@ -104,6 +104,10 @@ beforeEach(() => {
 });
 
 describe("ingerirEmail: pedidos e-SIC", () => {
+  it("identifica a criação automática como recebida por e-mail", async () => {
+    expect((await ingerirEmail(entrada)).ok).toBe(true);
+    expect(mock.tables.protocolos[0].origem).toBe("email");
+  });
   it("insere e-SIC com número próprio, sem IA e sempre em triagem, mesmo com conta vinculada", async () => {
     const res = await ingerirEmail(entrada);
     expect(res.ok).toBe(true);
