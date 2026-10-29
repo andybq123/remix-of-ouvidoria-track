@@ -17,13 +17,12 @@ import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { currentMonthValue } from "@/lib/month-filter";
 import { validarFiltrosProtocolos } from "@/lib/protocolos-listagem";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts";
 import { ChartTooltipContent } from "@/components/chart-tooltip";
 import { HealthUnitChart } from "@/components/health-unit-chart";
 import { format, startOfMonth, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#84cc16", "#14b8a6", "#a855f7", "#eab308"];
 
 export const Route = createFileRoute("/_authenticated/saude")({
   head: () => ({ meta: [
