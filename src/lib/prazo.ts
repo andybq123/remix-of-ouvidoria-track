@@ -107,7 +107,8 @@ export function estavaAtrasadoNaData(
 ): { atrasado: boolean; diasAtraso: number; prazoFinal: Date } {
   const { prazoFinal } = calcularPrazo(p);
   const diasAtraso = differenceInCalendarDays(refDate, prazoFinal);
-  const venceuAntes = prazoFinal < refDate;
+  // No próprio dia do vencimento ainda é "vence hoje"; atrasada só a partir do dia seguinte.
+  const venceuAntes = diasAtraso >= 1;
   const dataConclusao = p.data_conclusao
     ? new Date(p.data_conclusao + (p.data_conclusao.length === 10 ? "T00:00:00" : ""))
     : null;

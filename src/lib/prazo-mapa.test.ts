@@ -90,3 +90,12 @@ describe("resumoPrazoMapa (popup do mapa)", () => {
     ).toBeNull();
   });
 });
+
+import { estavaAtrasadoNaData as _atrasoNaData } from "./prazo";
+describe("vence hoje x atrasada", () => {
+  it("no dia do vencimento não conta como atrasada; no dia seguinte, sim", () => {
+    const p = { tipo: "ouvidoria" as const, data_abertura: "2026-01-01", prorrogado: false, status: "aberto" as const };
+    expect(_atrasoNaData(p, new Date(2026, 0, 31, 15, 0)).atrasado).toBe(false);
+    expect(_atrasoNaData(p, new Date(2026, 1, 1, 9, 0)).atrasado).toBe(true);
+  });
+});
