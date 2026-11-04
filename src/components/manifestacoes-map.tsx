@@ -8,6 +8,7 @@ import { mapDepartmentOf } from "@/lib/map-departments";
 import { obterIconeSecretaria, SECRETARIA_ICONES } from "@/lib/secretaria-map-icons";
 import { resumoPrazoMapa, type ResumoPrazoMapa } from "@/lib/prazo";
 import { atualizarMapaQuandoPronto } from "@/lib/map-ready";
+import { coberturaSaudeMapa } from "@/lib/map-health-coverage";
 
 export { SECRETARIA_ICONES };
 
@@ -466,6 +467,10 @@ export function ManifestacoesMap({
     () => valid.filter(p => p.mapDepartment === "obras"),
     [valid],
   );
+  const protocolosIndividuais = useMemo(
+    () => [...validProtocolosObras, ...coberturaSaudeMapa(points, validLocais).individuais],
+    [validProtocolosObras, points, validLocais],
+  );
   // Group health units that share the same (rounded) coordinates so they become a cluster
   const localGroups = useMemo(() => {
     const map = new Map<string, LocalPoint[]>();
@@ -652,12 +657,12 @@ export function ManifestacoesMap({
         markersRef.current.push(marker);
       });
 
-      // Cada protocolo de Obras com coordenadas ganha um marcador próprio e identificável.
-      validProtocolosObras.forEach((point) => {
+      // Saúde sem unidade visível também recebe pino próprio, sem duplicar os totais das unidades.
+      protocolosIndividuais.forEach((point) => {
         const el = document.createElement("div");
-        el.innerHTML = obrasPinSvg(point.secretariaIcone);
+        el.innerHTML = point.mapDepartment === "obras" ? obrasPinSvg(point.secretariaIcone) : pinSvg(point.categoria);
         el.style.cursor = "pointer";
-        el.setAttribute("aria-label", `Obras · protocolo ${point.numero}`);
+        el.setAttribute("aria-label", `${point.mapDepartment === "obras" ? "Obras" : "Saúde"} · protocolo ${point.numero}`);
         const popupNode = document.createElement("div");
         const root = createRoot(popupNode);
         root.render(<ProtocolMapPopup point={point} onOpen={(id) => onOpenRef.current?.(id)} />);
@@ -671,7 +676,7 @@ export function ManifestacoesMap({
       });
 
       // fit bounds
-      const all = [...validSecs, ...validLocais, ...validProtocolosObras];
+      const all = [...validSecs, ...validLocais, ...protocolosIndividuais];
       if (all.length === 1) {
         map.flyTo({ center: [all[0].lng, all[0].lat], zoom: 15, duration: 0 });
       } else if (all.length > 1) {
@@ -682,7 +687,7 @@ export function ManifestacoesMap({
     };
 
     return atualizarMapaQuandoPronto(map, apply);
-  }, [valid, validSecs, validLocais, validProtocolosObras, localGroups, protocolosPorLocal]);
+  }, [valid, validSecs, validLocais, protocolosIndividuais, localGroups, protocolosPorLocal]);
 
   return (
     <div
@@ -701,7 +706,7 @@ export function ManifestacoesMap({
         ref={containerRef}
         style={{ height: "100%", width: "100%", borderRadius: 8, overflow: "hidden", contain: "paint" }}
       />
-      {!validSecs.length && !validLocais.length && !validProtocolosObras.length && (
+      {!validSecs.length && !validLocais.length && !protocolosIndividuais.length && (
         <p className="text-xs text-muted-foreground mt-2 text-center">
           Nenhuma unidade cadastrada com coordenadas ainda.
         </p>

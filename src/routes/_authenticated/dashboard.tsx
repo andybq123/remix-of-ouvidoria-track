@@ -49,6 +49,7 @@ import { ptBR } from "date-fns/locale";
 import { useRealtimeSync } from "@/hooks/realtime-sync-context";
 import { MapDepartmentToggle } from "@/components/map-department-toggle";
 import { mapDepartmentOf, matchesMapDepartment, type MapDepartmentScope } from "@/lib/map-departments";
+import { coberturaSaudeMapa } from "@/lib/map-health-coverage";
 
 const DASHBOARD_COLUNAS =
   "id, numero, numero_esic, tipo, categoria, assunto, status, secretaria_id, local_id, solicitante, endereco, latitude, longitude, data_abertura, data_conclusao, data_prorrogacao, prorrogado, created_at, triagem_concluida_em, triagem_pendente, resolucao, origem, sigilo, responsavel_id, secretarias(nome, sigla, icone), locais(nome), secretaria_responsaveis(nome)";
@@ -216,6 +217,16 @@ function Dashboard() {
   const localCoordById = useMemo(
     () => new Map((locaisComCoord as any[]).map((l) => [l.id, { lat: l.latitude, lng: l.longitude }])),
     [locaisComCoord],
+  );
+  const coberturaSaude = useMemo(
+    () => coberturaSaudeMapa(mapProtocolos.map(p => ({
+      id: p.id,
+      local_id: p.local_id,
+      lat: p.latitude ?? localCoordById.get(p.local_id)?.lat ?? NaN,
+      lng: p.longitude ?? localCoordById.get(p.local_id)?.lng ?? NaN,
+      mapDepartment: mapDepartmentOf(p.secretarias ?? {}),
+    })), mapLocais),
+    [mapProtocolos, localCoordById, mapLocais],
   );
   const obrasSemCoord = useMemo(
     () => mapProtocolos.filter((p: any) =>
@@ -1013,6 +1024,20 @@ function Dashboard() {
                 mapDepartment: mapDepartmentOf(p.secretarias ?? {}),
               }))}
           />
+          {mapScope === "saude" && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span>Saúde · {mes === "all" ? "Todos os meses" : formatMonthLabel(mes)} · <strong>{mapProtocolos.length}</strong> ouvidoria(s)</span>
+              <span>· <strong>{coberturaSaude.porUnidade + coberturaSaude.individuais.length}</strong> localizada(s)</span>
+              {coberturaSaude.semLocalizacao.length > 0 && (
+                <Button variant="link" size="sm" className="h-auto px-0 py-0 text-xs" onClick={() => {
+                  const ids = new Set(coberturaSaude.semLocalizacao.map(p => p.id));
+                  openDrill("Saúde — sem localização", p => ids.has(p.id));
+                }}>
+                  {coberturaSaude.semLocalizacao.length} sem localização
+                </Button>
+              )}
+            </div>
+          )}
           {mapScope !== "saude" && (
             <p className="text-xs text-muted-foreground mt-2">
               Mostrando <strong>{mapProtocolos.length}</strong> ouvidoria(s) de Obras <strong>atrasadas</strong> (todos os meses).
