@@ -11,7 +11,8 @@ export function validarFiltrosProtocolos(search: Partial<Record<"busca" | "statu
   const date = (key: keyof typeof search) => /^\d{4}-\d{2}-\d{2}$/.test(text(key)) ? text(key) : "";
   const pagina = Number(search.pagina);
   return {
-    busca: text("busca"),
+    // A URL transforma "2450" em número; a busca precisa continuar como texto.
+    busca: typeof search.busca === "number" && Number.isFinite(search.busca) ? String(search.busca) : text("busca"),
     status: option("status", ["todos", "aberto", "em_andamento", "concluido"]),
     tipo: option("tipo", ["todos", "ouvidoria", "lai", "esic"]),
     categoria: option("categoria", ["todos", "elogio", "reclamacao", "pedido_informacao", "esic", "denuncia", "solicitacao", "sugestao", "outros"]),

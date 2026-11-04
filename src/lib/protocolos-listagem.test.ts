@@ -23,4 +23,7 @@ describe("listagem paginada de protocolos", () => {
     vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: null, error: { message: "falha de conexão" } } as never);
     await expect(protocolosPaginaOptions(validarFiltrosProtocolos({}), false).queryFn()).rejects.toEqual({ message: "falha de conexão" });
   });
+  it("mantém busca só com números (ex.: 2450)", () => {
+    expect(validarFiltrosProtocolos({ busca: 2450 }).busca).toBe("2450");
+  });
 });
