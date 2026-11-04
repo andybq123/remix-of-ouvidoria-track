@@ -11,11 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Plus, Trash2, AlertCircle, CheckCircle2, Clock, RefreshCw, ShieldCheck, Sparkles, Bot, Zap } from "lucide-react";
+import { Mail, Plus, Trash2, AlertCircle, CheckCircle2, Clock, RefreshCw, Sparkles, Bot, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useServerFn } from "@tanstack/react-start";
-import { sincronizarGmail, ressincronizarGmail, reverificarEmails, backfillUrls1Doc, reprocessarEmail, testarContaImap } from "@/lib/gmail-sync.functions";
+import { sincronizarGmail, testarContaImap } from "@/lib/gmail-sync.functions";
 import { EsicMailboxButton } from "@/components/esic-mailbox-button";
 
 const SYNC_INTERVAL_MIN = 3;
@@ -52,15 +52,7 @@ export const Route = createFileRoute("/_authenticated/email-inbox")({
 function EmailInboxPage() {
   const qc = useQueryClient();
   const sincronizar = useServerFn(sincronizarGmail);
-  const ressincronizar = useServerFn(ressincronizarGmail);
-  const reverificar = useServerFn(reverificarEmails);
-  const backfillUrls = useServerFn(backfillUrls1Doc);
-  const reprocessar = useServerFn(reprocessarEmail);
-  const [reprocessandoId, setReprocessandoId] = useState<string | null>(null);
   const [sincronizando, setSincronizando] = useState(false);
-  const [ressincronizando, setRessincronizando] = useState(false);
-  const [reverificando, setReverificando] = useState(false);
-  const [backfillando, setBackfillando] = useState(false);
   useTick(1000);
 
   async function rodarSync() {
@@ -74,58 +66,6 @@ function EmailInboxPage() {
       toast.error(e?.message ?? "Falha ao sincronizar");
     } finally {
       setSincronizando(false);
-    }
-  }
-
-  async function rodarRessync() {
-    if (!confirm("Ressincronizar os últimos 30 dias de e-mails? E-mails já processados não serão duplicados.")) return;
-    setRessincronizando(true);
-    try {
-      const r = await ressincronizar({ data: { dias: 30 } }) as any;
-      toast.success(`Ressincronização: ${r?.novos ?? 0} novo(s), ${r?.erros ?? 0} erro(s) em ${r?.contas ?? 0} conta(s)`);
-      qc.invalidateQueries({ queryKey: ["email-inbox-accounts"] });
-      qc.invalidateQueries({ queryKey: ["email-inbox-log"] });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao ressincronizar");
-    } finally {
-      setRessincronizando(false);
-    }
-  }
-
-  async function rodarReverificacao() {
-    if (!confirm("Reverificar os últimos 60 dias e tentar criar protocolo para todos os e-mails que ainda não foram protocolizados? Pode demorar alguns minutos.")) return;
-    setReverificando(true);
-    try {
-      const r = await reverificar({ data: { dias: 60 } }) as any;
-      toast.success(`Reverificação: ${r?.reprocessados ?? 0} reprocessado(s), ${r?.novos ?? 0} novo(s) protocolo(s), ${r?.erros ?? 0} erro(s)`);
-      qc.invalidateQueries({ queryKey: ["email-inbox-accounts"] });
-      qc.invalidateQueries({ queryKey: ["email-inbox-log"] });
-      qc.invalidateQueries({ queryKey: ["protocolos"] });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao reverificar");
-    } finally {
-      setReverificando(false);
-    }
-  }
-
-  async function rodarBackfillUrls() {
-    if (!confirm(
-      "Buscar nos últimos 180 dias do Gmail e preencher a URL do 1Doc nos protocolos existentes que ainda estão sem link?\n\n" +
-      "Não cria protocolos novos, não altera status nem nenhum outro campo — só preenche a URL quando estiver vazia."
-    )) return;
-    setBackfillando(true);
-    try {
-      const r = await backfillUrls({ data: { dias: 180 } }) as any;
-      toast.success(
-        `Backfill: ${r?.atualizados ?? 0} protocolo(s) atualizado(s). ` +
-        `Lidos ${r?.emails_lidos ?? 0} e-mails · ${r?.ja_com_url ?? 0} já tinham URL · ` +
-        `${r?.sem_link ?? 0} sem link · ${r?.sem_numero ?? 0} sem nº · ${r?.sem_protocolo ?? 0} sem protocolo.`
-      );
-      qc.invalidateQueries({ queryKey: ["protocolos"] });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha no backfill de URLs");
-    } finally {
-      setBackfillando(false);
     }
   }
 
@@ -217,24 +157,6 @@ function EmailInboxPage() {
     );
   };
 
-  async function rodarReprocessar(logId: string) {
-    setReprocessandoId(logId);
-    try {
-      const r = await reprocessar({ data: { logId } }) as any;
-      if (r?.ok) {
-        toast.success(`Reprocessado: protocolo ${r.numero ?? ""} criado`);
-      } else {
-        toast.error(r?.error ?? "Falha ao reprocessar");
-      }
-      qc.invalidateQueries({ queryKey: ["email-inbox-log"] });
-      qc.invalidateQueries({ queryKey: ["protocolos"] });
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao reprocessar");
-    } finally {
-      setReprocessandoId(null);
-    }
-  }
-
   const syncAccounts = accounts.filter((a: any) => (a.provider === "gmail" || a.provider === "imap") && a.ativo);
   const ultimaSync = syncAccounts
     .map((a: any) => a.ultima_sincronizacao ? new Date(a.ultima_sincronizacao).getTime() : 0)
@@ -253,19 +175,7 @@ function EmailInboxPage() {
           <p className="text-sm text-muted-foreground">Encaminhe e-mails para um endereço único e o sistema cria a ouvidoria automaticamente.</p>
         </div>
         <div className="flex flex-wrap items-start gap-2">
-          <EsicMailboxButton accountIds={syncAccounts.map(a => a.id)} disabled={sincronizando || ressincronizando || reverificando || backfillando} />
-          <Button variant="outline" onClick={rodarBackfillUrls} disabled={backfillando || reverificando || ressincronizando || sincronizando} title="Preenche a URL do 1Doc nos protocolos existentes sem link">
-            <RefreshCw className={`h-4 w-4 mr-1 ${backfillando ? "animate-spin" : ""}`} />
-            Backfill URLs 1Doc
-          </Button>
-          <Button variant="outline" onClick={rodarReverificacao} disabled={reverificando || ressincronizando || sincronizando} title="Reverifica e-mails não protocolizados nos últimos 60 dias">
-            <ShieldCheck className={`h-4 w-4 mr-1 ${reverificando ? "animate-spin" : ""}`} />
-            Reverificar não-protocolados
-          </Button>
-          <Button variant="outline" onClick={rodarRessync} disabled={ressincronizando || sincronizando}>
-            <RefreshCw className={`h-4 w-4 mr-1 ${ressincronizando ? "animate-spin" : ""}`} />
-            Ressincronizar 30 dias
-          </Button>
+          <EsicMailboxButton accountIds={syncAccounts.map(a => a.id)} disabled={sincronizando} />
           <Button variant="outline" onClick={rodarSync} disabled={sincronizando}>
             <RefreshCw className={`h-4 w-4 mr-1 ${sincronizando ? "animate-spin" : ""}`} />
             Sincronizar agora
@@ -389,18 +299,6 @@ function EmailInboxPage() {
                       </p>
                     )}
                   </div>
-                  {l.status === "erro" && !l.protocolo_id && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => rodarReprocessar(l.id)}
-                      disabled={reprocessandoId === l.id}
-                      title="Tentar processar este e-mail novamente"
-                    >
-                      <RefreshCw className={`h-3 w-3 mr-1 ${reprocessandoId === l.id ? "animate-spin" : ""}`} />
-                      Reprocessar
-                    </Button>
-                  )}
                 </div>
               </CardContent>
             </Card>
