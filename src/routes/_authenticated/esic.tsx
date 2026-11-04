@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
-import { filtrarEsicPorMes, mesesDisponiveisEsic } from "@/lib/esic-lista";
+import { COLUNAS_CARTAO_ESIC, filtrarEsicPorMes, mesesDisponiveisEsic } from "@/lib/esic-lista";
 
 export const Route = createFileRoute("/_authenticated/esic")({
   head: () => ({ meta: [
@@ -36,7 +36,7 @@ function EsicPage() {
     queryKey: ["protocolos", "esic-lista"],
     queryFn: () => fetchAllPaginated<any>((from, to) =>
       supabase.from("protocolos")
-        .select("id, numero, numero_esic, assunto, solicitante, status, data_abertura, data_conclusao, secretarias(nome)")
+        .select(COLUNAS_CARTAO_ESIC)
         .eq("tipo", "esic")
         .order("data_abertura", { ascending: false })
         .range(from, to) as any),
