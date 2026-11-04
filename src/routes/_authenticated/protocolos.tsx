@@ -4,7 +4,7 @@ import { useIsAdmin as useIsAdminGuard } from "@/hooks/use-is-admin";
 import { formatarNumeroEsic } from "@/lib/esic";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
