@@ -69,10 +69,18 @@ function ProtocolosPage() {
   const alterarFiltros = (patch: Partial<FiltrosProtocolos>) => {
     void navigate({ search: (prev) => ({ ...prev, ...patch, pagina: 1 }), replace: true });
   };
-  useEffect(() => { setBusca(filtros.busca); }, [filtros.busca]);
+  // Guarda o último valor que nós mesmos enviamos ao endereço: quando ele
+  // volta pela URL não pode sobrescrever o que o usuário digitou depois.
+  const buscaEnviadaRef = useRef(filtros.busca);
   useEffect(() => {
-    if (busca === filtros.busca) return;
+    if (String(filtros.busca ?? "") === String(buscaEnviadaRef.current ?? "")) return;
+    buscaEnviadaRef.current = filtros.busca;
+    setBusca(filtros.busca);
+  }, [filtros.busca]);
+  useEffect(() => {
+    if (String(busca ?? "") === String(filtros.busca ?? "")) return;
     const timer = window.setTimeout(() => {
+      buscaEnviadaRef.current = busca;
       void navigate({ search: (prev) => ({ ...prev, busca, pagina: 1 }), replace: true });
     }, 300);
     return () => window.clearTimeout(timer);
