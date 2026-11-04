@@ -7,6 +7,7 @@ import type { MapDepartment } from "@/lib/map-departments";
 import { mapDepartmentOf } from "@/lib/map-departments";
 import { obterIconeSecretaria, SECRETARIA_ICONES } from "@/lib/secretaria-map-icons";
 import { resumoPrazoMapa, type ResumoPrazoMapa } from "@/lib/prazo";
+import { atualizarMapaQuandoPronto } from "@/lib/map-ready";
 
 export { SECRETARIA_ICONES };
 
@@ -680,8 +681,7 @@ export function ManifestacoesMap({
       }
     };
 
-    if (map.isStyleLoaded()) apply();
-    else map.once("load", apply);
+    return atualizarMapaQuandoPronto(map, apply);
   }, [valid, validSecs, validLocais, validProtocolosObras, localGroups, protocolosPorLocal]);
 
   return (
