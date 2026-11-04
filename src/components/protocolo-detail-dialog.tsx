@@ -81,6 +81,8 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
       return data;
     },
     enabled: open && !!protocoloProp?.id && !isLegacyProp,
+    // Voltar para a aba não deve recarregar o registro e apagar a edição.
+    refetchOnWindowFocus: false,
   });
   const protocolo = protocoloFresh ?? protocoloProp;
   const isLegacy = protocolo?.__antigo === true;
@@ -174,8 +176,24 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
     finally { setRevertendo(null); }
   }
 
+  // Só recarrega o formulário quando abre outro protocolo ou quando o
+  // registro mudou de verdade e não há edição em andamento; assim trocar de
+  // aba ou um recarregamento em segundo plano não apaga a triagem.
+  const formCarregadoRef = useRef<string | null>(null);
+  const formDoRegistroCompletoRef = useRef(false);
+  useEffect(() => {
+    if (!open) formCarregadoRef.current = null;
+  }, [open]);
   useEffect(() => {
     if (protocolo) {
+      const chave = `${protocolo.id}|${protocolo.updated_at ?? ""}|${protocolo.triagem_pendente ? 1 : 0}`;
+      if (formCarregadoRef.current === chave) return;
+      const mesmoProtocolo = formCarregadoRef.current?.split("|")[0] === String(protocolo.id);
+      // Só preserva se o formulário já veio do registro completo (o cartão da
+      // lista traz campos parciais e precisa ser substituído).
+      if (mesmoProtocolo && formDoRegistroCompletoRef.current && editing && protocolo.triagem_pendente) return;
+      formCarregadoRef.current = chave;
+      formDoRegistroCompletoRef.current = !!protocoloFresh;
       setForm({
         numero: protocolo.numero ?? "",
         numero_esic: protocolo.numero_esic ?? (protocolo.tipo === "esic" ? protocolo.numero : ""),

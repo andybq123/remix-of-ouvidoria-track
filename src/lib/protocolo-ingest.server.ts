@@ -529,14 +529,17 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
     // tinha devolvido outro valor).
     {
       const variantes = normalizarNumero(numero);
-      const { data: jaExiste, error: erroDuplicidade } = await supabaseAdmin
+      // e-SIC e ouvidorias têm numerações independentes: o pedido e-SIC
+      // 103/2026 pode coexistir com a ouvidoria 103/2026.
+      let consultaDup = supabaseAdmin
         .from("protocolos")
         .select("id, numero, tipo")
-        .in("numero", variantes)
-        .maybeSingle();
+        .in("numero", variantes);
+      consultaDup = emailEhEsic ? consultaDup.eq("tipo", "esic") : consultaDup.neq("tipo", "esic");
+      const { data: jaExiste, error: erroDuplicidade } = await consultaDup.maybeSingle();
       if (erroDuplicidade) throw erroDuplicidade;
       if (jaExiste) {
-        if (emailEhEsic || jaExiste.tipo === "esic") throw new Error("Número já utilizado por outro protocolo; revise o conflito de numeração antes de reprocessar.");
+        if (emailEhEsic) throw new Error("Pedido e-SIC com este número já existe; revise o conflito antes de reprocessar.");
         await supabaseAdmin.from("email_inbox_log").update({
           status: "processado",
           protocolo_id: jaExiste.id,

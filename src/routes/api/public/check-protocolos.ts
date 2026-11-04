@@ -74,6 +74,7 @@ export const Route = createFileRoute("/api/public/check-protocolos")({
         const { data, error } = await supabaseAdmin
           .from("protocolos")
           .select("numero")
+          .neq("tipo", "esic")
           .in("numero", Array.from(todasVariantes));
         if (error) {
           return Response.json({ error: error.message }, { status: 500, headers: corsHeaders() });
