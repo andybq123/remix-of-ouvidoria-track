@@ -536,7 +536,7 @@ export async function ingerirEmail(input: IngestInput): Promise<{ ok: boolean; p
         .select("id, numero, tipo")
         .in("numero", variantes);
       consultaDup = emailEhEsic ? consultaDup.eq("tipo", "esic") : consultaDup.neq("tipo", "esic");
-      const { data: jaExiste, error: erroDuplicidade } = await consultaDup.limit(1).maybeSingle();
+      const { data: jaExiste, error: erroDuplicidade } = await consultaDup.maybeSingle();
       if (erroDuplicidade) throw erroDuplicidade;
       if (jaExiste) {
         if (emailEhEsic) throw new Error("Pedido e-SIC com este número já existe; revise o conflito antes de reprocessar.");
