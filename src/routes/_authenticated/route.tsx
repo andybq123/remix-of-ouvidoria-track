@@ -84,6 +84,7 @@ function AuthLayoutContent() {
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     ...(podeTriar ? [{ to: "/tarefas", label: "Triagem", icon: Inbox }] : []),
     ...(soSaude ? [] : [{ to: "/protocolos", label: "Protocolos", icon: FileText }]),
+    ...(soSaude ? [] : [{ to: "/esic", label: "e-SIC", icon: ScrollText }]),
     ...(soVigilancia ? [] : [{ to: "/saude", label: "Saúde", icon: HeartPulse }]),
     { to: "/mapa", label: "Mapa", icon: MapIcon },
     { to: "/atrasados", label: "Atrasados", icon: AlertTriangle },
