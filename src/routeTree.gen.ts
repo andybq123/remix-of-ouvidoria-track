@@ -27,6 +27,7 @@ import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authen
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDebugRouteImport } from './routes/_authenticated/debug'
 import { Route as AuthenticatedEmailInboxRouteImport } from './routes/_authenticated/email-inbox'
+import { Route as AuthenticatedEsicRouteImport } from './routes/_authenticated/esic'
 import { Route as AuthenticatedIaConfigRouteImport } from './routes/_authenticated/ia-config'
 import { Route as AuthenticatedLicencaRouteImport } from './routes/_authenticated/licenca'
 import { Route as AuthenticatedMapaRouteImport } from './routes/_authenticated/mapa'
@@ -137,6 +138,11 @@ const AuthenticatedDebugRoute = AuthenticatedDebugRouteImport.update({
 const AuthenticatedEmailInboxRoute = AuthenticatedEmailInboxRouteImport.update({
   id: '/email-inbox',
   path: '/email-inbox',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEsicRoute = AuthenticatedEsicRouteImport.update({
+  id: '/esic',
+  path: '/esic',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedIaConfigRoute = AuthenticatedIaConfigRouteImport.update({
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
   '/email-inbox': typeof AuthenticatedEmailInboxRoute
+  '/esic': typeof AuthenticatedEsicRoute
   '/ia-config': typeof AuthenticatedIaConfigRoute
   '/licenca': typeof AuthenticatedLicencaRoute
   '/mapa': typeof AuthenticatedMapaRoute
@@ -306,6 +313,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
   '/email-inbox': typeof AuthenticatedEmailInboxRoute
+  '/esic': typeof AuthenticatedEsicRoute
   '/ia-config': typeof AuthenticatedIaConfigRoute
   '/licenca': typeof AuthenticatedLicencaRoute
   '/mapa': typeof AuthenticatedMapaRoute
@@ -346,6 +354,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/debug': typeof AuthenticatedDebugRoute
   '/_authenticated/email-inbox': typeof AuthenticatedEmailInboxRoute
+  '/_authenticated/esic': typeof AuthenticatedEsicRoute
   '/_authenticated/ia-config': typeof AuthenticatedIaConfigRoute
   '/_authenticated/licenca': typeof AuthenticatedLicencaRoute
   '/_authenticated/mapa': typeof AuthenticatedMapaRoute
@@ -387,6 +396,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/debug'
     | '/email-inbox'
+    | '/esic'
     | '/ia-config'
     | '/licenca'
     | '/mapa'
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/debug'
     | '/email-inbox'
+    | '/esic'
     | '/ia-config'
     | '/licenca'
     | '/mapa'
@@ -465,6 +476,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/debug'
     | '/_authenticated/email-inbox'
+    | '/_authenticated/esic'
     | '/_authenticated/ia-config'
     | '/_authenticated/licenca'
     | '/_authenticated/mapa'
@@ -630,6 +642,13 @@ declare module '@tanstack/react-router' {
       path: '/email-inbox'
       fullPath: '/email-inbox'
       preLoaderRoute: typeof AuthenticatedEmailInboxRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/esic': {
+      id: '/_authenticated/esic'
+      path: '/esic'
+      fullPath: '/esic'
+      preLoaderRoute: typeof AuthenticatedEsicRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ia-config': {
@@ -802,6 +821,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDebugRoute: typeof AuthenticatedDebugRoute
   AuthenticatedEmailInboxRoute: typeof AuthenticatedEmailInboxRoute
+  AuthenticatedEsicRoute: typeof AuthenticatedEsicRoute
   AuthenticatedIaConfigRoute: typeof AuthenticatedIaConfigRoute
   AuthenticatedLicencaRoute: typeof AuthenticatedLicencaRoute
   AuthenticatedMapaRoute: typeof AuthenticatedMapaRoute
@@ -827,6 +847,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDebugRoute: AuthenticatedDebugRoute,
   AuthenticatedEmailInboxRoute: AuthenticatedEmailInboxRoute,
+  AuthenticatedEsicRoute: AuthenticatedEsicRoute,
   AuthenticatedIaConfigRoute: AuthenticatedIaConfigRoute,
   AuthenticatedLicencaRoute: AuthenticatedLicencaRoute,
   AuthenticatedMapaRoute: AuthenticatedMapaRoute,
