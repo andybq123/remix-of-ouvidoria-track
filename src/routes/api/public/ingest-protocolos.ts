@@ -125,7 +125,8 @@ export const Route = createFileRoute("/api/public/ingest-protocolos")({
           const { data: existentes, error: errSel } = await supabaseAdmin
             .from("protocolos")
             .select("id, numero, status")
-            .in("numero", Array.from(todasVariantes));
+            .neq("tipo", "esic")
+          .in("numero", Array.from(todasVariantes));
           if (errSel) throw new Error(errSel.message);
 
           // numeroVariante -> { id, status }
