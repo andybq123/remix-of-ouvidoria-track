@@ -26,9 +26,11 @@ buraco_db() {
   for i in $(seq 1 30); do
     c="$(docker ps --filter 'label=com.supabase.cli.project=buraco-local' --format '{{.Names}}' | grep -E '^supabase_db_' | head -1 || true)"
     [ -n "$c" ] || c="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_buraco' | head -1 || true)"
-    if [ -n "$c" ] && docker exec "$c" pg_isready -U postgres -q 2>/dev/null; then echo "$c"; return 0; fi
+    if [ -n "$c" ] && timeout 5 docker exec "$c" pg_isready -U postgres -q 2>/dev/null; then printf '\r  ✓ Banco respondendo            \n' >&2; echo "$c"; return 0; fi
+    printf '\r  … Aguardando o banco responder (%ss de 90s)' "$((i*3))" >&2
     sleep 3
   done
+  echo >&2
   {
     echo "--- contêineres do Buraco ---"
     docker ps -a --format '{{.Names}}\t{{.Status}}' | grep -i buraco || echo "(nenhum)"
