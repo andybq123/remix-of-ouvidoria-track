@@ -218,6 +218,13 @@
       "when": 1793791459369,
       "tag": "0030_numeracao_esic_independente",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794503595037,
+      "tag": "0031_rls_leituras_restritas",
+      "breakpoints": true
     }
   ]
 }
