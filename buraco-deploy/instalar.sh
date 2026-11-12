@@ -39,6 +39,8 @@ buraco_db() {
     docker ps -a --format '{{.Names}}\t{{.Status}}' | grep -i buraco || echo "(nenhum)"
     c="$(docker ps -a --format '{{.Names}}' | grep -E '^supabase_db_buraco' | head -1 || true)"
     [ -n "$c" ] && { echo "--- últimas linhas do banco ($c) ---"; docker logs --tail 30 "$c" 2>&1; }
+    echo "--- todos os contêineres ---"; docker ps -a --format '{{.Names}}\t{{.Status}}' | head -30
+    echo "--- registro da instalação (últimas linhas) ---"; tail -n 40 "$LOG" 2>/dev/null
     echo "--- memória / disco ---"; free -m; df -h / | tail -1
   } | tee -a "$LOG" >&2
   return 1
