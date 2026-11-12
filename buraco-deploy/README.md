@@ -37,6 +37,24 @@ sudo bash /opt/buraco-brusque/buraco-deploy/atualizar.sh
 Baixa a versão nova do GitHub, aplica mudanças de banco pendentes e recompila
 somente o Buraco Brusque.
 
+## Adicionar outro domínio sem remover o atual
+
+No DNS de `chatizy.com.br`, crie o registro **A** `buraco` apontando para o
+mesmo IP público da VPS. Não mantenha um AAAA apontando para outro servidor.
+Depois, no clone do OuviDesk:
+
+```bash
+git pull
+sudo bash buraco-deploy/deploy.sh dominio buraco.chatizy.com.br
+```
+
+Os dois endereços servem o mesmo aplicativo, banco e fotos, sem redirecionar
+um para o outro. Não reinstala nem recompila o aplicativo, nem altera o
+OuviDesk. O servidor valida a configuração e restaura a anterior se não
+conseguir aplicá-la. HTTPS é emitido automaticamente após o DNS apontar
+corretamente. Login já existente continua disponível; a sessão do navegador
+é separada por endereço. A URL principal do serviço de login não é alterada.
+
 ## Como fica na VPS
 
 | Item | OuviDesk | Buraco Brusque |

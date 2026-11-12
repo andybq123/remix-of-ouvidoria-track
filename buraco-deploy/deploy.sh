@@ -15,17 +15,19 @@ if [ -z "$ACAO" ]; then
   cat <<EOF
   1) Instalação nova
   2) Atualizar o aplicativo
+  3) Adicionar outro domínio (mantém o atual)
   0) Sair
 
 EOF
   read -rp "  Escolha: " OP
   case "$OP" in
-    1) ACAO=instalar ;; 2) ACAO=atualizar ;; *) exit 0 ;;
+    1) ACAO=instalar ;; 2) ACAO=atualizar ;; 3) ACAO=dominio ;; *) exit 0 ;;
   esac
 fi
 
 case "$ACAO" in
   instalar)  exec bash "$KIT/instalar.sh" ;;
   atualizar) exec bash "$KIT/atualizar.sh" ;;
-  *) echo "Uso: sudo bash buraco-deploy/deploy.sh [instalar|atualizar]"; exit 1 ;;
+  dominio) exec bash "$KIT/dominio.sh" "${2:-}" ;;
+  *) echo "Uso: sudo bash buraco-deploy/deploy.sh [instalar|atualizar|dominio [endereço]]"; exit 1 ;;
 esac

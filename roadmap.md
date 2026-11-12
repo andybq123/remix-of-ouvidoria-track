@@ -1,4 +1,5 @@
 # Tarefas
+- [x] Preparar comando para adicionar buraco.chatizy.com.br sem remover buraco.brusque.app.br, usando o mesmo aplicativo e banco; aplicação e HTTPS na VPS dependem do comando local e apontamento DNS.
 - [x] Mostrar Saúde com coordenadas próprias quando não há unidade localizada e disponibilizar lista para tratar ouvidorias sem localização; 10 testes passaram, pinos Saúde/lista com 1213 registros reais/unidade com 23 ouvidorias conferidos na prévia, filtro por abertura preservado.
 - [ ] Conferir especificamente 3804/2026 e mês atual na VPS — pedido não existe no backup acessível e não há registros de novembro; depende de dados atualizados da VPS, sem confirmação da causa específica desse pedido.
 - [x] Corrigir atualização/cancelamento de ícones Saúde/Obras durante carregamento; 20 testes passaram, troca real conferida sem ícones remanescentes e totais Saúde comparados ao banco (Águas Claras 23, Vigilância Sanitária 91); novembro sem registros no backup, filtro mensal preservado.
