@@ -51,7 +51,7 @@ Verificado sem problema: rotas `/api/public/*` exigem `INGEST_TOKEN`/`CRON_SECRE
 ```bash
 # 1. Backup antes de tudo
 cd ~/controle-seta/local-docker
-DBC=$(docker ps --format '{{.Names}}' | grep '^supabase_db_' | head -1)
+DBC=$(docker ps --format '{{.Names}}' | grep '^supabase_db_' | grep -v '^supabase_db_buraco-local' | head -1)
 mkdir -p backups && docker exec "$DBC" pg_dump -U postgres -d postgres -Fc > backups/antes-seguranca-$(date +%F-%H%M).dump
 git -C .. rev-parse HEAD > backups/versao-anterior.txt
 

@@ -30,7 +30,7 @@ Requisitos: Docker e Node.js 24 LTS.
 cd local-docker
 npx supabase start            # banco + login locais, já com a estrutura
 cp .env.local.example .env.local   # cole as chaves mostradas por: npx supabase status
-for f in atualizacoes-banco/*.sql; do docker exec -i "$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | head -1)" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$f"; done
+for f in atualizacoes-banco/*.sql; do docker exec -i "$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | grep -v '^supabase_db_buraco-local' | head -1)" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$f"; done
 node create-admin.mjs admin@exemplo.local 'SenhaForte#2026' admin
 docker compose up             # http://localhost:8080
 ```
