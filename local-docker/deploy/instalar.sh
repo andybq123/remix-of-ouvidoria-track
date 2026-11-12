@@ -167,7 +167,7 @@ npx --yes supabase stop --no-backup >>"$LOG" 2>&1 || true
 rodar "Iniciando banco de dados (pode levar alguns minutos)" npx --yes supabase start -x vector,logflare,studio,imgproxy,edge-runtime,mailpit,inbucket,postgres-meta --ignore-health-check
 eval "$(npx --yes supabase status -o env 2>>"$LOG" | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
 [ -n "${ANON_KEY:-}" ] || falha "Não consegui ler as chaves do banco local."
-DBC="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | head -1 || true)"
+DBC="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | grep -v '^supabase_db_buraco-local' | head -1 || true)"
 [ -n "$DBC" ] || falha "O banco local não iniciou."
 rodar "Aplicando e conferindo todas as mudanças do banco" aplicar_banco
 

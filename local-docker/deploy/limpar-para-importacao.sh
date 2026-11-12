@@ -22,7 +22,7 @@ APP_ID="$("${COMPOSE[@]}" ps -q app)"
 APP_ROOT="$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/app"}}{{.Source}}{{end}}{{end}}' "$APP_ID")"
 [[ "$APP_ROOT" == "$ROOT" ]] || fail 'O contêiner da aplicação pertence a outro clone. Nada foi apagado.'
 DBS=()
-while IFS= read -r name; do [[ -z "$name" ]] || DBS+=("$name"); done < <(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' || true)
+while IFS= read -r name; do [[ -z "$name" ]] || DBS+=("$name"); done < <(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | grep -v '^supabase_db_buraco-local' || true)
 [[ ${#DBS[@]} -eq 1 ]] || fail 'É necessário exatamente um banco supabase_db_ em execução. Não vou escolher entre bancos.'
 DB="${DBS[0]}"
 USER_DB=postgres
