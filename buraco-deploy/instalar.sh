@@ -55,7 +55,8 @@ else
 fi
 
 # Arquivos de instalação entram no clone (supabase/, compose, scripts)
-cp -r "$KIT/supabase" "$APP_DIR/supabase"
+mkdir -p "$APP_DIR/supabase"
+cp -r "$KIT/supabase/." "$APP_DIR/supabase/"
 cp "$KIT/docker-compose.yml" "$APP_DIR/docker-compose.yml"
 cp "$KIT/criar-admin.mjs" "$APP_DIR/criar-admin.mjs"
 ok "Arquivos de instalação copiados"
