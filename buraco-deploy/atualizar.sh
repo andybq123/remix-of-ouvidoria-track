@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# ============================================================
+#  Buraco Brusque — atualização na VPS
+#
+#    sudo bash /opt/buraco-brusque/buraco-deploy/atualizar.sh
+#
+#  Baixa a versão nova do GitHub, aplica mudanças de banco
+#  pendentes e recompila só o Buraco Brusque (OuviDesk intacto).
+# ============================================================
+set -Eeuo pipefail
+umask 077
+
+APP_DIR="/opt/buraco-brusque"
+LOG="/tmp/buraco-atualizar.log"
+: >"$LOG"; chmod 600 "$LOG"
+
+titulo() { printf '\n\033[1m== %s ==\033[0m\n' "$*"; }
+ok()     { printf '  \033[32m✓\033[0m %s\n' "$*"; }
+falha()  { printf '\n\033[31mERRO: %s\033[0m\n' "$*" >&2; [ -n "${2:-}" ] && printf '%s\n' "$2" >&2; exit 1; }
+rodar()  { local msg="$1"; shift; printf '  … %s\n' "$msg"; "$@" >>"$LOG" 2>&1 || { tail -n 15 "$LOG" >&2; falha "$msg — falhou." "Envie o registro $LOG para o suporte."; }; ok "$msg"; }
+
+titulo "Buraco Brusque — atualização"
+[ "$EUID" -eq 0 ] || falha "Execute com sudo."
+[ -d "$APP_DIR/.git" ] || falha "Instalação não encontrada em $APP_DIR. Rode o instalar.sh primeiro."
+cd "$APP_DIR"
+
+rodar "Baixando a versão nova" git pull --ff-only
+
+# Mudanças de banco pendentes (mesma regra da instalação)
+DBC="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_buraco-local' | head -1 || true)"
+[ -n "$DBC" ] || falha "O banco local não está rodando."
+rodar "Aplicando mudanças de banco pendentes" bash -c "
+  set -e
+  docker exec -i $DBC psql -X -q -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+CREATE TABLE IF NOT EXISTS public._migracoes_aplicadas (nome text PRIMARY KEY, aplicada_em timestamptz NOT NULL DEFAULT now());
+SQL
+  for f in drizzle/migrations/*.sql; do
+    n=\$(basename \"\$f\")
+    if ! docker exec -i $DBC psql -X -qtA -U postgres -d postgres -c \"SELECT 1 FROM public._migracoes_aplicadas WHERE nome='\$n'\" | grep -q 1; then
+      docker exec -i $DBC psql -X -q -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < \"\$f\"
+      docker exec -i $DBC psql -X -q -U postgres -d postgres -c \"INSERT INTO public._migracoes_aplicadas(nome) VALUES ('\$n')\"
+    fi
+  done
+  docker exec -i $DBC psql -X -q -U postgres -d postgres -c \"NOTIFY pgrst, 'reload schema'\"
+"
+
+rodar "Recompilando o aplicativo" bash -c "rm -rf .output && docker compose --project-directory '$APP_DIR' -f '$APP_DIR/docker-compose.yml' up -d --force-recreate app"
+printf '  … Aguardando o aplicativo responder\n'
+for i in $(seq 1 120); do
+  if curl -fsS -o /dev/null --max-time 5 "http://127.0.0.1:8081/" 2>/dev/null; then break; fi
+  [ "$i" -eq 120 ] && falha "O aplicativo não respondeu a tempo." "Veja: docker logs buraco-app-1 — e o registro $LOG"
+  sleep 10
+done
+ok "Aplicativo atualizado e no ar"

@@ -1,0 +1,26 @@
+# Buraco Brusque — app em modo produção na VPS.
+# Roda ao lado do OuviDesk: porta interna 8081 (OuviDesk usa 8080).
+name: buraco
+
+services:
+  app:
+    image: node:24.22.1-bookworm
+    working_dir: /app
+    restart: unless-stopped
+    volumes:
+      - /opt/buraco-brusque:/app
+      - app_node_modules:/app/node_modules
+    env_file: .env.local
+    environment:
+      NITRO_PRESET: "node-server"
+      HOST: "0.0.0.0"
+      PORT: "8080"
+      NODE_OPTIONS: "--max-old-space-size=3072"
+    ports:
+      - "127.0.0.1:8081:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: sh -c "if [ -f .output/server/index.mjs ]; then exec node .output/server/index.mjs; else npm i -g bun@1 && rm -f package-lock.json && bun install && bun run build && exec node .output/server/index.mjs; fi"
+
+volumes:
+  app_node_modules:

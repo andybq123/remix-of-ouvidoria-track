@@ -1,0 +1,44 @@
+project_id = "buraco-local"
+
+# Portas deslocadas em +10 em relação ao OuviDesk (54321+), para os dois
+# sistemas rodarem na mesma VPS sem conflito.
+[api]
+port = 54331
+schemas = ["public"]
+
+[db]
+port = 54332
+shadow_port = 54333
+major_version = 15
+
+[pooler]
+enabled = false
+
+[auth]
+site_url = "https://buraco.brusque.app.br"
+additional_redirect_urls = ["https://buraco.brusque.app.br"]
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+
+# Fotos dos buracos (bucket privado "fotos")
+[storage]
+enabled = true
+file_size_limit = "10MB"
+
+[storage.imgproxy]
+enabled = false
+
+[analytics]
+enabled = false
+
+[studio]
+enabled = false
+
+[edge_runtime]
+enabled = false
+
+[inbucket]
+enabled = false

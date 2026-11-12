@@ -44,4 +44,4 @@
 - [x] Importação de backup sem erro "responsável inexistente"
 - [x] Licença pedida na instalação, salva na VPS e validada antes de instalar/atualizar (servidor de licenças em projeto separado)
 - [ ] Servidor de licenças (outro projeto) — depois preencher LICENCA_URL em local-docker/deploy/licenca.conf
-- [ ] Buraco Brusque na VPS: criar kit de instalacao local (buraco-deploy/) — backend local em portas 54331+, app na 8081, Caddy buraco.brusque.app.br, sem tocar no OuviDesk
+- [x] Buraco Brusque na VPS: kit buraco-deploy/ criado (instalar, atualizar, Caddy, banco local); falta rodar na VPS
