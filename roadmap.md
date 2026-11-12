@@ -44,4 +44,4 @@
 - [x] Importação de backup sem erro "responsável inexistente"
 - [x] Licença pedida na instalação, salva na VPS e validada antes de instalar/atualizar (servidor de licenças em projeto separado)
 - [ ] Servidor de licenças (outro projeto) — depois preencher LICENCA_URL em local-docker/deploy/licenca.conf
-- [x] Buraco Brusque na VPS: kit buraco-deploy/ criado (instalar, atualizar, Caddy, banco local); falta rodar na VPS
+- [x] Buraco Brusque na VPS: kit buraco-deploy/ criado (instalar, atualizar, Caddy, banco local) e instalação concluída com sucesso na VPS (banco buraco-local, site e painel no ar)
