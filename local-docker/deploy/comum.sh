@@ -46,7 +46,7 @@ conferir_espaco() {
 }
 
 # ---------- banco local ----------
-banco_container() { docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | grep -v '^supabase_db_buraco-local' | head -1 || true; }
+banco_container() { { docker ps --filter publish=54322 --format '{{.Names}}' | grep -E '^supabase_db_' || docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | grep -v '^supabase_db_buraco-local'; } | head -1 || true; }
 # sql "comando"  — executa como postgres no banco local
 sql() { docker exec -i "$(banco_container)" psql -X -qtA -U postgres -d postgres -v ON_ERROR_STOP=1 -c "$1"; }
 sql_arquivo() { docker exec -i "$(banco_container)" psql -X -q -U postgres -d postgres -v ON_ERROR_STOP=1 -c "SET client_min_messages=warning" -f - < "$1"; }

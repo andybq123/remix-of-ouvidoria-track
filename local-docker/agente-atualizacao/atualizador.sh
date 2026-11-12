@@ -22,7 +22,7 @@ main() {
   exec 9>/tmp/ouvidesk-agente-atualizacao.lock
   flock -n 9 || { echo "Já há um agente de atualização rodando."; exit 0; }
 
-  dbc() { docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | grep -v '^supabase_db_buraco-local' | head -1; }
+  dbc() { { docker ps --filter publish=54322 --format '{{.Names}}' | grep -E '^supabase_db_' || docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | grep -v '^supabase_db_buraco-local'; } | head -1; }
   sql() { docker exec -i "$(dbc)" psql -qtA -U postgres -d postgres -v ON_ERROR_STOP=1 -c "$1"; }
   esc() { printf '%s' "$1" | sed "s/'/''/g"; }
   limpo() { sed 's/\x1b\[[0-9;]*m//g' | tr '\r' '\n' | grep -av '^[[:space:]]*$'; }

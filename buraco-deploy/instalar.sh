@@ -90,6 +90,14 @@ titulo "Banco de dados e login locais"
 cd "$APP_DIR"
 sed -i "s#^site_url = .*#site_url = \"https://$DOMAIN\"#" supabase/config.toml
 sed -i "s#^additional_redirect_urls = .*#additional_redirect_urls = [\"https://$DOMAIN\"]#" supabase/config.toml
+# O .env do repositório traz SUPABASE_PROJECT_ID do projeto na nuvem, e a
+# ferramenta do banco usa esse valor no lugar do project_id do config.toml.
+# Fixamos o nome local e desligamos qualquer tentativa anterior com o nome antigo.
+ID_ANTIGO="$(grep -E '^SUPABASE_PROJECT_ID=' .env 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' || true)"
+if [ -n "$ID_ANTIGO" ] && [ "$ID_ANTIGO" != "buraco-local" ] && [ "$ID_ANTIGO" != "seta-local" ]; then
+  SUPABASE_PROJECT_ID="$ID_ANTIGO" npx --yes supabase stop --no-backup >>"$LOG" 2>&1 || true
+fi
+export SUPABASE_PROJECT_ID=buraco-local
 npx --yes supabase stop --no-backup >>"$LOG" 2>&1 || true
 rodar "Iniciando banco de dados (pode levar alguns minutos)" npx --yes supabase start -x vector,logflare,studio,imgproxy,edge-runtime,mailpit,postgres-meta --ignore-health-check
 eval "$(timeout 120 npx --yes supabase status -o env 2>>"$LOG" | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"

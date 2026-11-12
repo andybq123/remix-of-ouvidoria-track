@@ -19,7 +19,7 @@ if [ -z "$ZIP" ] || [ ! -f "$ZIP" ]; then
 fi
 command -v unzip >/dev/null || apt-get install -y unzip >/dev/null
 
-DB="$(docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | grep -v '^supabase_db_buraco-local' | head -1 || true)"
+DB="$({ docker ps --filter publish=54322 --format '{{.Names}}' | grep -E '^supabase_db_' || docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | grep -v '^supabase_db_buraco-local'; } | head -1 || true)"
 [ -z "$DB" ] && { echo "ERRO: banco local não está rodando."; exit 1; }
 
 DBUSER=supabase_admin
