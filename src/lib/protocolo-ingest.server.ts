@@ -4,6 +4,7 @@ import { gerarNumeroProtocolo } from "@/lib/prazo";
 import { extrairPedidoEsic, acaoNotificacaoEsic, formatarNumeroEsic } from "./esic";
 import { exigirIngestaoAtiva } from "./import-maintenance.server";
 import { mapDepartmentOf } from "@/lib/map-departments";
+import { imapTransport } from "./imap-transport";
 
 function norm(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -1286,10 +1287,9 @@ async function _sincronizarImapContas(): Promise<{ contas: number; novos: number
       client = new ImapFlow({
         host: conta.imap_host,
         port: conta.imap_port ?? 993,
-        secure: conta.imap_tls ?? true,
+        ...imapTransport(conta.imap_port ?? 993, conta.imap_tls ?? true),
         auth: { user: conta.imap_user, pass: senha },
         logger: false,
-        tls: { rejectUnauthorized: true },
         connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000,
       });
       try { await client.connect(); } catch {

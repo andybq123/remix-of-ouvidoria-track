@@ -1,12 +1,12 @@
 import type { ImapConfig } from "./imap-config";
+import { imapTransport } from "./imap-transport";
 
 /** TLS obrigatório; nenhum erro do provedor (que pode conter credenciais) sai desta função. */
 export async function validarConexaoImap(config: ImapConfig) {
   const { ImapFlow } = await import("imapflow");
   const client = new ImapFlow({
-    host: config.host, port: config.port, secure: true,
+    host: config.host, port: config.port, ...imapTransport(config.port),
     auth: { user: config.user, pass: config.pass }, logger: false,
-    tls: { rejectUnauthorized: true },
     connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000,
   });
   try {

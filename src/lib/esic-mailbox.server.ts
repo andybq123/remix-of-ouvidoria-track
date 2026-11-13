@@ -2,6 +2,7 @@ import { chaveNumeroEsic, extrairPedidoEsic, formatarNumeroEsic } from "./esic";
 import { ESIC_MAIL_BATCH, intervaloEsic, pastasEsic, type EsicMailboxCursor, type EsicNumerosBusca } from "./esic-mailbox";
 import { exigirIngestaoAtiva } from "./import-maintenance.server";
 import { ingerirEmail } from "./protocolo-ingest.server";
+import { imapTransport } from "./imap-transport";
 
 export async function rechecarLoteEsic(cursor: EsicMailboxCursor, numeros?: string[]) {
   exigirIngestaoAtiva();
@@ -69,9 +70,9 @@ export async function rechecarLoteEsic(cursor: EsicMailboxCursor, numeros?: stri
   if (!conta.imap_host || !conta.imap_user) throw new Error("Credenciais de e-mail incompletas.");
   const { senhaImapConta } = await import("./imap-connection.server");
   const senha = await senhaImapConta(conta.id);
-  const client = new ImapFlow({ host: conta.imap_host, port: conta.imap_port ?? 993, secure: conta.imap_tls ?? true,
+  const client = new ImapFlow({ host: conta.imap_host, port: conta.imap_port ?? 993, ...imapTransport(conta.imap_port ?? 993, conta.imap_tls ?? true),
     auth: { user: conta.imap_user, pass: senha }, logger: false,
-    tls: { rejectUnauthorized: true }, connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000 });
+    connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000 });
   try {
     try { await client.connect(); } catch {
       throw new Error("Falha no login IMAP seguro. Confira a configuração e a liberação pela TI.");

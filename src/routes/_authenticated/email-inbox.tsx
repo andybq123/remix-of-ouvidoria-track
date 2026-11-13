@@ -370,7 +370,7 @@ function NovaContaDialog({ secretarias }: { secretarias: any[] }) {
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Configurar conta institucional</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <p className="text-xs text-muted-foreground">IMAP com TLS obrigatório e certificado válido. Senha protegida, sem exibição após salvar.</p>
+          <p className="text-xs text-muted-foreground">Porta 993: SSL/TLS. Porta 143: STARTTLS obrigatório. Certificado válido e senha protegida.</p>
           <div className="space-y-1.5">
             <Label htmlFor="imap-email">E-mail institucional *</Label>
             <Input id="imap-email" type="email" value={email} onChange={e => { setEmail(e.target.value); setTeste(null); }} placeholder="ouvidoria@instituicao.gov.br" />

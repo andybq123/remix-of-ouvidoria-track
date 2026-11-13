@@ -24,4 +24,10 @@ describe("Validação segura IMAP", () => {
     expect(fake.close).toHaveBeenCalledOnce();
     expect(fake.status).not.toHaveBeenCalled();
   });
+  it("usa STARTTLS obrigatório na porta 143 antes de autenticar", async () => {
+    await validarConexaoImap({ ...config, host: "imap.brusque.sc.gov.br", port: 143, user: "anderson.rosa" });
+    expect(fake.options.secure).toBe(false);
+    expect(fake.options.doSTARTTLS).toBe(true);
+    expect(fake.options.tls.rejectUnauthorized).toBe(true);
+  });
 });

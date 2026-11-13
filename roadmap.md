@@ -1,4 +1,5 @@
 # Tarefas
+- [x] Compatibilizar cadastro, coleta e busca e-SIC com IMAP 143/STARTTLS, mantendo certificado válido e autenticação somente após criptografia; 11 testes passaram e formulário autenticado conferido. Conexão/cadastro real aguardam atualização e teste na VPS, sem credenciais no ambiente acessível.
 - [x] Recuperar botão para pedidos não iniciados: cancelamento admin atômico sem interromper execução, aviso sem resposta e consultas do agente limitadas; 4 testes, instalação limpa/idempotência e cancelamento autenticado com persistência passaram.
 - [ ] Confirmar causa e aplicar recuperação na VPS — depende do registro de ouvidesk-atualizador e da situação do pedido local; não iniciar atualização concorrente enquanto houver execução real.
 - [x] Conectar Zimbra por IMAP seguro com campos institucionais, validação antes de salvar e senha cifrada exclusiva do coletor; banco atualizado, instalação limpa e idempotência passaram, formulário autenticado conferido. Conexão com a conta institucional real depende da configuração e atualização da VPS.
