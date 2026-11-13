@@ -50,3 +50,5 @@
 - [x] Licença pedida na instalação, salva na VPS e validada antes de instalar/atualizar (servidor de licenças em projeto separado)
 - [ ] Servidor de licenças (outro projeto) — depois preencher LICENCA_URL em local-docker/deploy/licenca.conf
 - [x] Buraco Brusque na VPS: kit buraco-deploy/ criado (instalar, atualizar, Caddy, banco local) e instalação concluída com sucesso na VPS (banco buraco-local, site e painel no ar)
+- [x] Cadastro de e-mail estilo Thunderbird: só e-mail + senha, detecção automática de servidor/porta (corrige certificado de imap.brusque → imap.armazemdc.inf.br), janela adaptada ao celular.
+- [ ] Cadastrar a conta Zimbra na VPS após atualizar — depende da senha real do usuário.

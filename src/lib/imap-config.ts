@@ -6,6 +6,7 @@ export const imapConfigSchema = z.object({
   port: z.number().int().min(1).max(65535).default(993),
   user: z.string().trim().min(1, "Informe o usuário").max(320),
   pass: z.string().min(1, "Informe a senha").max(4096),
+  usuariosAlternativos: z.array(z.string().trim().min(1).max(320)).max(3).default([]),
 });
 export type ImapConfig = z.infer<typeof imapConfigSchema>;
 export const salvarImapSchema = imapConfigSchema.extend({

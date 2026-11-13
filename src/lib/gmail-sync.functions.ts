@@ -2,6 +2,7 @@ import { requireLicencaLiberada } from "@/lib/licenca-middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { exigirAdmin } from "./admin-guard.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { z } from "zod";
 import { imapConfigSchema, salvarImapSchema } from "./imap-config";
 
 export const sincronizarGmail = createServerFn({ method: "POST" })
@@ -69,7 +70,17 @@ export const testarContaImap = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await exigirAdmin(context);
     const { validarConexaoImap } = await import("./imap-connection.server");
-    return validarConexaoImap(data);
+    return validarConexaoImap(data, data.usuariosAlternativos);
+  });
+
+/** Descobre servidor/porta/segurança a partir do e-mail, como o Thunderbird; não usa senha. */
+export const detectarConfigImap = createServerFn({ method: "POST" })
+  .middleware([requireLicencaLiberada])
+  .inputValidator((d: unknown) => z.object({ email: z.string().trim().email().max(320) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await exigirAdmin(context);
+    const { detectarImap } = await import("./imap-autoconfig.server");
+    return { config: await detectarImap(data.email.toLowerCase()) };
   });
 
 export const salvarContaImap = createServerFn({ method: "POST" })
@@ -78,11 +89,11 @@ export const salvarContaImap = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await exigirAdmin(context);
     const { validarConexaoImap } = await import("./imap-connection.server");
-    await validarConexaoImap(data);
+    const valido = await validarConexaoImap(data, data.usuariosAlternativos);
     const { adminComAutor } = await import("./audit-admin.server");
     const supabaseAdmin = adminComAutor(context.userId);
     const { error } = await (supabaseAdmin as any).rpc("salvar_conta_imap", {
-      p_email: data.email, p_host: data.host, p_port: data.port, p_user: data.user,
+      p_email: data.email, p_host: valido.host, p_port: data.port, p_user: valido.user,
       p_password: data.pass, p_descricao: data.descricao, p_secretaria: data.secretariaId,
       p_actor: context.userId,
     });

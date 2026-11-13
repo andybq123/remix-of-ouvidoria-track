@@ -15,7 +15,7 @@ import { Mail, Plus, Trash2, AlertCircle, CheckCircle2, Clock, RefreshCw, Sparkl
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useServerFn } from "@tanstack/react-start";
-import { sincronizarGmail, testarContaImap, salvarContaImap } from "@/lib/gmail-sync.functions";
+import { sincronizarGmail, detectarConfigImap, salvarContaImap } from "@/lib/gmail-sync.functions";
 import { EsicMailboxButton } from "@/components/esic-mailbox-button";
 
 const SYNC_INTERVAL_MIN = 3;
@@ -332,92 +332,163 @@ function EmailInboxPage() {
   );
 }
 
+type ConfigDetectada = { host: string; port: number; seguranca: "SSL" | "STARTTLS"; usuario: "email" | "local"; origem: string };
+
 function NovaContaDialog({ secretarias }: { secretarias: any[] }) {
   const qc = useQueryClient();
-  const testar = useServerFn(testarContaImap);
+  const detectar = useServerFn(detectarConfigImap);
   const salvar = useServerFn(salvarContaImap);
-  const [host, setHost] = useState("");
-  const [port, setPort] = useState("993");
-  const [usuario, setUsuario] = useState("");
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [descricao, setDescricao] = useState("");
   const [secId, setSecId] = useState<string>("");
-  const [teste, setTeste] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [detectado, setDetectado] = useState<ConfigDetectada | null>(null);
+  const [manual, setManual] = useState(false);
+  const [host, setHost] = useState("");
+  const [port, setPort] = useState("993");
+  const [usuario, setUsuario] = useState("");
+  const [aviso, setAviso] = useState<string | null>(null);
 
-  const mTeste = useMutation({
-    mutationFn: () => testar({ data: { host, port: Number(port), user: usuario || email, pass: senha } }),
-    onSuccess: (r: any) => setTeste({ ok: true, msg: `Conectado! ${r.mensagens} e-mail(s) na caixa de entrada.` }),
-    onError: (e: any) => setTeste({ ok: false, msg: e?.message ?? "Falha" }),
+  const local = email.trim().toLowerCase().split("@")[0] ?? "";
+  const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const etapaConfig = detectado !== null || manual;
+
+  const limpar = () => {
+    setEmail(""); setSenha(""); setDescricao(""); setSecId(""); setDetectado(null); setManual(false);
+    setHost(""); setPort("993"); setUsuario(""); setAviso(null);
+  };
+  const alterarEmail = (v: string) => { setEmail(v); setDetectado(null); setManual(false); setAviso(null); };
+
+  const mDetectar = useMutation({
+    mutationFn: () => detectar({ data: { email: email.trim() } }),
+    onSuccess: (r: any) => {
+      const c = r?.config as ConfigDetectada | null;
+      if (c) {
+        setDetectado(c); setHost(c.host); setPort(String(c.port));
+        setUsuario(c.usuario === "local" ? local : ""); setAviso(null);
+      } else {
+        setManual(true);
+        setAviso("Não encontramos as configurações automaticamente. Informe o servidor fornecido pela TI.");
+      }
+    },
+    onError: (e: any) => { setManual(true); setAviso(e?.message ?? "Falha na detecção. Configure manualmente."); },
   });
 
   const criar = useMutation({
-    mutationFn: () => salvar({ data: { email, host, port: Number(port), user: usuario || email,
-      pass: senha, descricao, secretariaId: secId || null } }),
+    mutationFn: () => {
+      const user = usuario.trim() || email.trim().toLowerCase();
+      const alternativos = usuario.trim() ? [] : [local].filter(u => u && u !== user);
+      return salvar({ data: { email, host: host.trim(), port: Number(port), user, usuariosAlternativos: alternativos,
+        pass: senha, descricao, secretariaId: secId || null } });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["email-inbox-accounts"] });
-      toast.success("Conta IMAP cadastrada com segurança");
-      setOpen(false);
-      setEmail(""); setSenha(""); setHost(""); setPort("993"); setUsuario(""); setDescricao(""); setSecId(""); setTeste(null);
+      toast.success("Conta de e-mail conectada e cadastrada");
+      setOpen(false); limpar();
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => setAviso(e?.message ?? "Falha ao conectar"),
   });
 
+  const ocupado = mDetectar.isPending || criar.isPending;
+
   return (
-    <Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) { setSenha(""); setTeste(null); } }}>
-      <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> Nova conta</Button></DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Configurar conta institucional</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <p className="text-xs text-muted-foreground">Porta 993: SSL/TLS. Porta 143: STARTTLS obrigatório. Certificado válido e senha protegida.</p>
+    <Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) limpar(); }}>
+      <DialogTrigger asChild><Button className="w-full sm:w-auto"><Plus className="h-4 w-4 mr-1" /> Nova conta</Button></DialogTrigger>
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-lg max-h-[92vh] overflow-y-auto p-4 sm:p-6">
+        <DialogHeader>
+          <DialogTitle>Adicionar conta de e-mail</DialogTitle>
+          <p className="text-sm text-muted-foreground text-left">Informe o e-mail e a senha. O sistema descobre o servidor sozinho, como o Thunderbird.</p>
+        </DialogHeader>
+        <form className="space-y-3" onSubmit={e => { e.preventDefault(); if (ocupado) return; if (etapaConfig) criar.mutate(); else if (emailValido) mDetectar.mutate(); }}>
           <div className="space-y-1.5">
-            <Label htmlFor="imap-email">E-mail institucional *</Label>
-            <Input id="imap-email" type="email" value={email} onChange={e => { setEmail(e.target.value); setTeste(null); }} placeholder="ouvidoria@instituicao.gov.br" />
-          </div>
-          <div className="grid grid-cols-[minmax(0,1fr)_90px] gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="imap-host">Servidor IMAP *</Label>
-              <Input id="imap-host" value={host} onChange={e => { setHost(e.target.value); setTeste(null); }} placeholder="mail.instituicao.gov.br" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="imap-port">Porta *</Label>
-              <Input id="imap-port" type="number" min={1} max={65535} value={port} onChange={e => { setPort(e.target.value); setTeste(null); }} />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="imap-user">Usuário IMAP</Label>
-            <Input id="imap-user" autoComplete="off" value={usuario} onChange={e => { setUsuario(e.target.value); setTeste(null); }} placeholder="Mesmo e-mail, se não informado" />
+            <Label htmlFor="imap-email">E-mail *</Label>
+            <Input id="imap-email" type="email" inputMode="email" autoComplete="off" value={email} onChange={e => alterarEmail(e.target.value)} placeholder="ouvidoria@instituicao.gov.br" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="imap-password">Senha *</Label>
-            <Input id="imap-password" type="password" autoComplete="new-password" value={senha} onChange={e => { setSenha(e.target.value); setTeste(null); }} />
+            <Input id="imap-password" type="password" autoComplete="new-password" value={senha} onChange={e => { setSenha(e.target.value); setAviso(null); }} />
           </div>
-          <div className="space-y-1.5">
-            <Label>Descrição</Label>
-            <Input value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex.: Caixa principal da Ouvidoria" />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Vincular à secretaria (opcional)</Label>
-            <Select value={secId} onValueChange={setSecId}>
-              <SelectTrigger><SelectValue placeholder="Detectar automaticamente" /></SelectTrigger>
-              <SelectContent>
-                {secretarias.map(s => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          {teste && (
-            <div className={`flex items-start gap-2 rounded-md border p-2 text-sm ${teste.ok ? "border-primary/40" : "border-destructive/50 text-destructive"}`}>
-              {teste.ok ? <CheckCircle2 className="h-4 w-4 mt-0.5" /> : <AlertCircle className="h-4 w-4 mt-0.5" />}
-              <span>{teste.msg}</span>
+
+          {mDetectar.isPending && (
+            <div className="flex items-center gap-2 rounded-md border p-3 text-sm text-muted-foreground">
+              <RefreshCw className="h-4 w-4 animate-spin shrink-0" /> Procurando as configurações de {email.split("@")[1]}…
             </div>
           )}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => { setOpen(false); setSenha(""); setTeste(null); }}>Cancelar</Button>
-          <Button variant="outline" onClick={() => mTeste.mutate()} disabled={!email || !host || !senha || criar.isPending || mTeste.isPending}>{mTeste.isPending ? "Testando…" : "Testar conexão"}</Button>
-          <Button onClick={() => criar.mutate()} disabled={!email || !host || !senha || mTeste.isPending || criar.isPending}>{criar.isPending ? "Validando…" : "Cadastrar"}</Button>
-        </DialogFooter>
+
+          {detectado && !manual && (
+            <div className="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm space-y-1">
+              <div className="flex items-center gap-2 font-medium"><CheckCircle2 className="h-4 w-4 text-primary shrink-0" /> Configuração encontrada</div>
+              <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-muted-foreground">
+                <span>Servidor</span><span className="break-all text-foreground">{detectado.host}</span>
+                <span>Porta</span><span className="text-foreground">{detectado.port} · {detectado.seguranca === "SSL" ? "SSL/TLS" : "STARTTLS"}</span>
+                <span>Usuário</span><span className="break-all text-foreground">{usuario || `${email.trim().toLowerCase()} (ou ${local})`}</span>
+              </div>
+              <button type="button" className="text-xs text-primary underline underline-offset-2" onClick={() => setManual(true)}>Configurar manualmente</button>
+            </div>
+          )}
+
+          {manual && (
+            <div className="space-y-3 rounded-md border p-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_110px]">
+                <div className="space-y-1.5">
+                  <Label htmlFor="imap-host">Servidor IMAP *</Label>
+                  <Input id="imap-host" value={host} onChange={e => { setHost(e.target.value); setAviso(null); }} placeholder="imap.instituicao.gov.br" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="imap-port">Porta *</Label>
+                  <Select value={port} onValueChange={v => { setPort(v); setAviso(null); }}>
+                    <SelectTrigger id="imap-port"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="993">993 · SSL/TLS</SelectItem>
+                      <SelectItem value="143">143 · STARTTLS</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="imap-user">Usuário</Label>
+                <Input id="imap-user" autoComplete="off" value={usuario} onChange={e => { setUsuario(e.target.value); setAviso(null); }} placeholder={`Automático: ${email.trim() || "e-mail"} ou ${local || "nome"}`} />
+              </div>
+            </div>
+          )}
+
+          {etapaConfig && (
+            <>
+              <div className="space-y-1.5">
+                <Label htmlFor="imap-desc">Descrição</Label>
+                <Input id="imap-desc" value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex.: Caixa principal da Ouvidoria" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Vincular à secretaria (opcional)</Label>
+                <Select value={secId} onValueChange={setSecId}>
+                  <SelectTrigger><SelectValue placeholder="Detectar automaticamente" /></SelectTrigger>
+                  <SelectContent>
+                    {secretarias.map(s => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+
+          {aviso && (
+            <div role="alert" className="flex items-start gap-2 rounded-md border border-destructive/50 p-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" /><span>{aviso}</span>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 pt-1">
+            <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => { setOpen(false); limpar(); }}>Cancelar</Button>
+            {etapaConfig ? (
+              <Button type="submit" className="w-full sm:w-auto" disabled={!senha || !host.trim() || ocupado}>{criar.isPending ? "Conectando…" : "Conectar e cadastrar"}</Button>
+            ) : (
+              <Button type="submit" className="w-full sm:w-auto" disabled={!emailValido || ocupado}>{mDetectar.isPending ? "Procurando…" : "Continuar"}</Button>
+            )}
+          </DialogFooter>
+          {!etapaConfig && !mDetectar.isPending && (
+            <button type="button" className="block w-full text-center text-xs text-muted-foreground underline underline-offset-2" onClick={() => { setManual(true); setAviso(null); }}>Prefiro configurar manualmente</button>
+          )}
+        </form>
       </DialogContent>
     </Dialog>
   );
