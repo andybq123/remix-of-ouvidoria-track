@@ -1,2 +1,3 @@
+- Update page and overlay share atualizacao-estado.ts; only unstarted queued jobs can be canceled, never active host updates, to avoid concurrent deployments.
 - Shared maps use cancellable readiness updates from map-ready.ts to avoid stale markers after department changes.
 - Health map coverage uses map-health-coverage.ts: visible units own their protocol counts; unrepresented protocols with coordinates receive individual pins, and records without a location remain available through the dashboard list without guessing coordinates.

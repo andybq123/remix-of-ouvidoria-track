@@ -232,6 +232,13 @@
       "when": 1794568625515,
       "tag": "0032_imap_institucional_seguro",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794569067294,
+      "tag": "0033_cancelar_atualizacao_pendente",
+      "breakpoints": true
     }
   ]
 }

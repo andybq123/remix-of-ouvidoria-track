@@ -27,4 +27,5 @@ done
 "${PSQL[@]}" -f "$ROOT/tests/instalacao/protocolos-paginacao.sql"
 "${PSQL[@]}" -f "$ROOT/tests/instalacao/registro-autoria.sql"
 "${PSQL[@]}" -f "$ROOT/tests/instalacao/imap-seguranca.sql"
+"${PSQL[@]}" -f "$ROOT/tests/instalacao/atualizacao-recuperacao.sql"
 echo "Instalação limpa do banco: OK"

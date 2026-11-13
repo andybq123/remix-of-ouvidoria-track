@@ -19,7 +19,8 @@ BEGIN
     'registrar_alteracao()','autor_registro_sistema()','aplicar_conferencia_1doc_job(uuid,uuid,jsonb,jsonb)','dashboard_protocolos()','handle_new_user()','limpar_vinculos_usuarios_inexistentes()',
     'backup_importar(text,jsonb)','backup_importar_usuarios(jsonb)','licenca_bloqueada()','bloquear_se_licenca()',
     'listar_protocolos_pagina(jsonb)','meses_protocolos_listagem()','normalizar_busca_protocolo(text)',
-    'ler_senha_imap(uuid)','salvar_conta_imap(text,text,integer,text,text,text,uuid,uuid)','proteger_senha_imap()'
+    'ler_senha_imap(uuid)','salvar_conta_imap(text,text,integer,text,text,text,uuid,uuid)','proteger_senha_imap()',
+    'cancelar_atualizacao_pendente(uuid)'
   ] LOOP
     IF to_regprocedure('public.' || f) IS NULL THEN faltando := faltando || ('função ' || f); END IF;
   END LOOP;

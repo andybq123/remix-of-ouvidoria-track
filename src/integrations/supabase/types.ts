@@ -1064,6 +1064,10 @@ export type Database = {
       }
       backup_importar_usuarios: { Args: { p: Json }; Returns: Json }
       bi_estatisticas: { Args: { p_mes?: string }; Returns: Json }
+      cancelar_atualizacao_pendente: {
+        Args: { p_id: string }
+        Returns: boolean
+      }
       concluir_triagem: {
         Args: { p_id: string; p_local: string; p_secretaria: string }
         Returns: Json

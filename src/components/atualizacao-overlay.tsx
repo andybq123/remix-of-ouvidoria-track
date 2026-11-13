@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/use-is-admin";
+import { estadoAtualizacao } from "@/lib/atualizacao-estado";
 
 export const ATUALIZACAO_ATUAL_KEY = ["atualizacao-atual"];
 const NOMES = ["Baixando alterações", "Preparando a versão", "Atualizando o banco", "Trocando a versão", "Conferindo o sistema"];
@@ -48,9 +49,9 @@ export function AtualizacaoOverlay() {
   if (fechado === job.id && !concluindo) return null;
   // Pedido na fila há mais de 1 min sem o serviço da VPS pegar: não bloqueia a tela
   // (a página Atualização mostra como ativar o serviço).
-  if (job.status === "pendente" && Date.now() - new Date(job.created_at).getTime() > 60_000) return null;
+  if (estadoAtualizacao(job).podeCancelar) return null;
   // Sem notícia da VPS há mais de 3 min: considera travado e não bloqueia a tela.
-  if (!concluindo && Date.now() - new Date(job.updated_at).getTime() > 180_000) return null;
+  if (!concluindo && estadoAtualizacao(job).semResposta) return null;
 
   const pct = concluindo ? 100 : Math.max(5, (job.etapa / job.etapas_total) * 100);
   return (

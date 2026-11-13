@@ -1,4 +1,6 @@
 # Tarefas
+- [x] Recuperar botão para pedidos não iniciados: cancelamento admin atômico sem interromper execução, aviso sem resposta e consultas do agente limitadas; 4 testes, instalação limpa/idempotência e cancelamento autenticado com persistência passaram.
+- [ ] Confirmar causa e aplicar recuperação na VPS — depende do registro de ouvidesk-atualizador e da situação do pedido local; não iniciar atualização concorrente enquanto houver execução real.
 - [x] Conectar Zimbra por IMAP seguro com campos institucionais, validação antes de salvar e senha cifrada exclusiva do coletor; banco atualizado, instalação limpa e idempotência passaram, formulário autenticado conferido. Conexão com a conta institucional real depende da configuração e atualização da VPS.
 - [x] Preparar comando para adicionar buraco.chatizy.com.br sem remover buraco.brusque.app.br, usando o mesmo aplicativo e banco; aplicação e HTTPS na VPS dependem do comando local e apontamento DNS.
 - [x] Mostrar Saúde com coordenadas próprias quando não há unidade localizada e disponibilizar lista para tratar ouvidorias sem localização; 10 testes passaram, pinos Saúde/lista com 1213 registros reais/unidade com 23 ouvidorias conferidos na prévia, filtro por abertura preservado.

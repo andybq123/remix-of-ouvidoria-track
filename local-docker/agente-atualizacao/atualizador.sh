@@ -22,8 +22,11 @@ main() {
   exec 9>/tmp/ouvidesk-agente-atualizacao.lock
   flock -n 9 || { echo "Já há um agente de atualização rodando."; exit 0; }
 
-  dbc() { { docker ps --filter publish=54322 --format '{{.Names}}' | grep -E '^supabase_db_' || docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | grep -v '^supabase_db_buraco-local'; } | head -1; }
-  sql() { docker exec -i "$(dbc)" psql -qtA -U postgres -d postgres -v ON_ERROR_STOP=1 -c "$1"; }
+  dbc() { timeout 10s docker ps --filter publish=54322 --format '{{.Names}}' | grep -E '^supabase_db_' | head -1; }
+  sql() {
+    local db; db="$(dbc)"; [ -n "$db" ] || { echo "Banco OuviDesk não encontrado na porta 54322." >&2; return 1; }
+    timeout --kill-after=3s 20s docker exec -i "$db" psql -qtA -U postgres -d postgres -v ON_ERROR_STOP=1 -c "SET statement_timeout='15s'; $1"
+  }
   esc() { printf '%s' "$1" | sed "s/'/''/g"; }
   limpo() { sed 's/\x1b\[[0-9;]*m//g' | tr '\r' '\n' | grep -av '^[[:space:]]*$'; }
 
@@ -36,6 +39,7 @@ main() {
   sql "update atualizacao_jobs set status='erro', mensagem='Pedido antigo cancelado: o serviço da VPS não estava ativo. Clique em atualizar novamente.', updated_at=now() where status='pendente' and created_at < now() - interval '15 minutes'" >/dev/null 2>&1 || true
 
   while true; do
+    sql "update atualizacao_jobs set status='erro', mensagem='Pedido antigo cancelado sem iniciar. Confira o serviço da VPS e solicite novamente.', updated_at=now() where status='pendente' and created_at < now() - interval '15 minutes'" >/dev/null 2>&1 || true
     ID="$(sql "update atualizacao_jobs set status='rodando', etapa=0, mensagem='Iniciando a atualização', updated_at=now() where id = (select id from atualizacao_jobs where status='pendente' order by created_at limit 1 for update skip locked) returning id" 2>/dev/null | head -1 || true)"
     ID="$(printf "%s" "$ID" | grep -oE "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" || true)"
     if [ -n "$ID" ]; then

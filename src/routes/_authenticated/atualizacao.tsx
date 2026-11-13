@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { ATUALIZACAO_ATUAL_KEY } from "@/components/atualizacao-overlay";
+import { estadoAtualizacao } from "@/lib/atualizacao-estado";
 
 export const Route = createFileRoute("/_authenticated/atualizacao")({
   head: () => ({
@@ -41,7 +42,7 @@ const NOMES_ETAPAS = ["Baixando alterações", "Preparando a versão", "Atualiza
 function AtualizacaoPage() {
   const isAdmin = useIsAdmin();
   const qc = useQueryClient();
-  const { data: jobs = [] } = useQuery({
+  const { data: jobs = [], error: erroConsulta } = useQuery({
     queryKey: KEY,
     enabled: isAdmin,
     refetchInterval: q =>
@@ -58,6 +59,21 @@ function AtualizacaoPage() {
   });
 
   const atual = jobs.find(j => j.status === "pendente" || j.status === "rodando");
+  const estado = atual ? estadoAtualizacao(atual) : null;
+  const cancelar = useMutation({
+    mutationFn: async () => {
+      if (!atual) return;
+      const { data, error } = await supabase.rpc("cancelar_atualizacao_pendente", { p_id: atual.id });
+      if (error) throw new Error("Não foi possível liberar o pedido. Confira a atualização do sistema na VPS.");
+      if (!data) throw new Error("O pedido já começou ou mudou. Aguarde a atualização da tela.");
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEY });
+      qc.invalidateQueries({ queryKey: ATUALIZACAO_ATUAL_KEY });
+      toast.success("Pedido não iniciado cancelado. Você pode solicitar novamente.");
+    },
+    onError: (error: Error) => { toast.error(error.message); qc.invalidateQueries({ queryKey: KEY }); },
+  });
 
   const disparar = useMutation({
     mutationFn: async () => {
@@ -85,7 +101,8 @@ function AtualizacaoPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button onClick={() => disparar.mutate()} disabled={disparar.isPending || !!atual}>
+          {erroConsulta && <p className="text-sm text-destructive">Não foi possível consultar a atualização. Confira a conexão com o servidor.</p>}
+          <Button onClick={() => disparar.mutate()} disabled={disparar.isPending || !!atual || !!erroConsulta}>
             {atual ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1.5 h-4 w-4" />}
             {atual ? "Atualização em andamento…" : "Atualizar sistema agora"}
           </Button>
@@ -102,12 +119,16 @@ function AtualizacaoPage() {
               </div>
               <Progress value={(atual.etapa / atual.etapas_total) * 100} />
               {atual.mensagem && <p className="text-xs text-muted-foreground">{atual.mensagem}</p>}
-              {atual.status === "pendente" && Date.now() - new Date(atual.created_at).getTime() > 60_000 && (
+              {estado?.podeCancelar && (
+                <div className="space-y-2">
                 <p className="text-xs text-destructive">
                   O serviço de atualização da VPS não respondeu. Na VPS, como root, entre na pasta do sistema e rode{" "}
                   <code>bash deploy.sh ferramentas</code> (opção "Reinstalar o serviço do botão Atualizar"). O pedido é atendido assim que o serviço iniciar.
                 </p>
+                <Button variant="outline" onClick={() => cancelar.mutate()} disabled={cancelar.isPending}>Cancelar pedido não iniciado</Button>
+                </div>
               )}
+              {estado?.semResposta && <p className="text-xs text-destructive">A VPS está há mais de 3 minutos sem responder. A atualização pode continuar no servidor; não inicie outra antes de conferir o serviço.</p>}
             </div>
           )}
         </CardContent>
