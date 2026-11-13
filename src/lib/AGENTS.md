@@ -1,0 +1,1 @@
+- IMAP setup autodetects from the email in imap-autoconfig*.ts (autoconfig, imap./mail. guesses, CNAME fallback on certificate name mismatch) without disabling certificate checks; provider error text never leaves the server.
