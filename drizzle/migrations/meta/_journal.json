@@ -225,6 +225,13 @@
       "when": 1794503595037,
       "tag": "0031_rls_leituras_restritas",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794568625515,
+      "tag": "0032_imap_institucional_seguro",
+      "breakpoints": true
     }
   ]
 }

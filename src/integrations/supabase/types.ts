@@ -214,6 +214,29 @@ export type Database = {
         }
         Relationships: []
       }
+      email_imap_secrets: {
+        Row: {
+          account_id: string
+          encrypted_password: string
+        }
+        Insert: {
+          account_id: string
+          encrypted_password: string
+        }
+        Update: {
+          account_id?: string
+          encrypted_password?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_imap_secrets_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: true
+            referencedRelation: "email_inbox_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_inbox_accounts: {
         Row: {
           ativo: boolean
@@ -1085,6 +1108,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      ler_senha_imap: { Args: { p_account_id: string }; Returns: string }
       liberar_triagem: { Args: { p_id: string }; Returns: undefined }
       liberar_triagem_admin: { Args: { p_id: string }; Returns: undefined }
       licenca_bloqueada: { Args: never; Returns: boolean }
@@ -1117,6 +1141,19 @@ export type Database = {
       reservar_triagem_admin: { Args: { p_id: string }; Returns: Json }
       reverter_alteracao_1doc: {
         Args: { p_historico_id: string }
+        Returns: undefined
+      }
+      salvar_conta_imap: {
+        Args: {
+          p_actor: string
+          p_descricao: string
+          p_email: string
+          p_host: string
+          p_password: string
+          p_port: number
+          p_secretaria: string
+          p_user: string
+        }
         Returns: undefined
       }
       show_limit: { Args: never; Returns: number }

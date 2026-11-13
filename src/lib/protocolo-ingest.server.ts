@@ -1278,17 +1278,23 @@ async function _sincronizarImapContas(): Promise<{ contas: number; novos: number
     let contaErroDetalhe: string | null = null;
     let client: any = null;
     try {
-      if (!conta.imap_host || !conta.imap_user || !conta.imap_password) {
+      if (!conta.imap_host || !conta.imap_user) {
         throw new Error("Credenciais IMAP incompletas (host/usuário/senha)");
       }
+      const { senhaImapConta } = await import("./imap-connection.server");
+      const senha = await senhaImapConta(conta.id);
       client = new ImapFlow({
         host: conta.imap_host,
         port: conta.imap_port ?? 993,
         secure: conta.imap_tls ?? true,
-        auth: { user: conta.imap_user, pass: conta.imap_password },
+        auth: { user: conta.imap_user, pass: senha },
         logger: false,
+        tls: { rejectUnauthorized: true },
+        connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000,
       });
-      await client.connect();
+      try { await client.connect(); } catch {
+        throw new Error("Falha no login IMAP seguro. Confira a configuração e a liberação pela TI.");
+      }
       const lock = await client.getMailboxLock("INBOX");
       try {
         const status = await client.status("INBOX", { messages: true, uidNext: true, uidValidity: true });

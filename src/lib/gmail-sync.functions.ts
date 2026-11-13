@@ -2,6 +2,7 @@ import { requireLicencaLiberada } from "@/lib/licenca-middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { exigirAdmin } from "./admin-guard.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { imapConfigSchema, salvarImapSchema } from "./imap-config";
 
 export const sincronizarGmail = createServerFn({ method: "POST" })
   .middleware([requireLicencaLiberada])
@@ -61,30 +62,30 @@ export const reprocessarEmail = createServerFn({ method: "POST" })
     const { reprocessarEmailLog } = await import("@/lib/protocolo-ingest.server");
     return await reprocessarEmailLog(data.logId);
   });
-/** Testa login IMAP (Gmail com senha de app) sem gravar nada. */
+/** Testa IMAP institucional sem persistir as credenciais. */
 export const testarContaImap = createServerFn({ method: "POST" })
   .middleware([requireLicencaLiberada])
-  .inputValidator((d: { host?: string; port?: number; user: string; pass: string }) => ({
-    host: String(d.host || "imap.gmail.com").trim(),
-    port: Number(d.port || 993),
-    user: String(d.user || "").trim(),
-    pass: String(d.pass || "").replace(/\s+/g, ""),
-  }))
+  .inputValidator((d: unknown) => imapConfigSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
-    if (!isAdmin) throw new Error("Acesso negado");
-    const { ImapFlow } = await import("imapflow");
-    const client = new ImapFlow({ host: data.host, port: data.port, secure: true, auth: { user: data.user, pass: data.pass }, logger: false });
-    try {
-      await client.connect();
-      const st = await client.status("INBOX", { messages: true });
-      return { ok: true, mensagens: st.messages ?? 0 };
-    } catch (e: any) {
-      const msg = String(e?.responseText || e?.message || e);
-      throw new Error(/auth|credentials|invalid/i.test(msg)
-        ? "Login recusado pelo Gmail. Confira o e-mail e a senha de app (16 letras) e se a verificação em 2 etapas está ativa."
-        : `Falha ao conectar: ${msg}`);
-    } finally {
-      try { await client.logout(); } catch {}
-    }
+    await exigirAdmin(context);
+    const { validarConexaoImap } = await import("./imap-connection.server");
+    return validarConexaoImap(data);
+  });
+
+export const salvarContaImap = createServerFn({ method: "POST" })
+  .middleware([requireLicencaLiberada])
+  .inputValidator((d: unknown) => salvarImapSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await exigirAdmin(context);
+    const { validarConexaoImap } = await import("./imap-connection.server");
+    await validarConexaoImap(data);
+    const { adminComAutor } = await import("./audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
+    const { error } = await (supabaseAdmin as any).rpc("salvar_conta_imap", {
+      p_email: data.email, p_host: data.host, p_port: data.port, p_user: data.user,
+      p_password: data.pass, p_descricao: data.descricao, p_secretaria: data.secretariaId,
+      p_actor: context.userId,
+    });
+    if (error) throw new Error("Não foi possível salvar a conta. Confira a atualização do sistema e tente novamente.");
+    return { ok: true };
   });

@@ -15,7 +15,7 @@ import { Mail, Plus, Trash2, AlertCircle, CheckCircle2, Clock, RefreshCw, Sparkl
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useServerFn } from "@tanstack/react-start";
-import { sincronizarGmail, testarContaImap } from "@/lib/gmail-sync.functions";
+import { sincronizarGmail, testarContaImap, salvarContaImap } from "@/lib/gmail-sync.functions";
 import { EsicMailboxButton } from "@/components/esic-mailbox-button";
 
 const SYNC_INTERVAL_MIN = 3;
@@ -74,7 +74,7 @@ function EmailInboxPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("email_inbox_accounts")
-        .select("*, secretarias(nome)")
+        .select("id,email,descricao,ativo,provider,imap_host,imap_port,imap_user,imap_tls,created_at,ultima_sincronizacao,ultima_sync_novos,ultima_sync_erros,ultima_sync_processados,ultima_sync_erro_detalhe,secretarias(nome)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -239,7 +239,7 @@ function EmailInboxPage() {
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium">{a.email}</span>
-                        <Badge className="bg-blue-500/15 text-blue-700 border-blue-500/30" variant="outline">Gmail</Badge>
+                        <Badge className="bg-blue-500/15 text-blue-700 border-blue-500/30" variant="outline">{a.provider === "imap" ? "IMAP seguro" : a.provider}</Badge>
                         {!a.ativo && <Badge variant="secondary">Inativa</Badge>}
                       </div>
                       {a.descricao && <p className="text-xs text-muted-foreground mt-0.5">{a.descricao}</p>}
@@ -267,7 +267,7 @@ function EmailInboxPage() {
                     </div>
                   </div>
                   <div className="rounded-md border border-blue-500/30 bg-blue-500/5 p-2 text-xs text-muted-foreground">
-                    ✓ Conectado ao Google. O sistema verifica a caixa a cada {SYNC_INTERVAL_MIN} min e cria protocolos automaticamente.
+                    {a.imap_host ? `${a.imap_host}:${a.imap_port} · ${a.imap_user}` : "Conta de e-mail"}
                   </div>
                 </CardContent>
               </Card>
@@ -309,16 +309,16 @@ function EmailInboxPage() {
           <Card>
             <CardHeader>
               <CardTitle>Como funciona</CardTitle>
-              <CardDescription>O sistema lê a caixa do Gmail com uma senha de app e cria os protocolos automaticamente a cada 3 minutos.</CardDescription>
+              <CardDescription>Contas institucionais conectadas por IMAP com TLS.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               <div>
                 <h3 className="font-semibold mb-1">1. Cadastre a conta</h3>
-                <p className="text-muted-foreground">Na conta Google, ative a <strong>verificação em 2 etapas</strong> e crie uma <strong>senha de app</strong> em myaccount.google.com/apppasswords. Depois, na aba "Contas", clique em <strong>Nova conta</strong>, informe o e-mail e a senha de app, teste e cadastre.</p>
+                <p className="text-muted-foreground">Solicite à TI o servidor IMAP, a porta segura e o usuário da conta institucional. Use a senha específica de aplicativo se exigida pelo provedor.</p>
               </div>
               <div>
                 <h3 className="font-semibold mb-1">2. Sincronização automática</h3>
-                <p className="text-muted-foreground">A cada {SYNC_INTERVAL_MIN} minutos o sistema lê os novos e-mails da caixa Gmail conectada e cria protocolos automaticamente. Você também pode clicar em <strong>Sincronizar agora</strong> a qualquer momento.</p>
+                <p className="text-muted-foreground">A cada {SYNC_INTERVAL_MIN} minutos o sistema lê os novos e-mails da caixa de e-mail conectada e cria protocolos automaticamente. Você também pode clicar em <strong>Sincronizar agora</strong> a qualquer momento.</p>
               </div>
               <div>
                 <h3 className="font-semibold mb-1">3. Teste</h3>
@@ -335,6 +335,10 @@ function EmailInboxPage() {
 function NovaContaDialog({ secretarias }: { secretarias: any[] }) {
   const qc = useQueryClient();
   const testar = useServerFn(testarContaImap);
+  const salvar = useServerFn(salvarContaImap);
+  const [host, setHost] = useState("");
+  const [port, setPort] = useState("993");
+  const [usuario, setUsuario] = useState("");
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -343,68 +347,51 @@ function NovaContaDialog({ secretarias }: { secretarias: any[] }) {
   const [teste, setTeste] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const mTeste = useMutation({
-    mutationFn: () => testar({ data: { user: email.trim(), pass: senha } }),
+    mutationFn: () => testar({ data: { host, port: Number(port), user: usuario || email, pass: senha } }),
     onSuccess: (r: any) => setTeste({ ok: true, msg: `Conectado! ${r.mensagens} e-mail(s) na caixa de entrada.` }),
     onError: (e: any) => setTeste({ ok: false, msg: e?.message ?? "Falha" }),
   });
 
   const criar = useMutation({
-    mutationFn: async () => {
-      await testar({ data: { user: email.trim(), pass: senha } });
-      const { data: { user } } = await supabase.auth.getUser();
-      const payload: any = {
-        email: email.trim().toLowerCase(),
-        descricao: descricao || null,
-        secretaria_id: secId || null,
-        created_by: user?.id,
-        provider: "imap",
-        imap_host: "imap.gmail.com",
-        imap_port: 993,
-        imap_tls: true,
-        imap_user: email.trim(),
-        imap_password: senha.replace(/\s+/g, ""),
-        ativo: true,
-      };
-      // Se o e-mail já existe (ex.: conta antiga ligada pela nuvem), converte para senha de app.
-      const { data: existente } = await supabase
-        .from("email_inbox_accounts").select("id").eq("email", payload.email).maybeSingle();
-      if (existente?.id) {
-        const { created_by: _cb, ...upd } = payload;
-        const { error } = await supabase.from("email_inbox_accounts").update(upd).eq("id", existente.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("email_inbox_accounts").insert(payload);
-        if (error) throw error;
-      }
-    },
+    mutationFn: () => salvar({ data: { email, host, port: Number(port), user: usuario || email,
+      pass: senha, descricao, secretariaId: secId || null } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["email-inbox-accounts"] });
-      toast.success("Conta Gmail cadastrada — coleta automática a cada 3 minutos");
+      toast.success("Conta IMAP cadastrada com segurança");
       setOpen(false);
-      setEmail(""); setSenha(""); setDescricao(""); setSecId(""); setTeste(null);
+      setEmail(""); setSenha(""); setHost(""); setPort("993"); setUsuario(""); setDescricao(""); setSecId(""); setTeste(null);
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) { setSenha(""); setTeste(null); } }}>
       <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> Nova conta</Button></DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Configurar conta Gmail</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Configurar conta institucional</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div className="rounded-md border p-3 text-xs text-muted-foreground space-y-1">
-            <p><strong>1.</strong> Na conta Google, ative a verificação em 2 etapas.</p>
-            <p><strong>2.</strong> Crie uma senha de app em{" "}
-              <a className="underline" href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer">myaccount.google.com/apppasswords</a> (16 letras).</p>
-            <p><strong>3.</strong> Cole abaixo, clique em Testar e depois em Cadastrar. A leitura é automática a cada 3 minutos.</p>
+          <p className="text-xs text-muted-foreground">IMAP com TLS obrigatório e certificado válido. Senha protegida, sem exibição após salvar.</p>
+          <div className="space-y-1.5">
+            <Label htmlFor="imap-email">E-mail institucional *</Label>
+            <Input id="imap-email" type="email" value={email} onChange={e => { setEmail(e.target.value); setTeste(null); }} placeholder="ouvidoria@instituicao.gov.br" />
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_90px] gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="imap-host">Servidor IMAP *</Label>
+              <Input id="imap-host" value={host} onChange={e => { setHost(e.target.value); setTeste(null); }} placeholder="mail.instituicao.gov.br" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="imap-port">Porta *</Label>
+              <Input id="imap-port" type="number" min={1} max={65535} value={port} onChange={e => { setPort(e.target.value); setTeste(null); }} />
+            </div>
           </div>
           <div className="space-y-1.5">
-            <Label>E-mail Gmail *</Label>
-            <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="setamonitoramento75@gmail.com" />
+            <Label htmlFor="imap-user">Usuário IMAP</Label>
+            <Input id="imap-user" autoComplete="off" value={usuario} onChange={e => { setUsuario(e.target.value); setTeste(null); }} placeholder="Mesmo e-mail, se não informado" />
           </div>
           <div className="space-y-1.5">
-            <Label>Senha de app *</Label>
-            <Input type="password" value={senha} onChange={e => setSenha(e.target.value)} placeholder="abcd efgh ijkl mnop" />
+            <Label htmlFor="imap-password">Senha *</Label>
+            <Input id="imap-password" type="password" autoComplete="new-password" value={senha} onChange={e => { setSenha(e.target.value); setTeste(null); }} />
           </div>
           <div className="space-y-1.5">
             <Label>Descrição</Label>
@@ -427,9 +414,9 @@ function NovaContaDialog({ secretarias }: { secretarias: any[] }) {
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button variant="outline" onClick={() => mTeste.mutate()} disabled={!email || !senha || mTeste.isPending}>{mTeste.isPending ? "Testando…" : "Testar conexão"}</Button>
-          <Button onClick={() => criar.mutate()} disabled={!email || !senha || criar.isPending}>{criar.isPending ? "Validando…" : "Cadastrar"}</Button>
+          <Button variant="outline" onClick={() => { setOpen(false); setSenha(""); setTeste(null); }}>Cancelar</Button>
+          <Button variant="outline" onClick={() => mTeste.mutate()} disabled={!email || !host || !senha || criar.isPending || mTeste.isPending}>{mTeste.isPending ? "Testando…" : "Testar conexão"}</Button>
+          <Button onClick={() => criar.mutate()} disabled={!email || !host || !senha || mTeste.isPending || criar.isPending}>{criar.isPending ? "Validando…" : "Cadastrar"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

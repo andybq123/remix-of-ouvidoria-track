@@ -9,7 +9,7 @@ BEGIN
   FOREACH t IN ARRAY ARRAY[
     'profiles','user_roles','allowed_emails','secretarias','locais','assuntos','protocolos',
     'protocolo_historico','user_secretarias','user_locais','registro_sistema','email_inbox_accounts',
-    'email_inbox_log','onedoc_jobs','onedoc_config','atualizacao_jobs','ai_config','coletas','licenca_estado'
+    'email_inbox_log','email_imap_secrets','onedoc_jobs','onedoc_config','atualizacao_jobs','ai_config','coletas','licenca_estado'
   ] LOOP
     IF to_regclass('public.' || t) IS NULL THEN faltando := faltando || ('tabela ' || t); END IF;
   END LOOP;
@@ -18,7 +18,8 @@ BEGIN
     'has_role(uuid,app_role)','posso_editar()','pode_triar()','area_permitida(uuid,uuid)',
     'registrar_alteracao()','autor_registro_sistema()','aplicar_conferencia_1doc_job(uuid,uuid,jsonb,jsonb)','dashboard_protocolos()','handle_new_user()','limpar_vinculos_usuarios_inexistentes()',
     'backup_importar(text,jsonb)','backup_importar_usuarios(jsonb)','licenca_bloqueada()','bloquear_se_licenca()',
-    'listar_protocolos_pagina(jsonb)','meses_protocolos_listagem()','normalizar_busca_protocolo(text)'
+    'listar_protocolos_pagina(jsonb)','meses_protocolos_listagem()','normalizar_busca_protocolo(text)',
+    'ler_senha_imap(uuid)','salvar_conta_imap(text,text,integer,text,text,text,uuid,uuid)','proteger_senha_imap()'
   ] LOOP
     IF to_regprocedure('public.' || f) IS NULL THEN faltando := faltando || ('função ' || f); END IF;
   END LOOP;

@@ -66,11 +66,16 @@ export async function rechecarLoteEsic(cursor: EsicMailboxCursor, numeros?: stri
   if (conta.provider !== "imap") throw new Error("Conta não permite leitura da caixa de e-mail.");
   const { ImapFlow } = await import("imapflow");
   const { simpleParser } = await import("mailparser");
-  if (!conta.imap_host || !conta.imap_user || !conta.imap_password) throw new Error("Credenciais de e-mail incompletas.");
+  if (!conta.imap_host || !conta.imap_user) throw new Error("Credenciais de e-mail incompletas.");
+  const { senhaImapConta } = await import("./imap-connection.server");
+  const senha = await senhaImapConta(conta.id);
   const client = new ImapFlow({ host: conta.imap_host, port: conta.imap_port ?? 993, secure: conta.imap_tls ?? true,
-    auth: { user: conta.imap_user, pass: conta.imap_password }, logger: false });
+    auth: { user: conta.imap_user, pass: senha }, logger: false,
+    tls: { rejectUnauthorized: true }, connectionTimeout: 15000, greetingTimeout: 15000, socketTimeout: 20000 });
   try {
-    await client.connect();
+    try { await client.connect(); } catch {
+      throw new Error("Falha no login IMAP seguro. Confira a configuração e a liberação pela TI.");
+    }
     const pastas = pastasEsic(await client.list());
     const indice = cursor.folder ? pastas.findIndex(p => p.path === cursor.folder) : 0;
     if (indice < 0) throw new Error("A pasta em conferência não existe mais. Reinicie a busca.");
