@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Bot, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { OnedocAgentButton } from "@/components/onedoc-agent-button";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { perguntarAssistenteMuse } from "@/lib/muse-chat.functions";
+import type { OnedocJob } from "@/lib/onedoc.functions";
 
 export const Route = createFileRoute("/_authenticated/muse-chat")({
   head: () => ({
@@ -39,16 +41,47 @@ type Mensagem = {
   papel: "usuario" | "assistente";
   texto: string;
   fonte?: "ia" | "regras";
-  acao?: {
-    tipo: "conferir-atrasadas";
-    total: number;
-    protocoloIds: string[];
-    numeros: string[];
-  } | null;
+  acao?:
+    | {
+        tipo: "conferir-atrasadas";
+        total: number;
+        protocoloIds: string[];
+        numeros: string[];
+      }
+    | { tipo: "conferir-protocolo"; protocoloId: string; numero: string; total: 1 }
+    | null;
 };
+
+/**
+ * Texto do resultado de uma conferência unitária, a partir dos campos
+ * reais do job (resultados[0]: concluido/data_conclusao/erro/situacao).
+ */
+function textoResultadoConferenciaUnitaria(job: OnedocJob, numero: string): string {
+  if (job.status === "erro") {
+    return (
+      `Conferência da ouvidoria ${numero} no 1Doc terminou com erro` +
+      (job.mensagem ? `: ${job.mensagem}` : ".")
+    );
+  }
+  const r = (job.resultados ?? [])[0];
+  if (r?.erro) return `Conferência da ouvidoria ${numero} no 1Doc: erro — ${r.erro}`;
+  if (r?.concluido) {
+    return (
+      `Conferência da ouvidoria ${numero} no 1Doc: já foi baixada lá` +
+      (r.data_conclusao ? ` em ${r.data_conclusao}` : "") +
+      " — concluída no OuviDesk."
+    );
+  }
+  return (
+    `Conferência da ouvidoria ${numero} no 1Doc: ainda não foi baixada lá` +
+    (r?.situacao ? ` (situação no 1Doc: ${r.situacao})` : "") +
+    " — continua em aberto no OuviDesk."
+  );
+}
 
 function MuseChatPage() {
   const isAdmin = useIsAdmin();
+  const qc = useQueryClient();
   const perguntar = useServerFn(perguntarAssistenteMuse);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [pergunta, setPergunta] = useState("");
@@ -98,9 +131,11 @@ function MuseChatPage() {
             <Badge variant="secondary">dados do OuviDesk</Badge>
           </CardTitle>
           <CardDescription>
-            O chat responde só com os dados que você pode ver (mesmas regras de área das telas) e
-            nunca conclui um protocolo: conferir atrasadas apenas enfileira a verificação no agente
-            do 1Doc.
+            O chat responde só com os dados que você pode ver (mesmas regras de área das telas).
+            Você pode pedir para conferir uma ouvidoria no 1Doc: o Assistente pede a conferência,
+            acompanha e traz o resultado aqui no chat. A leitura da página do 1Doc é feita pelo
+            agente do 1Doc na VPS; se houver baixa lá, a ouvidoria é concluída no OuviDesk pelo
+            fluxo auditado.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -139,7 +174,7 @@ function MuseChatPage() {
                   )}
                 </p>
                 <p className="whitespace-pre-wrap break-words">{m.texto}</p>
-                {m.papel === "assistente" && m.acao && (
+                {m.papel === "assistente" && m.acao?.tipo === "conferir-atrasadas" && (
                   <div className="mt-3 rounded-md border border-primary/40 bg-background p-3 space-y-2">
                     <p className="font-medium">Conferir {m.acao.total} atrasada(s) no 1Doc?</p>
                     <p className="text-xs text-muted-foreground">
@@ -160,6 +195,48 @@ function MuseChatPage() {
                           onDone={(job) =>
                             toast.success(`Conferência iniciada (${job.processados}/${job.total})`)
                           }
+                        />
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          A conferência precisa de um administrador.
+                        </p>
+                      )}
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to="/atrasados">Ver atrasadas</Link>
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {m.papel === "assistente" && m.acao?.tipo === "conferir-protocolo" && (
+                  <div className="mt-3 rounded-md border border-primary/40 bg-background p-3 space-y-2">
+                    <p className="font-medium">Conferir a ouvidoria {m.acao.numero} no 1Doc?</p>
+                    <p className="text-xs text-muted-foreground">
+                      Vou pedir a conferência dessa ouvidoria no 1Doc e trazer o resultado aqui no
+                      chat. A leitura da página do 1Doc é feita pelo agente do 1Doc na VPS; se já
+                      foi baixada lá, ela é concluída no OuviDesk.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {isAdmin ? (
+                        <OnedocAgentButton
+                          tipo="unitario"
+                          protocoloId={m.acao.protocoloId}
+                          escopo={`muse-chat:protocolo:${m.acao.protocoloId}`}
+                          label="Conferir no 1Doc"
+                          onDone={(job) => {
+                            const numero =
+                              m.acao?.tipo === "conferir-protocolo" ? m.acao.numero : "";
+                            setMensagens((ms) => [
+                              ...ms,
+                              {
+                                papel: "assistente",
+                                texto: textoResultadoConferenciaUnitaria(job, numero),
+                              },
+                            ]);
+                            void qc.invalidateQueries({ queryKey: ["protocolos"] });
+                            void qc.invalidateQueries({ queryKey: ["protocolos-dashboard"] });
+                            void qc.invalidateQueries({ queryKey: ["muse-status"] });
+                            toast.success("Conferência concluída — resultado no chat");
+                          }}
                         />
                       ) : (
                         <p className="text-xs text-muted-foreground">

@@ -11,6 +11,7 @@ import {
   type TipoProtocolo,
 } from "@/lib/prazo";
 import {
+  acaoConferirProtocolo,
   classificarIntencao,
   extrairNumeroProtocolo,
   respostaDeterministica,
@@ -21,13 +22,19 @@ import {
 /**
  * Chat do Assistente Muse — perguntas sobre os dados do OuviDesk.
  *
- * NÃO é uma sessão do Muse externa e não conclui protocolo nenhum.
+ * O Assistente pede, acompanha e reporta a conferência no 1Doc: quando o
+ * usuário pede para conferir uma ouvidoria (ou as atrasadas), a verificação
+ * é enfileirada e o agente do 1Doc na VPS — o único componente que pode
+ * abrir a página do 1Doc (o servidor web não pode rodar navegador) —
+ * confere e, se houver a linha "deu baixa", a ouvidoria é concluída no
+ * OuviDesk pelo fluxo auditado existente. O chat nunca conclui um
+ * protocolo diretamente nem abre a página do 1Doc por conta própria.
+ *
  * A resposta vem dos dados reais (protocolos visíveis para o usuário,
  * prazos de prazo.ts, jobs do 1Doc), reescrita em linguagem natural
  * pela IA já configurada no sistema (Groq/Gemini, via ai-chat.server.ts).
  * Sem IA configurada, a resposta é o texto determinístico de
- * muse-chat.ts, com os mesmos números. A conferência de atrasadas só
- * enfileira no agente do 1Doc (enfileirarOnedoc) — nunca conclui direto.
+ * muse-chat.ts, com os mesmos números.
  *
  * Leitura segue as regras de área do usuário: tudo é lido com o client
  * autenticado dele (context.supabase), então o RLS aplica as mesmas
@@ -174,6 +181,7 @@ export const perguntarAssistenteMuse = createServerFn({ method: "POST" })
           prorrogado: !!achado.prorrogado,
         });
         protocolo = {
+          id: achado.id,
           numero: achado.numero,
           assunto: achado.assunto ?? "Sem assunto",
           secretaria: achado.secretarias?.nome ?? "Sem secretaria",
@@ -181,6 +189,7 @@ export const perguntarAssistenteMuse = createServerFn({ method: "POST" })
           situacao: sla.situacao,
           dias: sla.dias,
           prazoFinal: prazoFinal.toISOString().slice(0, 10),
+          url: achado.url ?? null,
         };
       }
     }
@@ -199,9 +208,11 @@ export const perguntarAssistenteMuse = createServerFn({ method: "POST" })
       protocolo,
     };
 
-    // Ação: conferir as atrasadas no 1Doc. Só monta a ação para admin;
-    // ela apenas enfileira (enfileirarOnedoc) — o agente do 1Doc confere
-    // e só conclui com a linha "deu baixa". Nunca conclui pelo chat.
+    // Ação: conferir no 1Doc. Em lote para as atrasadas (só admin) e
+    // unitária para um protocolo específico (só admin, não concluído e
+    // com link do 1Doc — ver acaoConferirProtocolo em muse-chat.ts).
+    // Em ambos os casos a conferência só é enfileirada: o agente do
+    // 1Doc na VPS confere e só conclui com a linha "deu baixa".
     const elegiveis = atrasadas.filter((a) => /1doc/i.test(a.url ?? ""));
     const acao =
       intencao === "atrasadas" && elegiveis.length > 0 && admin
@@ -211,7 +222,9 @@ export const perguntarAssistenteMuse = createServerFn({ method: "POST" })
             protocoloIds: elegiveis.map((a) => a.id),
             numeros: elegiveis.slice(0, 10).map((a) => a.numero),
           }
-        : null;
+        : intencao === "protocolo"
+          ? acaoConferirProtocolo(resumo.protocolo, admin)
+          : null;
 
     // Última conferência pedida pelo Muse, só para contexto da resposta.
     let ultimoJob: string | null = null;
@@ -279,7 +292,10 @@ export const perguntarAssistenteMuse = createServerFn({ method: "POST" })
               "Você é o Assistente Muse do OuviDesk, sistema de gestão de ouvidorias da Prefeitura de Brusque. " +
               "Responda em português, de forma curta e direta, usando SOMENTE os dados fornecidos abaixo. " +
               "Nunca invente números, nomes ou prazos. Se a resposta não estiver nos dados, diga que não sabe. " +
-              "Nunca diga que concluiu, baixou ou arquivou uma ouvidoria — a conferência e a baixa são feitas pelo agente do 1Doc, não por você.",
+              "Você pede, acompanha e reporta a conferência no 1Doc: quando o usuário pedir para conferir uma ouvidoria, " +
+              "ofereça a conferência e, depois dela, reporte o resultado (baixada ou ainda em aberto). A leitura da página " +
+              "do 1Doc é feita pelo agente do 1Doc na VPS, e se houver baixa lá a ouvidoria é concluída no OuviDesk pelo " +
+              "fluxo auditado. Nunca afirme que você mesmo abriu a página do 1Doc ou concluiu um protocolo diretamente.",
           },
           {
             role: "user",
@@ -302,6 +318,19 @@ export const perguntarAssistenteMuse = createServerFn({ method: "POST" })
     if (intencao === "atrasadas" && elegiveis.length === 0 && resumo.vencidos > 0) {
       resposta +=
         " Nenhuma das atrasadas tem link do 1Doc cadastrado, então não dá para conferi-las automaticamente.";
+    }
+    // A resposta determinística já explica esses casos; a IA pode omitir,
+    // então completa só quando a resposta veio da IA.
+    if (intencao === "protocolo" && fonte === "ia" && resumo.protocolo) {
+      if (resumo.protocolo.status === "concluido") {
+        resposta += " Ela já está concluída no OuviDesk, então não há o que conferir no 1Doc.";
+      } else if (!/1doc/i.test(resumo.protocolo.url ?? "")) {
+        resposta +=
+          " Ela não tem link do 1Doc cadastrado, então não dá para conferi-la automaticamente no 1Doc.";
+      } else if (!admin) {
+        resposta +=
+          " A conferência no 1Doc precisa de um administrador — peça a um admin para conferir essa ouvidoria.";
+      }
     }
 
     return { resposta, intencao, fonte, acao, resumo, isAdmin: admin };

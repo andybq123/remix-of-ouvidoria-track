@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  acaoConferirProtocolo,
   classificarIntencao,
   extrairNumeroProtocolo,
   respostaDeterministica,
@@ -72,6 +73,7 @@ describe("chat do Assistente Muse — intenção", () => {
       "protocolo",
       resumo({
         protocolo: {
+          id: "a",
           numero: "3.321/2026",
           assunto: "Foco de dengue",
           secretaria: "Saúde",
@@ -79,6 +81,7 @@ describe("chat do Assistente Muse — intenção", () => {
           situacao: "concluido",
           dias: 32,
           prazoFinal: "2026-10-23",
+          url: "https://brusque.1doc.com.br/x",
         },
       }),
     );
@@ -98,5 +101,59 @@ describe("chat do Assistente Muse — intenção", () => {
   it("sem atrasadas, a resposta diz isso em vez de inventar", () => {
     const r = respostaDeterministica("atrasadas", resumo({ vencidos: 0, atrasadasTop: [] }));
     expect(r).toContain("Nenhuma ouvidoria está atrasada");
+  });
+});
+
+describe("chat do Assistente Muse — conferência unitária no 1Doc", () => {
+  const protocoloAberto = {
+    id: "proto-1",
+    numero: "3.321/2026",
+    assunto: "Foco de dengue",
+    secretaria: "Saúde",
+    status: "aberto",
+    situacao: "vencido",
+    dias: -32,
+    prazoFinal: "2026-10-23",
+    url: "https://brusque.1doc.com.br/x",
+  };
+
+  it("protocolo aberto com link do 1Doc vira ação unitária para admin", () => {
+    expect(acaoConferirProtocolo(protocoloAberto, true)).toEqual({
+      tipo: "conferir-protocolo",
+      protocoloId: "proto-1",
+      numero: "3.321/2026",
+      total: 1,
+    });
+  });
+
+  it("protocolo sem link do 1Doc não tem ação", () => {
+    expect(acaoConferirProtocolo({ ...protocoloAberto, url: null }, true)).toBeNull();
+    expect(
+      acaoConferirProtocolo({ ...protocoloAberto, url: "https://exemplo.com/doc" }, true),
+    ).toBeNull();
+  });
+
+  it("protocolo já concluído não tem ação", () => {
+    expect(acaoConferirProtocolo({ ...protocoloAberto, status: "concluido" }, true)).toBeNull();
+  });
+
+  it("sem admin ou sem protocolo não tem ação", () => {
+    expect(acaoConferirProtocolo(protocoloAberto, false)).toBeNull();
+    expect(acaoConferirProtocolo(null, true)).toBeNull();
+  });
+
+  it("a resposta explica cada caso: pode conferir, sem link ou já concluído", () => {
+    expect(respostaDeterministica("protocolo", resumo({ protocolo: protocoloAberto }))).toContain(
+      "Posso conferir essa ouvidoria no 1Doc",
+    );
+    expect(
+      respostaDeterministica("protocolo", resumo({ protocolo: { ...protocoloAberto, url: null } })),
+    ).toContain("não tem link do 1Doc");
+    expect(
+      respostaDeterministica(
+        "protocolo",
+        resumo({ protocolo: { ...protocoloAberto, status: "concluido" } }),
+      ),
+    ).toContain("já está concluída");
   });
 });
