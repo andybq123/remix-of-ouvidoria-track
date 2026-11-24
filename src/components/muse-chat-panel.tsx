@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ArrowRight, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -155,13 +155,24 @@ function BotaoNavegar({ rota, rotulo }: { rota: string; rotulo: string }): React
  * (enfileiradas, admin-only, com confirmação) e nunca conclui, edita
  * ou exclui protocolos diretamente.
  */
-export function MuseChatPanel({ alturaMensagens }: { alturaMensagens?: string }) {
+export function MuseChatPanel({
+  alturaMensagens,
+  onPensandoChange,
+}: {
+  alturaMensagens?: string;
+  /** Avisado quando o assistente começa/termina de buscar uma resposta — o mascote mostra a bola de cristal enquanto pensa. */
+  onPensandoChange?: (pensando: boolean) => void;
+}) {
   const isAdmin = useIsAdmin();
   const qc = useQueryClient();
   const perguntar = useServerFn(perguntarAssistenteMuse);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [pergunta, setPergunta] = useState("");
   const [enviando, setEnviando] = useState(false);
+
+  useEffect(() => {
+    onPensandoChange?.(enviando);
+  }, [enviando, onPensandoChange]);
 
   async function enviar(texto: string) {
     const q = texto.trim();
