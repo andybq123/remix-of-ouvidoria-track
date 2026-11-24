@@ -18,7 +18,7 @@ export const getOnedocConfig = createServerFn({ method: "GET" })
     const { data } = await context.supabase.from("onedoc_config")
       .select("url_login, usuario, senha_cifrada, updated_at").maybeSingle();
     const { data: jobs } = await context.supabase.from("onedoc_jobs")
-      .select("id, tipo, status, total, processados, atualizados, erros, mensagem, created_at, iniciado_em, finalizado_em, resultados")
+      .select("id, tipo, status, total, processados, atualizados, erros, mensagem, created_at, iniciado_em, finalizado_em, resultados, contexto")
       .order("created_at", { ascending: false }).limit(20);
     return {
       url_login: data?.url_login ?? "",

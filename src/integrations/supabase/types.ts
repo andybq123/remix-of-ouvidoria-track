@@ -457,6 +457,7 @@ export type Database = {
       onedoc_config: {
         Row: {
           id: boolean
+          muse_pausado: boolean | null
           senha_cifrada: string | null
           updated_at: string
           updated_by: string | null
@@ -465,6 +466,7 @@ export type Database = {
         }
         Insert: {
           id?: boolean
+          muse_pausado?: boolean | null
           senha_cifrada?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -473,6 +475,7 @@ export type Database = {
         }
         Update: {
           id?: boolean
+          muse_pausado?: boolean | null
           senha_cifrada?: string | null
           updated_at?: string
           updated_by?: string | null

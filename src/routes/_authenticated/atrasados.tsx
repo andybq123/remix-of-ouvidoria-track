@@ -19,6 +19,7 @@ import { BulkConcluirDialog } from "@/components/bulk-concluir-dialog";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { CheckCheck } from "lucide-react";
 import { OnedocAgentButton } from "@/components/onedoc-agent-button";
+import { MuseUltimaConferenciaFaixa, useMuseStatus } from "@/components/muse-status-card";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/_authenticated/atrasados")({
@@ -41,6 +42,7 @@ function AtrasadosPage() {
   const [mes, setMes] = useState<string>(currentMonthValue());
   const [bulkOpen, setBulkOpen] = useState(false);
   const isAdmin = useIsAdmin();
+  const { data: museStatus } = useMuseStatus(isAdmin);
 
   const { data: protocolos = [] } = useQuery({
     queryKey: ["protocolos"],
@@ -79,6 +81,14 @@ function AtrasadosPage() {
       })
       .sort(sortProtocolosPorNumero);
   }, [protocolos, filtroTipo, filtroSec, busca, refDate]);
+
+  const museIds = useMemo(
+    () =>
+      atrasados
+        .filter((p) => p.tipo === "ouvidoria" && p.status !== "concluido" && /1doc/i.test(p.url ?? ""))
+        .map((p) => p.id as string),
+    [atrasados],
+  );
 
   const opcoesMes = useMemo(
     () => monthOptionsFromDates(protocolos.map(p => p.data_abertura)),
@@ -166,11 +176,24 @@ function AtrasadosPage() {
             </Button>
           )}
           {isAdmin && <OnedocAgentButton tipo="lote" label="Atualizar todas pelo 1Doc" size="default" />}
+          {isAdmin && (
+            <OnedocAgentButton
+              tipo="lote"
+              protocoloIds={museIds}
+              escopo="lote:muse-atrasadas"
+              label="Conferir atrasadas com o Muse"
+              confirmacao="Conferir no 1Doc as ouvidorias atrasadas desta tela? Isso roda em segundo plano."
+              disabled={museIds.length === 0}
+              size="default"
+            />
+          )}
           <Button onClick={exportar} variant="outline" disabled={atrasados.length === 0}>
             <Download className="h-4 w-4 mr-1" /> Exportar Excel
           </Button>
         </div>
       </div>
+
+      {isAdmin && museStatus && <MuseUltimaConferenciaFaixa status={museStatus} />}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {Object.entries(buckets).map(([label, value]) => (

@@ -13,6 +13,7 @@ import { useIsAdmin } from "@/hooks/use-is-admin";
 import { getOnedocConfig, salvarOnedocConfig } from "@/lib/onedoc.functions";
 import { OnedocAgentButton } from "@/components/onedoc-agent-button";
 import { OnedocBatchHistory } from "@/components/onedoc-batch-history";
+import { MuseStatusCard } from "@/components/muse-status-card";
 
 export const Route = createFileRoute("/_authenticated/agente-1doc")({
   head: () => ({
@@ -90,6 +91,7 @@ function AgentePage() {
           </div>
         </CardContent>
       </Card>
+      <MuseStatusCard />
       <Card>
         <CardHeader><CardTitle>Últimas execuções</CardTitle></CardHeader>
         <CardContent>
@@ -99,6 +101,7 @@ function AgentePage() {
                 <div key={j.id} className="py-2 flex flex-wrap items-center gap-2 text-sm">
                   <span className="w-36 text-muted-foreground">{new Date(j.created_at).toLocaleString("pt-BR")}</span>
                   <span className="w-32">{TIPO[j.tipo] ?? j.tipo}</span>
+                  {j.contexto?.origem === "muse" && <Badge variant="secondary">Muse</Badge>}
                   <Badge variant={j.status === "erro" ? "destructive" : j.status === "concluido" ? "default" : "secondary"}>{STATUS[j.status] ?? j.status}</Badge>
                   {j.tipo !== "teste" && <span>{j.processados}/{j.total} conferidas · {j.atualizados} concluídas · {j.erros} erros</span>}
                   {j.mensagem && <span className="text-muted-foreground">— {j.mensagem}</span>}

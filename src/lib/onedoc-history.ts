@@ -9,6 +9,8 @@ export type OnedocResultado = {
 };
 export type OnedocContexto = {
   escopo?: string; secretarias?: { id: string | null; nome: string }[];
+  /** Origem do pedido: "muse" quando enfileirado pela integração Muse. */
+  origem?: string;
 };
 export function resumoResultados(resultados: OnedocResultado[]) {
   const salvos = resultados.filter((r) => !r.erro);
