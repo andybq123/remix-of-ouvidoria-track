@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, KeyRound, ArrowUp, ArrowDown, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { getAiConfig, saveAiProvider, saveAiPriority, testAiProvider } from "@/lib/ai-config.functions";
+import { getAiConfig, saveAiProvider, saveAiPriority, saveMuseToken, testAiProvider } from "@/lib/ai-config.functions";
 
 export const Route = createFileRoute("/_authenticated/ia-config")({
   head: () => ({
@@ -107,9 +107,100 @@ function IAConfigPage() {
           {(["grok", "gemini"] as Prov[]).map((p) => (
             <ProviderCard key={p} provider={p} info={data[p]} />
           ))}
+
+          <MuseTokenCard info={data.muse} />
         </>
       )}
     </div>
+  );
+}
+
+function MuseTokenCard({
+  info,
+}: {
+  info: { hasKey: boolean; apiKeyMasked: string | null; origem: "sistema" | "env" | "nenhuma" };
+}) {
+  const qc = useQueryClient();
+  const save = useServerFn(saveMuseToken);
+  const [token, setToken] = useState("");
+  const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const mSave = useMutation({
+    mutationFn: (clearKey?: boolean) =>
+      save({ data: { apiKey: token || undefined, clearKey } }),
+    onSuccess: (_r, clearKey) => {
+      toast.success(clearKey ? "Token do Muse removido" : "Token do Muse salvo");
+      setStatus({
+        ok: true,
+        msg: clearKey
+          ? "Token removido do sistema — volta a valer o MUSE_API_TOKEN do env, se houver."
+          : "Token salvo. Ele passa a valer imediatamente para os endpoints do Muse.",
+      });
+      setToken("");
+      qc.invalidateQueries({ queryKey: ["ai-config"] });
+      qc.invalidateQueries({ queryKey: ["muse-status"] });
+    },
+    onError: (e: any) => {
+      setStatus({ ok: false, msg: e?.message ?? "Erro" });
+      toast.error(`Não salvo: ${e?.message ?? "erro"}`);
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <KeyRound className="h-5 w-5" /> Assistente Muse
+          {info.hasKey ? (
+            <Badge variant="secondary">Token cadastrado {info.apiKeyMasked}</Badge>
+          ) : info.origem === "env" ? (
+            <Badge variant="secondary">Token via variável de ambiente</Badge>
+          ) : (
+            <Badge variant="outline">Sem token</Badge>
+          )}
+        </CardTitle>
+        <CardDescription>
+          Token que o Muse usa para chamar os endpoints{" "}
+          <code>/api/public/muse/*</code>. O token guardado aqui vence o{" "}
+          <code>MUSE_API_TOKEN</code> do .env.local da VPS — apague-o para voltar a valer o do
+          ambiente. O valor nunca volta a aparecer: só os últimos 4 caracteres.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="space-y-1.5">
+          <Label>Novo token da API Muse</Label>
+          <Input
+            type="password"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder={info.hasKey ? "Deixe vazio para manter o atual" : "Cole aqui o token (mín. 16 caracteres)"}
+          />
+          <p className="text-xs text-muted-foreground">
+            Gere um valor aleatório longo e guarde-o também no cofre do Muse — é o mesmo token que
+            ele envia como Bearer nos endpoints.
+          </p>
+        </div>
+        {status && (
+          <div className={`flex items-start gap-2 rounded-md border p-2 text-sm ${status.ok ? "border-primary/40" : "border-destructive/50 text-destructive"}`}>
+            {status.ok ? <CheckCircle2 className="h-4 w-4 mt-0.5" /> : <AlertCircle className="h-4 w-4 mt-0.5" />}
+            <span className="break-all">{status.msg}</span>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => mSave.mutate(false)} disabled={mSave.isPending || token.trim().length < 16}>
+            {mSave.isPending ? "Salvando…" : "Salvar token"}
+          </Button>
+          {info.hasKey && (
+            <Button
+              variant="ghost"
+              onClick={() => confirm("Remover o token do Muse guardado no sistema?") && mSave.mutate(true)}
+            >
+              Remover token
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

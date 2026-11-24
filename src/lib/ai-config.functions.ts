@@ -21,30 +21,65 @@ export const getAiConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context);
-    const { data, error } = await context.supabase
+    // Sem a coluna muse_api_token (banco ainda sem a migração 0035/036),
+    // a seleção com ela falha — tenta de novo sem ela em vez de quebrar
+    // a página inteira de IA.
+    const SELECT_COM_MUSE =
+      "provider, api_key, grok_api_key, gemini_api_key, grok_model, gemini_model, priority, updated_at, muse_api_token";
+    const SELECT_SEM_MUSE =
+      "provider, api_key, grok_api_key, gemini_api_key, grok_model, gemini_model, priority, updated_at";
+    // As duas seleções têm tipos diferentes (com/sem muse_api_token);
+    // usa `any` para o retry não quebrar a tipagem.
+    let data: any = null;
+    let error: any = null;
+    const first = await context.supabase
       .from("ai_config")
-      .select("provider, api_key, grok_api_key, gemini_api_key, grok_model, gemini_model, priority, updated_at")
+      .select(SELECT_COM_MUSE)
       .eq("id", true)
       .maybeSingle();
-    if (error) throw error;
+    data = first.data;
+    error = first.error;
+    if (error) {
+      const retry = await context.supabase
+        .from("ai_config")
+        .select(SELECT_SEM_MUSE)
+        .eq("id", true)
+        .maybeSingle();
+      if (retry.error) throw retry.error;
+      data = retry.data;
+    }
     const d: any = data ?? {};
     const { restaurarChavesSeNecessario } = await import("./ai-keys-store.server");
     const chaves = await restaurarChavesSeNecessario({
       grok_api_key: d.grok_api_key ?? null,
       gemini_api_key: d.gemini_api_key ?? (d.provider === "gemini" ? d.api_key : null) ?? null,
+      muse_api_token: d.muse_api_token ?? null,
     });
     d.grok_api_key = chaves.grok ?? null;
     const geminiKey: string | null = chaves.gemini ?? null;
+    const museKey: string | null = chaves.muse ?? null;
     const raw: string[] = Array.isArray(d.priority) ? d.priority : [];
     const priority = [
       ...raw.filter((p): p is Prov => (KNOWN as string[]).includes(p)),
       ...KNOWN.filter((p) => !raw.includes(p)),
     ].filter((p, i, a) => a.indexOf(p) === i);
     const mask = (k: string | null) => (k ? `••••${k.slice(-4)}` : null);
+    // Origem do token Muse: no banco (Configurações > IA) ou só no env.
+    const envMuse = (process.env.MUSE_API_TOKEN ?? "").trim();
+    const museOrigem: "sistema" | "env" | "nenhuma" = museKey
+      ? "sistema"
+      : envMuse
+        ? "env"
+        : "nenhuma";
     return {
       priority,
       grok: { hasKey: !!d.grok_api_key, apiKeyMasked: mask(d.grok_api_key ?? null), model: d.grok_model ?? "" },
       gemini: { hasKey: !!geminiKey, apiKeyMasked: mask(geminiKey), model: d.gemini_model ?? "" },
+      muse: {
+        hasKey: !!museKey,
+        apiKeyMasked: mask(museKey),
+        origem: museOrigem,
+      },
       updatedAt: d.updated_at ?? null,
     };
   });
@@ -82,6 +117,51 @@ export const saveAiProvider = createServerFn({ method: "POST" })
     }
     await invalidate();
     return { ok: true, reply };
+  });
+
+export const museTokenInputSchema = z
+  .object({
+    /** Token novo (mín. 16 caracteres — é um segredo aleatório longo). */
+    apiKey: z.string().trim().min(16).max(500).optional(),
+    /** Quando true, apaga o token guardado no sistema (volta a valer o env). */
+    clearKey: z.boolean().optional(),
+  })
+  .refine((d) => d.clearKey === true || !!d.apiKey, {
+    message: "Informe o token da API Muse ou use Remover para apagá-lo",
+  });
+
+/**
+ * Salva ou remove o token da API Muse em Configurações > IA, na mesma
+ * tabela das chaves Groq/Gemini (ai_config.muse_api_token, migração
+ * 0035/036). Admin-only. Nunca devolve o valor — só { ok: true }.
+ * O token guardado no sistema vence o MUSE_API_TOKEN do env.
+ */
+export const saveMuseToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => museTokenInputSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (!data.clearKey && !data.apiKey) {
+      throw new Error("Informe o token da API Muse ou use Remover para apagá-lo");
+    }
+    const { error } = await context.supabase.from("ai_config").upsert(
+      {
+        id: true,
+        muse_api_token: data.clearKey ? null : (data.apiKey as string),
+        updated_at: new Date().toISOString(),
+        updated_by: context.userId,
+      } as any,
+      { onConflict: "id" },
+    );
+    if (error) {
+      throw new Error(
+        "Não foi possível salvar o token. Atualize o banco na VPS (migração 0035/036 — coluna muse_api_token).",
+      );
+    }
+    const { salvarChavesArquivo } = await import("./ai-keys-store.server");
+    await salvarChavesArquivo({ muse: data.clearKey ? null : data.apiKey });
+    await invalidate();
+    return { ok: true };
   });
 
 export const saveAiPriority = createServerFn({ method: "POST" })

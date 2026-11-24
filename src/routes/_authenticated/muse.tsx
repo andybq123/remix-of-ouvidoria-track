@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import {
@@ -79,9 +80,18 @@ function MusePage() {
             do job, com resumo de encerradas, ainda atrasadas e erros.
           </p>
           <p className="text-muted-foreground">
-            O token vive só no .env.local da VPS e no cofre do Muse — nunca no repositório e nunca
-            aparece aqui. Sem ele, os endpoints respondem 500; com ele errado, 401.
+            O token é informado em{" "}
+            <Link to="/ia-config" className="text-primary underline underline-offset-2">
+              Configurações &gt; IA
+            </Link>{" "}
+            e fica guardado no sistema; como alternativa, vale o <code>MUSE_API_TOKEN</code> do
+            .env.local da VPS. O token guardado no sistema vence o do ambiente. Ele nunca aparece
+            aqui — só os últimos 4 caracteres. Sem token em lugar nenhum, os endpoints respondem
+            500; com ele errado, 401.
           </p>
+          <Button size="sm" asChild>
+            <Link to="/muse-chat">Perguntar ao Assistente</Link>
+          </Button>
           {data && <MusePausarButton pausado={data.pausado} />}
         </CardContent>
       </Card>

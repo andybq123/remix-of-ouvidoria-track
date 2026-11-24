@@ -8,8 +8,8 @@ describe("cópia das chaves de IA", () => {
     process.env["IA_CHAVES_FILE"] = path.join(os.tmpdir(), `ia-${Date.now()}.json`);
     await salvarChavesArquivo({ grok: "gsk_1" });
     await salvarChavesArquivo({ gemini: "AIza_2" });
-    expect(await lerChavesArquivo()).toEqual({ grok: "gsk_1", gemini: "AIza_2" });
+    expect(await lerChavesArquivo()).toEqual({ grok: "gsk_1", gemini: "AIza_2", muse: null });
     await salvarChavesArquivo({ grok: null });
-    expect(await lerChavesArquivo()).toEqual({ grok: null, gemini: "AIza_2" });
+    expect(await lerChavesArquivo()).toEqual({ grok: null, gemini: "AIza_2", muse: null });
   });
 });

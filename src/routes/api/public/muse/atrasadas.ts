@@ -17,7 +17,9 @@ export const Route = createFileRoute("/api/public/muse/atrasadas")({
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: museCorsHeaders() }),
       GET: async ({ request }) => {
-        const auth = validarTokenMuse(request);
+        // O client admin resolve o token do sistema (ai_config) ou do env.
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const auth = await validarTokenMuse(request, supabaseAdmin);
         if (auth) return auth;
 
         const url = new URL(request.url);
@@ -32,7 +34,6 @@ export const Route = createFileRoute("/api/public/muse/atrasadas")({
           );
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { listarAtrasadasMuse } = await import("@/lib/muse-atrasadas.server");
         try {
           const sel = await listarAtrasadasMuse(supabaseAdmin, {

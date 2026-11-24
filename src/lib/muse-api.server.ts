@@ -19,6 +19,65 @@ export function museCorsHeaders(): Record<string, string> {
   };
 }
 
+/** Origem do token que está valendo para a integração. */
+export type OrigemTokenMuse = "sistema" | "env" | "nenhuma";
+
+export type TokenMuseResolvido = {
+  /** O token (só existe no servidor — nunca vai para o navegador). */
+  token: string;
+  origem: OrigemTokenMuse;
+};
+
+/** Mesma máscara usada em getAiConfig para Groq/Gemini: só os últimos 4. */
+export function mascararTokenMuse(token: string | null | undefined): string | null {
+  const t = (token ?? "").trim();
+  return t ? `••••${t.slice(-4)}` : null;
+}
+
+// Cliente Supabase (admin) passado pelos chamadores; o builder encadeado
+// (select/eq/maybeSingle) não tem tipo estrutural simples neste repo.
+type SupabaseAdminLike = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  from: (tabela: string) => any;
+};
+
+/**
+ * Resolve o token da integração Muse.
+ *
+ * 1. Banco primeiro: `ai_config.muse_api_token`, informado em
+ *    Configurações > IA (migração 0035/036).
+ * 2. Fallback: `MUSE_API_TOKEN` da variável de ambiente, para quem já
+ *    configurou por env antes da tela existir.
+ * 3. Nenhum dos dois: token vazio, origem "nenhuma".
+ *
+ * Sem a coluna no banco (VPS ainda não atualizada), a leitura falha e
+ * cai para o env em vez de quebrar — igual a musePausado().
+ */
+export async function resolverTokenMuse(
+  client?: SupabaseAdminLike | null,
+): Promise<TokenMuseResolvido> {
+  const env = (process.env.MUSE_API_TOKEN ?? "").trim();
+  if (client) {
+    try {
+      const { data, error } = await client
+        .from("ai_config")
+        .select("muse_api_token")
+        .eq("id", true)
+        .maybeSingle();
+      if (!error) {
+        const db = (
+          (data as { muse_api_token?: string | null } | null)?.muse_api_token ?? ""
+        ).trim();
+        if (db) return { token: db, origem: "sistema" };
+      }
+    } catch {
+      /* sem coluna / sem banco: cai para o env */
+    }
+  }
+  if (env) return { token: env, origem: "env" };
+  return { token: "", origem: "nenhuma" };
+}
+
 /** Token dedicado da integração. Nunca reuse INGEST_TOKEN. */
 export function museTokenEsperado(): string {
   return process.env.MUSE_API_TOKEN ?? "";
@@ -26,11 +85,16 @@ export function museTokenEsperado(): string {
 
 /**
  * Valida o Bearer token da rota. Devolve null quando está ok, ou a
- * Response de erro (500 sem token configurado, 401 sem/errado).
- * Segue o padrão de check-protocolos.ts (comparação simples de string).
+ * Response de erro (500 sem token configurado em lugar nenhum, 401
+ * sem/errado). Segue o padrão de check-protocolos.ts (comparação
+ * simples de string). Passe o client admin para resolver também o
+ * token guardado no sistema; sem ele, só o env é considerado.
  */
-export function validarTokenMuse(request: Request): Response | null {
-  const expected = museTokenEsperado();
+export async function validarTokenMuse(
+  request: Request,
+  client?: SupabaseAdminLike | null,
+): Promise<Response | null> {
+  const { token: expected } = await resolverTokenMuse(client);
   if (!expected) {
     return Response.json(
       { error: "MUSE_API_TOKEN não configurado" },

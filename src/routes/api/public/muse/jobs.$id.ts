@@ -17,7 +17,8 @@ export const Route = createFileRoute("/api/public/muse/jobs/$id")({
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: museCorsHeaders() }),
       GET: async ({ request, params }) => {
-        const auth = validarTokenMuse(request);
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const auth = await validarTokenMuse(request, supabaseAdmin);
         if (auth) return auth;
 
         const id = params.id;
@@ -28,7 +29,6 @@ export const Route = createFileRoute("/api/public/muse/jobs/$id")({
           );
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         try {
           const { data, error } = await supabaseAdmin
             .from("onedoc_jobs")

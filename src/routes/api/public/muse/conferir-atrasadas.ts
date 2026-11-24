@@ -17,7 +17,9 @@ export const Route = createFileRoute("/api/public/muse/conferir-atrasadas")({
       POST: async ({ request }) => {
         // Token primeiro: sem ele, a resposta é 401 mesmo que o banco
         // esteja fora do ar. Só depois vêm licença e manutenção.
-        const auth = validarTokenMuse(request);
+        // O client admin resolve o token do sistema (ai_config) ou do env.
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const auth = await validarTokenMuse(request, supabaseAdmin);
         if (auth) return auth;
         // Falha de leitura da licença não bloqueia (o banco também recusa
         // gravações); só bloqueia quando a leitura confirma o bloqueio.
@@ -52,7 +54,6 @@ export const Route = createFileRoute("/api/public/muse/conferir-atrasadas")({
         }
         const { secretariaId, protocoloIds, simulacao } = parsed.data;
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { listarAtrasadasMuse, selecionarPorIdsMuse, musePausado } =
           await import("@/lib/muse-atrasadas.server");
         try {

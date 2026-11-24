@@ -103,7 +103,7 @@ O Muse é um agente externo que aciona o OuviDesk por três endpoints com token 
 - `POST /api/public/muse/conferir-atrasadas` — enfileira a conferência no agente do 1Doc. Com `simulacao: true` não insere nada.
 - `GET /api/public/muse/jobs/{id}` — status e resultado do job, só para jobs pedidos pelo Muse.
 
-O Muse nunca escreve direto em protocolos: toda conclusão passa pelo agente do 1Doc, que só conclui ao ler a linha "deu baixa" na página do 1Doc, com auditoria e reversão. O painel "Assistente Muse" (Configurações > Integrações, e nas telas Atrasados e Agente 1Doc) mostra o status, a última conferência e permite pausar a integração — com ela pausada, o POST responde 503. Antes de usar, crie o `MUSE_API_TOKEN` no `.env.local` da VPS e aplique a migração que adiciona a coluna `muse_pausado` em `onedoc_config`.
+O Muse nunca escreve direto em protocolos: toda conclusão passa pelo agente do 1Doc, que só conclui ao ler a linha "deu baixa" na página do 1Doc, com auditoria e reversão. O painel "Assistente Muse" (Configurações > Integrações, e nas telas Atrasados e Agente 1Doc) mostra o status, a última conferência e permite pausar a integração — com ela pausada, o POST responde 503. O token é informado por dentro do sistema, em Configurações > IA (campo "Token da API Muse", só para administradores); como alternativa, vale o `MUSE_API_TOKEN` do `.env.local` da VPS — o token guardado no sistema vence o do ambiente. Antes de usar, aplique as migrações que adicionam as colunas `muse_pausado` em `onedoc_config` e `muse_api_token` em `ai_config`.
 
 ### 6. Painéis, mapas e relatórios
 

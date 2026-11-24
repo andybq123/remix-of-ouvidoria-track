@@ -32,6 +32,7 @@ import { Route as AuthenticatedIaConfigRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedLicencaRouteImport } from './routes/_authenticated/licenca'
 import { Route as AuthenticatedMapaRouteImport } from './routes/_authenticated/mapa'
 import { Route as AuthenticatedMuseRouteImport } from './routes/_authenticated/muse'
+import { Route as AuthenticatedMuseChatRouteImport } from './routes/_authenticated/muse-chat'
 import { Route as AuthenticatedProtocolosRouteImport } from './routes/_authenticated/protocolos'
 import { Route as AuthenticatedRegistroRouteImport } from './routes/_authenticated/registro'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
@@ -169,6 +170,11 @@ const AuthenticatedMuseRoute = AuthenticatedMuseRouteImport.update({
   path: '/muse',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMuseChatRoute = AuthenticatedMuseChatRouteImport.update({
+  id: '/muse-chat',
+  path: '/muse-chat',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProtocolosRoute = AuthenticatedProtocolosRouteImport.update({
   id: '/protocolos',
   path: '/protocolos',
@@ -303,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/licenca': typeof AuthenticatedLicencaRoute
   '/mapa': typeof AuthenticatedMapaRoute
   '/muse': typeof AuthenticatedMuseRoute
+  '/muse-chat': typeof AuthenticatedMuseChatRoute
   '/protocolos': typeof AuthenticatedProtocolosRoute
   '/registro': typeof AuthenticatedRegistroRoute
   '/relatorios': typeof AuthenticatedRelatoriosRouteWithChildren
@@ -347,6 +354,7 @@ export interface FileRoutesByTo {
   '/licenca': typeof AuthenticatedLicencaRoute
   '/mapa': typeof AuthenticatedMapaRoute
   '/muse': typeof AuthenticatedMuseRoute
+  '/muse-chat': typeof AuthenticatedMuseChatRoute
   '/protocolos': typeof AuthenticatedProtocolosRoute
   '/registro': typeof AuthenticatedRegistroRoute
   '/saude': typeof AuthenticatedSaudeRoute
@@ -392,6 +400,7 @@ export interface FileRoutesById {
   '/_authenticated/licenca': typeof AuthenticatedLicencaRoute
   '/_authenticated/mapa': typeof AuthenticatedMapaRoute
   '/_authenticated/muse': typeof AuthenticatedMuseRoute
+  '/_authenticated/muse-chat': typeof AuthenticatedMuseChatRoute
   '/_authenticated/protocolos': typeof AuthenticatedProtocolosRoute
   '/_authenticated/registro': typeof AuthenticatedRegistroRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRouteWithChildren
@@ -438,6 +447,7 @@ export interface FileRouteTypes {
     | '/licenca'
     | '/mapa'
     | '/muse'
+    | '/muse-chat'
     | '/protocolos'
     | '/registro'
     | '/relatorios'
@@ -482,6 +492,7 @@ export interface FileRouteTypes {
     | '/licenca'
     | '/mapa'
     | '/muse'
+    | '/muse-chat'
     | '/protocolos'
     | '/registro'
     | '/saude'
@@ -526,6 +537,7 @@ export interface FileRouteTypes {
     | '/_authenticated/licenca'
     | '/_authenticated/mapa'
     | '/_authenticated/muse'
+    | '/_authenticated/muse-chat'
     | '/_authenticated/protocolos'
     | '/_authenticated/registro'
     | '/_authenticated/relatorios'
@@ -731,6 +743,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMuseRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/muse-chat': {
+      id: '/_authenticated/muse-chat'
+      path: '/muse-chat'
+      fullPath: '/muse-chat'
+      preLoaderRoute: typeof AuthenticatedMuseChatRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/protocolos': {
       id: '/_authenticated/protocolos'
       path: '/protocolos'
@@ -906,6 +925,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLicencaRoute: typeof AuthenticatedLicencaRoute
   AuthenticatedMapaRoute: typeof AuthenticatedMapaRoute
   AuthenticatedMuseRoute: typeof AuthenticatedMuseRoute
+  AuthenticatedMuseChatRoute: typeof AuthenticatedMuseChatRoute
   AuthenticatedProtocolosRoute: typeof AuthenticatedProtocolosRoute
   AuthenticatedRegistroRoute: typeof AuthenticatedRegistroRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRouteWithChildren
@@ -933,6 +953,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLicencaRoute: AuthenticatedLicencaRoute,
   AuthenticatedMapaRoute: AuthenticatedMapaRoute,
   AuthenticatedMuseRoute: AuthenticatedMuseRoute,
+  AuthenticatedMuseChatRoute: AuthenticatedMuseChatRoute,
   AuthenticatedProtocolosRoute: AuthenticatedProtocolosRoute,
   AuthenticatedRegistroRoute: AuthenticatedRegistroRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRouteWithChildren,
