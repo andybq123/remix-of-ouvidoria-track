@@ -17,7 +17,7 @@ export type MuseStatus = {
 };
 
 /**
- * Painel Assistente Muse: status da integração e os últimos jobs
+ * Painel Ouvidorizinho: status da integração e os últimos jobs
  * pedidos pelo Muse (onedoc_jobs com contexto.origem = "muse").
  * Admin-only. Sem tabela nova: o histórico é o próprio onedoc_jobs.
  */

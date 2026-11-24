@@ -14,12 +14,12 @@ import {
 export const Route = createFileRoute("/_authenticated/muse")({
   head: () => ({
     meta: [
-      { title: "Assistente Muse — OuviDesk" },
+      { title: "Ouvidorizinho — OuviDesk" },
       {
         name: "description",
-        content: "Integração Muse: status, conferências de ouvidorias atrasadas no 1Doc e pausa.",
+        content: "Ouvidorizinho, movido pelo Muse: status, conferências de ouvidorias atrasadas no 1Doc e pausa.",
       },
-      { property: "og:title", content: "Assistente Muse — OuviDesk" },
+      { property: "og:title", content: "Ouvidorizinho — OuviDesk" },
       {
         property: "og:description",
         content: "Integração Muse: conferências de atrasadas no 1Doc.",
@@ -49,10 +49,10 @@ function MusePage() {
     <div className="space-y-6 max-w-4xl">
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Sparkles className="h-6 w-6" /> Assistente Muse
+          <Sparkles className="h-6 w-6" /> Ouvidorizinho
         </h1>
         <p className="text-sm text-muted-foreground">
-          O Muse é um agente externo: ele chama a API do OuviDesk para listar as ouvidorias
+          O Ouvidorizinho é o assistente do OuviDesk, movido pelo Muse, um agente externo: ele chama a API do OuviDesk para listar as ouvidorias
           atrasadas, pedir a conferência no 1Doc e acompanhar o resultado. A conferência é pedida e
           acompanhada pelo Assistente; a leitura da página do 1Doc e a baixa continuam sendo feitas
           pelo agente do 1Doc na VPS, com auditoria e reversão.
@@ -91,7 +91,7 @@ function MusePage() {
             500; com ele errado, 401.
           </p>
           <Button size="sm" asChild>
-            <Link to="/muse-chat">Perguntar ao Assistente</Link>
+            <Link to="/muse-chat">Perguntar ao Ouvidorizinho</Link>
           </Button>
           {data && <MusePausarButton pausado={data.pausado} />}
         </CardContent>
