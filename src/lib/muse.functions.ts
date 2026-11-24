@@ -1,11 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { exigirAdmin } from "@/lib/admin-guard.server";
+import { mascararTokenMuse, type OrigemTokenMuse } from "@/lib/muse-api.server";
 import type { OnedocJob } from "@/lib/onedoc.functions";
 
 export type MuseStatus = {
-  /** MUSE_API_TOKEN configurado no servidor (nunca o valor). */
+  /** Token da API Muse configurado (no sistema ou no env) — nunca o valor. */
   configurado: boolean;
+  /** De onde vem o token que está valendo: sistema, env ou nenhuma. */
+  origem: OrigemTokenMuse;
+  /** Só os últimos 4 caracteres (mesma máscara das chaves de IA). */
+  tokenMascarado: string | null;
   /** Integração pausada pelo administrador (onedoc_config.muse_pausado). */
   pausado: boolean;
   jobs: OnedocJob[];
@@ -41,8 +46,35 @@ export const getMuseStatus = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(20);
     if (error) throw new Error(error.message);
+    // Origem do token: banco (Configurações > IA) primeiro, env depois.
+    // Sem a coluna (banco sem a migração 0035/036), cai para o env.
+    let origem: OrigemTokenMuse = "nenhuma";
+    let tokenMascarado: string | null = null;
+    try {
+      const { data: cfg } = await context.supabase
+        .from("ai_config")
+        .select("muse_api_token")
+        .eq("id", true)
+        .maybeSingle();
+      const db = ((cfg as { muse_api_token?: string | null } | null)?.muse_api_token ?? "").trim();
+      if (db) {
+        origem = "sistema";
+        tokenMascarado = mascararTokenMuse(db);
+      }
+    } catch {
+      /* sem coluna: tenta o env */
+    }
+    if (origem === "nenhuma") {
+      const env = (process.env.MUSE_API_TOKEN ?? "").trim();
+      if (env) {
+        origem = "env";
+        tokenMascarado = mascararTokenMuse(env);
+      }
+    }
     return {
-      configurado: !!process.env.MUSE_API_TOKEN,
+      configurado: origem !== "nenhuma",
+      origem,
+      tokenMascarado,
       pausado,
       jobs: (jobs ?? []) as unknown as OnedocJob[],
     };

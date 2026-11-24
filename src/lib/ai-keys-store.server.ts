@@ -1,7 +1,8 @@
 // Cópia de segurança das chaves de IA em um arquivo no servidor (VPS).
 // O arquivo fica fora do banco e do Git, então sobrevive a atualizações,
 // restaurações de backup e "zerar dados". Na nuvem (sem disco) é ignorado.
-export type ChavesIA = { grok?: string | null; gemini?: string | null };
+// O token do Muse segue o mesmo padrão das chaves Groq/Gemini.
+export type ChavesIA = { grok?: string | null; gemini?: string | null; muse?: string | null };
 
 async function caminho(): Promise<string | null> {
   try {
@@ -24,7 +25,7 @@ export async function lerChavesArquivo(): Promise<ChavesIA> {
     const fs = await import("node:fs");
     if (!fs.existsSync(p)) return {};
     const j = JSON.parse(fs.readFileSync(p, "utf8"));
-    return { grok: j.grok ?? null, gemini: j.gemini ?? null };
+    return { grok: j.grok ?? null, gemini: j.gemini ?? null, muse: j.muse ?? null };
   } catch {
     return {};
   }
@@ -45,17 +46,26 @@ export async function salvarChavesArquivo(patch: ChavesIA): Promise<void> {
 
 /** Se o banco perdeu alguma chave mas o arquivo ainda tem, devolve a chave ao banco. */
 export async function restaurarChavesSeNecessario(
-  db: { grok_api_key?: string | null; gemini_api_key?: string | null } | null,
+  db: {
+    grok_api_key?: string | null;
+    gemini_api_key?: string | null;
+    muse_api_token?: string | null;
+  } | null,
 ): Promise<ChavesIA> {
   const { restauracaoAutomaticaIaBloqueada } = await import("./import-maintenance.server");
   if (restauracaoAutomaticaIaBloqueada()) {
     // Limpeza intencional: não repovoar o banco a partir da cópia em arquivo.
-    return { grok: db?.grok_api_key ?? null, gemini: db?.gemini_api_key ?? null };
+    return {
+      grok: db?.grok_api_key ?? null,
+      gemini: db?.gemini_api_key ?? null,
+      muse: db?.muse_api_token ?? null,
+    };
   }
   const arq = await lerChavesArquivo();
   const faltando: Record<string, string> = {};
   if (!db?.grok_api_key && arq.grok) faltando.grok_api_key = arq.grok;
   if (!db?.gemini_api_key && arq.gemini) faltando.gemini_api_key = arq.gemini;
+  if (!db?.muse_api_token && arq.muse) faltando.muse_api_token = arq.muse;
   if (Object.keys(faltando).length) {
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -68,9 +78,11 @@ export async function restaurarChavesSeNecessario(
   const paraArquivo: ChavesIA = {};
   if (db?.grok_api_key && !arq.grok) paraArquivo.grok = db.grok_api_key;
   if (db?.gemini_api_key && !arq.gemini) paraArquivo.gemini = db.gemini_api_key;
+  if (db?.muse_api_token && !arq.muse) paraArquivo.muse = db.muse_api_token;
   if (Object.keys(paraArquivo).length) await salvarChavesArquivo(paraArquivo);
   return {
     grok: db?.grok_api_key || arq.grok || null,
     gemini: db?.gemini_api_key || arq.gemini || null,
+    muse: db?.muse_api_token || arq.muse || null,
   };
 }

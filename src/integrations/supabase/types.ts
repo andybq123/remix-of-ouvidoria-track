@@ -24,6 +24,7 @@ export type Database = {
           id: boolean
           lovable_model: string | null
           model: string | null
+          muse_api_token: string | null
           priority: string[]
           provider: string
           updated_at: string
@@ -38,6 +39,7 @@ export type Database = {
           id?: boolean
           lovable_model?: string | null
           model?: string | null
+          muse_api_token?: string | null
           priority?: string[]
           provider?: string
           updated_at?: string
@@ -52,6 +54,7 @@ export type Database = {
           id?: boolean
           lovable_model?: string | null
           model?: string | null
+          muse_api_token?: string | null
           priority?: string[]
           provider?: string
           updated_at?: string

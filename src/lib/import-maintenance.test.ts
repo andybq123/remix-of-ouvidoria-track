@@ -71,10 +71,15 @@ describe("preparação de base limpa", () => {
     writeFileSync(join(dir, ".ia-restauracao-bloqueada"), "bloqueada");
     expect(restauracaoAutomaticaIaBloqueada()).toBe(true);
     expect(await lerChavesArquivo()).toMatchObject({ grok: "chave-ficticia-antiga" });
-    expect(await restaurarChavesSeNecessario(null)).toEqual({ grok: null, gemini: null });
+    expect(await restaurarChavesSeNecessario(null)).toEqual({
+      grok: null,
+      gemini: null,
+      muse: null,
+    });
     expect(await restaurarChavesSeNecessario({ grok_api_key: "nova-chave-no-banco" })).toEqual({
       grok: "nova-chave-no-banco",
       gemini: null,
+      muse: null,
     });
   });
 });

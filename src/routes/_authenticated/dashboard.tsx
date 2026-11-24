@@ -15,7 +15,7 @@ import { situacaoProtocolo, calcularPrazo, estavaAtrasadoNaData, endOfMonthOrNow
 import {
   AlertTriangle, CheckCircle2, Clock, FileText, Smile,
   Timer, Download, MapPin, TrendingUp, Lightbulb, Building, ShieldCheck, Activity,
-  ArrowUpRight, ArrowDownRight, Users, ThumbsUp, ThumbsDown, AlertCircle, BarChart3,
+  ArrowUpRight, ArrowDownRight, Users, ThumbsUp, ThumbsDown, AlertCircle, BarChart3, Bot,
 } from "lucide-react";
 import { KpiCard, CAT_COLORS } from "@/components/kpi-card";
 import { fetchAllPaginated } from "@/lib/fetch-all";
@@ -558,6 +558,9 @@ function Dashboard() {
           </Select>
           <Button variant="outline" size="sm" onClick={exportarRelatorio} className="gap-2">
             <Download className="h-4 w-4" /> Exportar Relatório
+          </Button>
+          <Button size="sm" onClick={() => navigate({ to: "/muse-chat" })} className="gap-2">
+            <Bot className="h-4 w-4" /> Assistente Muse
           </Button>
         </div>
       </div>

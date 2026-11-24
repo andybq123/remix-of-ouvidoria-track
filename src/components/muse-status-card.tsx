@@ -99,9 +99,17 @@ export function MuseStatusCard() {
                 <Badge variant="destructive">Token não configurado</Badge>
               )}
               {data?.pausado && <Badge variant="secondary">Integração pausada</Badge>}
+              {data?.origem === "sistema" && <Badge variant="outline">Token no sistema</Badge>}
+              {data?.origem === "env" && (
+                <Badge variant="outline">Token via variável de ambiente</Badge>
+              )}
               {!data?.configurado && (
                 <span className="text-muted-foreground">
-                  Crie MUSE_API_TOKEN no .env.local da VPS e reinicie o app.
+                  Informe o token em{" "}
+                  <Link to="/ia-config" className="text-primary underline underline-offset-2">
+                    Configurações &gt; IA
+                  </Link>{" "}
+                  (ou MUSE_API_TOKEN no .env.local da VPS).
                 </span>
               )}
             </div>
