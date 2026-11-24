@@ -53,8 +53,9 @@ function MusePage() {
         </h1>
         <p className="text-sm text-muted-foreground">
           O Muse é um agente externo: ele chama a API do OuviDesk para listar as ouvidorias
-          atrasadas, pedir a conferência no 1Doc e acompanhar o resultado. A conferência e a baixa
-          continuam sendo feitas pelo agente do 1Doc na VPS, com auditoria e reversão.
+          atrasadas, pedir a conferência no 1Doc e acompanhar o resultado. A conferência é pedida e
+          acompanhada pelo Assistente; a leitura da página do 1Doc e a baixa continuam sendo feitas
+          pelo agente do 1Doc na VPS, com auditoria e reversão.
         </p>
       </div>
 

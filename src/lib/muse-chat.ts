@@ -25,6 +25,35 @@ export type AtrasadaChat = {
   url: string | null;
 };
 
+export type AcaoChat =
+  | {
+      tipo: "conferir-atrasadas";
+      total: number;
+      protocoloIds: string[];
+      numeros: string[];
+    }
+  | { tipo: "conferir-protocolo"; protocoloId: string; numero: string; total: 1 };
+
+/**
+ * Decide se uma pergunta sobre um protocolo específico pode virar uma
+ * conferência unitária no 1Doc. Só admin, protocolo não concluído e com
+ * link do 1Doc. Sem link, já concluído ou sem admin: sem ação.
+ */
+export function acaoConferirProtocolo(
+  protocolo: ResumoChat["protocolo"],
+  admin: boolean,
+): Extract<AcaoChat, { tipo: "conferir-protocolo" }> | null {
+  if (!admin || !protocolo) return null;
+  if (protocolo.status === "concluido") return null;
+  if (!/1doc/i.test(protocolo.url ?? "")) return null;
+  return {
+    tipo: "conferir-protocolo",
+    protocoloId: protocolo.id,
+    numero: protocolo.numero,
+    total: 1,
+  };
+}
+
 export type ResumoChat = {
   total: number;
   ativos: number;
@@ -37,6 +66,7 @@ export type ResumoChat = {
   atrasadasTop: AtrasadaChat[];
   vencendoTop: AtrasadaChat[];
   protocolo: {
+    id: string;
     numero: string;
     assunto: string;
     secretaria: string;
@@ -44,6 +74,7 @@ export type ResumoChat = {
     situacao: string;
     dias: number;
     prazoFinal: string;
+    url: string | null;
   } | null;
 };
 
@@ -121,9 +152,20 @@ export function respostaDeterministica(intencao: IntencaoChat, r: ResumoChat): s
     case "protocolo": {
       if (!r.protocolo) return "Não encontrei esse número entre os protocolos que você pode ver.";
       const p = r.protocolo;
-      return (
+      const base =
         `Ouvidoria ${p.numero} (${p.assunto}, ${p.secretaria}): status ${p.status}, ` +
-        `situação ${p.situacao}, prazo final ${p.prazoFinal} (${p.dias < 0 ? `${Math.abs(p.dias)}d atrasado` : p.dias === 0 ? "vence hoje" : `faltam ${p.dias}d`}).`
+        `situação ${p.situacao}, prazo final ${p.prazoFinal} (${p.dias < 0 ? `${Math.abs(p.dias)}d atrasado` : p.dias === 0 ? "vence hoje" : `faltam ${p.dias}d`}).`;
+      if (p.status === "concluido") {
+        return base + " Ela já está concluída no OuviDesk, então não há o que conferir no 1Doc.";
+      }
+      if (!/1doc/i.test(p.url ?? "")) {
+        return (
+          base +
+          " Ela não tem link do 1Doc cadastrado, então não dá para conferi-la automaticamente no 1Doc."
+        );
+      }
+      return (
+        base + " Posso conferir essa ouvidoria no 1Doc para ver se já foi baixada lá — é só pedir."
       );
     }
     case "resumo":
