@@ -175,13 +175,12 @@ function AtrasadosPage() {
               <CheckCheck className="h-4 w-4 mr-1" /> Concluir em massa
             </Button>
           )}
-          {isAdmin && <OnedocAgentButton tipo="lote" label="Atualizar todas pelo 1Doc" size="default" />}
           {isAdmin && (
             <OnedocAgentButton
               tipo="lote"
               protocoloIds={museIds}
               escopo="lote:muse-atrasadas"
-              label="Conferir atrasadas com o Muse"
+              label="Conferir atrasadas com o Ouvidorizinho"
               confirmacao="Conferir no 1Doc as ouvidorias atrasadas desta tela? Isso roda em segundo plano."
               disabled={museIds.length === 0}
               size="default"
