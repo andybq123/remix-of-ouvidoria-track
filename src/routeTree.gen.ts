@@ -31,6 +31,7 @@ import { Route as AuthenticatedEsicRouteImport } from './routes/_authenticated/e
 import { Route as AuthenticatedIaConfigRouteImport } from './routes/_authenticated/ia-config'
 import { Route as AuthenticatedLicencaRouteImport } from './routes/_authenticated/licenca'
 import { Route as AuthenticatedMapaRouteImport } from './routes/_authenticated/mapa'
+import { Route as AuthenticatedMuseRouteImport } from './routes/_authenticated/muse'
 import { Route as AuthenticatedProtocolosRouteImport } from './routes/_authenticated/protocolos'
 import { Route as AuthenticatedRegistroRouteImport } from './routes/_authenticated/registro'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
@@ -48,6 +49,9 @@ import { Route as ApiPublicIngestProtocolosRouteImport } from './routes/api/publ
 import { Route as AuthenticatedProtocolosAntigosSourceNumeroRouteImport } from './routes/_authenticated/protocolos-antigos.$source.$numero'
 import { Route as AuthenticatedRelatoriosSecretariaIdRouteImport } from './routes/_authenticated/relatorios.secretaria.$id'
 import { Route as ApiPublicInboundEmailTokenRouteImport } from './routes/api/public/inbound-email.$token'
+import { Route as ApiPublicMuseAtrasadasRouteImport } from './routes/api/public/muse/atrasadas'
+import { Route as ApiPublicMuseConferirAtrasadasRouteImport } from './routes/api/public/muse/conferir-atrasadas'
+import { Route as ApiPublicMuseJobsIdRouteImport } from './routes/api/public/muse/jobs.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -160,6 +164,11 @@ const AuthenticatedMapaRoute = AuthenticatedMapaRouteImport.update({
   path: '/mapa',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMuseRoute = AuthenticatedMuseRouteImport.update({
+  id: '/muse',
+  path: '/muse',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProtocolosRoute = AuthenticatedProtocolosRouteImport.update({
   id: '/protocolos',
   path: '/protocolos',
@@ -254,6 +263,22 @@ const ApiPublicInboundEmailTokenRoute =
     path: '/api/public/inbound-email/$token',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMuseAtrasadasRoute = ApiPublicMuseAtrasadasRouteImport.update({
+  id: '/api/public/muse/atrasadas',
+  path: '/api/public/muse/atrasadas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicMuseConferirAtrasadasRoute =
+  ApiPublicMuseConferirAtrasadasRouteImport.update({
+    id: '/api/public/muse/conferir-atrasadas',
+    path: '/api/public/muse/conferir-atrasadas',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicMuseJobsIdRoute = ApiPublicMuseJobsIdRouteImport.update({
+  id: '/api/public/muse/jobs/$id',
+  path: '/api/public/muse/jobs/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -277,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/ia-config': typeof AuthenticatedIaConfigRoute
   '/licenca': typeof AuthenticatedLicencaRoute
   '/mapa': typeof AuthenticatedMapaRoute
+  '/muse': typeof AuthenticatedMuseRoute
   '/protocolos': typeof AuthenticatedProtocolosRoute
   '/registro': typeof AuthenticatedRegistroRoute
   '/relatorios': typeof AuthenticatedRelatoriosRouteWithChildren
@@ -294,6 +320,9 @@ export interface FileRoutesByFullPath {
   '/protocolos-antigos/$source/$numero': typeof AuthenticatedProtocolosAntigosSourceNumeroRoute
   '/relatorios/secretaria/$id': typeof AuthenticatedRelatoriosSecretariaIdRoute
   '/api/public/inbound-email/$token': typeof ApiPublicInboundEmailTokenRoute
+  '/api/public/muse/atrasadas': typeof ApiPublicMuseAtrasadasRoute
+  '/api/public/muse/conferir-atrasadas': typeof ApiPublicMuseConferirAtrasadasRoute
+  '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -317,6 +346,7 @@ export interface FileRoutesByTo {
   '/ia-config': typeof AuthenticatedIaConfigRoute
   '/licenca': typeof AuthenticatedLicencaRoute
   '/mapa': typeof AuthenticatedMapaRoute
+  '/muse': typeof AuthenticatedMuseRoute
   '/protocolos': typeof AuthenticatedProtocolosRoute
   '/registro': typeof AuthenticatedRegistroRoute
   '/saude': typeof AuthenticatedSaudeRoute
@@ -333,6 +363,9 @@ export interface FileRoutesByTo {
   '/protocolos-antigos/$source/$numero': typeof AuthenticatedProtocolosAntigosSourceNumeroRoute
   '/relatorios/secretaria/$id': typeof AuthenticatedRelatoriosSecretariaIdRoute
   '/api/public/inbound-email/$token': typeof ApiPublicInboundEmailTokenRoute
+  '/api/public/muse/atrasadas': typeof ApiPublicMuseAtrasadasRoute
+  '/api/public/muse/conferir-atrasadas': typeof ApiPublicMuseConferirAtrasadasRoute
+  '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -358,6 +391,7 @@ export interface FileRoutesById {
   '/_authenticated/ia-config': typeof AuthenticatedIaConfigRoute
   '/_authenticated/licenca': typeof AuthenticatedLicencaRoute
   '/_authenticated/mapa': typeof AuthenticatedMapaRoute
+  '/_authenticated/muse': typeof AuthenticatedMuseRoute
   '/_authenticated/protocolos': typeof AuthenticatedProtocolosRoute
   '/_authenticated/registro': typeof AuthenticatedRegistroRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRouteWithChildren
@@ -375,6 +409,9 @@ export interface FileRoutesById {
   '/_authenticated/protocolos-antigos/$source/$numero': typeof AuthenticatedProtocolosAntigosSourceNumeroRoute
   '/_authenticated/relatorios/secretaria/$id': typeof AuthenticatedRelatoriosSecretariaIdRoute
   '/api/public/inbound-email/$token': typeof ApiPublicInboundEmailTokenRoute
+  '/api/public/muse/atrasadas': typeof ApiPublicMuseAtrasadasRoute
+  '/api/public/muse/conferir-atrasadas': typeof ApiPublicMuseConferirAtrasadasRoute
+  '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -400,6 +437,7 @@ export interface FileRouteTypes {
     | '/ia-config'
     | '/licenca'
     | '/mapa'
+    | '/muse'
     | '/protocolos'
     | '/registro'
     | '/relatorios'
@@ -417,6 +455,9 @@ export interface FileRouteTypes {
     | '/protocolos-antigos/$source/$numero'
     | '/relatorios/secretaria/$id'
     | '/api/public/inbound-email/$token'
+    | '/api/public/muse/atrasadas'
+    | '/api/public/muse/conferir-atrasadas'
+    | '/api/public/muse/jobs/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -440,6 +481,7 @@ export interface FileRouteTypes {
     | '/ia-config'
     | '/licenca'
     | '/mapa'
+    | '/muse'
     | '/protocolos'
     | '/registro'
     | '/saude'
@@ -456,6 +498,9 @@ export interface FileRouteTypes {
     | '/protocolos-antigos/$source/$numero'
     | '/relatorios/secretaria/$id'
     | '/api/public/inbound-email/$token'
+    | '/api/public/muse/atrasadas'
+    | '/api/public/muse/conferir-atrasadas'
+    | '/api/public/muse/jobs/$id'
   id:
     | '__root__'
     | '/'
@@ -480,6 +525,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ia-config'
     | '/_authenticated/licenca'
     | '/_authenticated/mapa'
+    | '/_authenticated/muse'
     | '/_authenticated/protocolos'
     | '/_authenticated/registro'
     | '/_authenticated/relatorios'
@@ -497,6 +543,9 @@ export interface FileRouteTypes {
     | '/_authenticated/protocolos-antigos/$source/$numero'
     | '/_authenticated/relatorios/secretaria/$id'
     | '/api/public/inbound-email/$token'
+    | '/api/public/muse/atrasadas'
+    | '/api/public/muse/conferir-atrasadas'
+    | '/api/public/muse/jobs/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -514,6 +563,9 @@ export interface RootRouteChildren {
   ApiPublicGmailSyncRoute: typeof ApiPublicGmailSyncRoute
   ApiPublicIngestProtocolosRoute: typeof ApiPublicIngestProtocolosRoute
   ApiPublicInboundEmailTokenRoute: typeof ApiPublicInboundEmailTokenRoute
+  ApiPublicMuseAtrasadasRoute: typeof ApiPublicMuseAtrasadasRoute
+  ApiPublicMuseConferirAtrasadasRoute: typeof ApiPublicMuseConferirAtrasadasRoute
+  ApiPublicMuseJobsIdRoute: typeof ApiPublicMuseJobsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -672,6 +724,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMapaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/muse': {
+      id: '/_authenticated/muse'
+      path: '/muse'
+      fullPath: '/muse'
+      preLoaderRoute: typeof AuthenticatedMuseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/protocolos': {
       id: '/_authenticated/protocolos'
       path: '/protocolos'
@@ -791,6 +850,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicInboundEmailTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/muse/atrasadas': {
+      id: '/api/public/muse/atrasadas'
+      path: '/api/public/muse/atrasadas'
+      fullPath: '/api/public/muse/atrasadas'
+      preLoaderRoute: typeof ApiPublicMuseAtrasadasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/muse/conferir-atrasadas': {
+      id: '/api/public/muse/conferir-atrasadas'
+      path: '/api/public/muse/conferir-atrasadas'
+      fullPath: '/api/public/muse/conferir-atrasadas'
+      preLoaderRoute: typeof ApiPublicMuseConferirAtrasadasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/muse/jobs/$id': {
+      id: '/api/public/muse/jobs/$id'
+      path: '/api/public/muse/jobs/$id'
+      fullPath: '/api/public/muse/jobs/$id'
+      preLoaderRoute: typeof ApiPublicMuseJobsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -825,6 +905,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIaConfigRoute: typeof AuthenticatedIaConfigRoute
   AuthenticatedLicencaRoute: typeof AuthenticatedLicencaRoute
   AuthenticatedMapaRoute: typeof AuthenticatedMapaRoute
+  AuthenticatedMuseRoute: typeof AuthenticatedMuseRoute
   AuthenticatedProtocolosRoute: typeof AuthenticatedProtocolosRoute
   AuthenticatedRegistroRoute: typeof AuthenticatedRegistroRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRouteWithChildren
@@ -851,6 +932,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIaConfigRoute: AuthenticatedIaConfigRoute,
   AuthenticatedLicencaRoute: AuthenticatedLicencaRoute,
   AuthenticatedMapaRoute: AuthenticatedMapaRoute,
+  AuthenticatedMuseRoute: AuthenticatedMuseRoute,
   AuthenticatedProtocolosRoute: AuthenticatedProtocolosRoute,
   AuthenticatedRegistroRoute: AuthenticatedRegistroRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRouteWithChildren,
@@ -883,6 +965,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicGmailSyncRoute: ApiPublicGmailSyncRoute,
   ApiPublicIngestProtocolosRoute: ApiPublicIngestProtocolosRoute,
   ApiPublicInboundEmailTokenRoute: ApiPublicInboundEmailTokenRoute,
+  ApiPublicMuseAtrasadasRoute: ApiPublicMuseAtrasadasRoute,
+  ApiPublicMuseConferirAtrasadasRoute: ApiPublicMuseConferirAtrasadasRoute,
+  ApiPublicMuseJobsIdRoute: ApiPublicMuseJobsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
