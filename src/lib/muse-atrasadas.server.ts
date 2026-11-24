@@ -196,7 +196,7 @@ export function secretariasDaSelecao(
 }
 
 /**
- * Flag "Pausar integração" do painel Assistente Muse, guardada em
+ * Flag "Pausar integração" do painel Ouvidorizinho, guardada em
  * onedoc_config.muse_pausado (migração 0034/035). Sem a coluna (banco
  * ainda não atualizado na VPS), considera desligada em vez de quebrar.
  */

@@ -13,22 +13,31 @@ import {
 import {
   acaoConferirProtocolo,
   classificarIntencao,
+  destinoNavegacao,
   extrairNumeroProtocolo,
+  extrairSecretaria,
   respostaDeterministica,
   type AtrasadaChat,
   type ResumoChat,
 } from "@/lib/muse-chat";
 
 /**
- * Chat do Assistente Muse — perguntas sobre os dados do OuviDesk.
+ * Chat do Ouvidorizinho — perguntas sobre os dados do OuviDesk.
  *
- * O Assistente pede, acompanha e reporta a conferência no 1Doc: quando o
- * usuário pede para conferir uma ouvidoria (ou as atrasadas), a verificação
- * é enfileirada e o agente do 1Doc na VPS — o único componente que pode
- * abrir a página do 1Doc (o servidor web não pode rodar navegador) —
- * confere e, se houver a linha "deu baixa", a ouvidoria é concluída no
- * OuviDesk pelo fluxo auditado existente. O chat nunca conclui um
- * protocolo diretamente nem abre a página do 1Doc por conta própria.
+ * O Ouvidorizinho é o assistente do OuviDesk movido pelo Muse. Ele pede,
+ * acompanha e reporta a conferência no 1Doc: quando o usuário pede para
+ * conferir uma ouvidoria (ou as atrasadas), a verificação é enfileirada
+ * e o agente do 1Doc na VPS — o único componente que pode abrir a página
+ * do 1Doc (o servidor web não pode rodar navegador) — confere e, se
+ * houver a linha "deu baixa", a ouvidoria é concluída no OuviDesk pelo
+ * fluxo auditado existente. O chat nunca conclui um protocolo
+ * diretamente nem abre a página do 1Doc por conta própria.
+ *
+ * Além das perguntas, o Ouvidorizinho navega: quando o usuário pede para
+ * abrir uma tela (Atrasados, Agente 1Doc, Dashboard, Configurações > IA…),
+ * o chat devolve a ação de navegação e a UI mostra o botão para abrir.
+ * Nenhuma ação que muda estado é feita pelo chat além de enfileirar a
+ * conferência (admin-only, com confirmação na UI).
  *
  * A resposta vem dos dados reais (protocolos visíveis para o usuário,
  * prazos de prazo.ts, jobs do 1Doc), reescrita em linguagem natural
@@ -201,30 +210,18 @@ export const perguntarAssistenteMuse = createServerFn({ method: "POST" })
       vencidos: op.vencidos,
       venceHoje: op.venceHoje,
       vence3Dias: op.vence3Dias,
+      vencendoSemana: vencendo.length,
       aguardando: op.aguardando,
       porSecretaria: [...porSecretariaMap.values()],
       atrasadasTop: atrasadas.slice(0, 10),
       vencendoTop: vencendo.slice(0, 10),
       protocolo,
+      secretariaBuscada: extrairSecretaria(
+        pergunta,
+        [...porSecretariaMap.values()].map((s) => s.nome),
+      ),
+      ultimoJob: null,
     };
-
-    // Ação: conferir no 1Doc. Em lote para as atrasadas (só admin) e
-    // unitária para um protocolo específico (só admin, não concluído e
-    // com link do 1Doc — ver acaoConferirProtocolo em muse-chat.ts).
-    // Em ambos os casos a conferência só é enfileirada: o agente do
-    // 1Doc na VPS confere e só conclui com a linha "deu baixa".
-    const elegiveis = atrasadas.filter((a) => /1doc/i.test(a.url ?? ""));
-    const acao =
-      intencao === "atrasadas" && elegiveis.length > 0 && admin
-        ? {
-            tipo: "conferir-atrasadas" as const,
-            total: elegiveis.length,
-            protocoloIds: elegiveis.map((a) => a.id),
-            numeros: elegiveis.slice(0, 10).map((a) => a.numero),
-          }
-        : intencao === "protocolo"
-          ? acaoConferirProtocolo(resumo.protocolo, admin)
-          : null;
 
     // Última conferência pedida pelo Muse, só para contexto da resposta.
     let ultimoJob: string | null = null;
@@ -250,6 +247,29 @@ export const perguntarAssistenteMuse = createServerFn({ method: "POST" })
     } catch {
       ultimoJob = null;
     }
+    resumo.ultimoJob = ultimoJob;
+
+    // Ação: conferir no 1Doc. Em lote para as atrasadas (só admin) e
+    // unitária para um protocolo específico (só admin, não concluído e
+    // com link do 1Doc — ver acaoConferirProtocolo em muse-chat.ts).
+    // Em ambos os casos a conferência só é enfileirada: o agente do
+    // 1Doc na VPS confere e só conclui com a linha "deu baixa".
+    // Navegação não muda estado: devolve só o destino para a UI abrir.
+    const destino = destinoNavegacao(pergunta);
+    const elegiveis = atrasadas.filter((a) => /1doc/i.test(a.url ?? ""));
+    const acao =
+      intencao === "navegacao" && destino
+        ? { tipo: "navegar" as const, rota: destino.rota, rotulo: destino.rotulo }
+        : intencao === "atrasadas" && elegiveis.length > 0 && admin
+          ? {
+              tipo: "conferir-atrasadas" as const,
+              total: elegiveis.length,
+              protocoloIds: elegiveis.map((a) => a.id),
+              numeros: elegiveis.slice(0, 10).map((a) => a.numero),
+            }
+          : intencao === "protocolo"
+            ? acaoConferirProtocolo(resumo.protocolo, admin)
+            : null;
 
     const contextoIA = {
       resumo: {
@@ -259,6 +279,7 @@ export const perguntarAssistenteMuse = createServerFn({ method: "POST" })
         atrasados: resumo.vencidos,
         vencendoHoje: resumo.venceHoje,
         vencendo3Dias: resumo.vence3Dias,
+        vencendoSemana: resumo.vencendoSemana,
         aguardandoResposta: resumo.aguardando,
       },
       atrasadas: resumo.atrasadasTop.map((a) => ({
@@ -276,12 +297,17 @@ export const perguntarAssistenteMuse = createServerFn({ method: "POST" })
         prazoFinal: a.prazoFinal,
       })),
       porSecretaria: resumo.porSecretaria,
+      secretariaBuscada: resumo.secretariaBuscada,
       protocolo: resumo.protocolo,
       ultimoJobMuse: ultimoJob,
+      navegacao: destino,
     };
 
     let resposta = respostaDeterministica(intencao, resumo);
     let fonte: "ia" | "regras" = "regras";
+    if (intencao === "navegacao" && destino) {
+      resposta = `Claro — vou abrir ${destino.rotulo} para você. É só tocar no botão abaixo.`;
+    }
     try {
       const { aiChat } = await import("./ai-chat.server");
       const texto = await aiChat({
@@ -289,13 +315,15 @@ export const perguntarAssistenteMuse = createServerFn({ method: "POST" })
           {
             role: "system",
             content:
-              "Você é o Assistente Muse do OuviDesk, sistema de gestão de ouvidorias da Prefeitura de Brusque. " +
+              "Você é o Ouvidorizinho, o assistente do OuviDesk movido pelo Muse, sistema de gestão de ouvidorias da Prefeitura de Brusque. " +
               "Responda em português, de forma curta e direta, usando SOMENTE os dados fornecidos abaixo. " +
               "Nunca invente números, nomes ou prazos. Se a resposta não estiver nos dados, diga que não sabe. " +
+              "Quando o usuário pedir para abrir uma tela, o campo navegacao traz o destino: confirme que vai abrir aquela tela. " +
               "Você pede, acompanha e reporta a conferência no 1Doc: quando o usuário pedir para conferir uma ouvidoria, " +
               "ofereça a conferência e, depois dela, reporte o resultado (baixada ou ainda em aberto). A leitura da página " +
               "do 1Doc é feita pelo agente do 1Doc na VPS, e se houver baixa lá a ouvidoria é concluída no OuviDesk pelo " +
-              "fluxo auditado. Nunca afirme que você mesmo abriu a página do 1Doc ou concluiu um protocolo diretamente.",
+              "fluxo auditado. Nunca afirme que você mesmo abriu a página do 1Doc ou concluiu um protocolo diretamente. " +
+              "Você nunca conclui, edita ou exclui protocolos diretamente.",
           },
           {
             role: "user",

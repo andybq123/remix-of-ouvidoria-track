@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   acaoConferirProtocolo,
   classificarIntencao,
+  destinoNavegacao,
   extrairNumeroProtocolo,
+  extrairSecretaria,
   respostaDeterministica,
   type ResumoChat,
 } from "./muse-chat";
@@ -15,6 +17,7 @@ function resumo(over: Partial<ResumoChat> = {}): ResumoChat {
     vencidos: 2,
     venceHoje: 1,
     vence3Dias: 2,
+    vencendoSemana: 3,
     aguardando: 3,
     porSecretaria: [
       { nome: "Saúde", total: 6, vencidos: 2 },
@@ -43,6 +46,8 @@ function resumo(over: Partial<ResumoChat> = {}): ResumoChat {
       },
     ],
     protocolo: null,
+    secretariaBuscada: null,
+    ultimoJob: null,
     ...over,
   };
 }
@@ -61,8 +66,64 @@ describe("chat do Assistente Muse — intenção", () => {
     expect(classificarIntencao("Quais vencem esta semana?")).toBe("vencendo");
     expect(classificarIntencao("O que vence hoje?")).toBe("vencendo");
     const r = respostaDeterministica("vencendo", resumo());
-    expect(r).toContain("1 vence(m) hoje");
+    expect(r).toContain("3 vence(m) esta semana");
+    expect(r).toContain("sendo 1 hoje");
     expect(r).toContain("3.802/2026");
+  });
+
+  it("pergunta por status roteia para status e usa os totais", () => {
+    expect(classificarIntencao("Quantos protocolos estão em andamento?")).toBe("status");
+    expect(classificarIntencao("Quantos já foram concluídos?")).toBe("status");
+    const r = respostaDeterministica("status", resumo());
+    expect(r).toContain("6 em andamento");
+    expect(r).toContain("4 concluídos");
+    expect(r).toContain("3 aguardando resposta");
+  });
+
+  it("pedido para abrir uma tela roteia para navegação com destino", () => {
+    expect(classificarIntencao("Abrir a tela de Atrasados")).toBe("navegacao");
+    expect(destinoNavegacao("Abrir a tela de Atrasados")).toEqual({
+      rota: "/atrasados",
+      rotulo: "Atrasados",
+    });
+    expect(destinoNavegacao("Me leva para o Agente 1Doc")).toEqual({
+      rota: "/agente-1doc",
+      rotulo: "Agente 1Doc",
+    });
+    expect(destinoNavegacao("Abrir Configurações > IA")).toEqual({
+      rota: "/ia-config",
+      rotulo: "Configurações > IA",
+    });
+    // Pergunta de dados não é navegação, mesmo citando atrasadas.
+    expect(classificarIntencao("Quantas ouvidorias estão atrasadas?")).toBe("atrasadas");
+    expect(destinoNavegacao("Quantas ouvidorias estão atrasadas?")).toBeNull();
+    const r = respostaDeterministica("navegacao", resumo());
+    expect(r).toContain("botão abaixo");
+  });
+
+  it("pergunta sobre a última conferência roteia e usa o último job", () => {
+    expect(classificarIntencao("Qual foi a última conferência no 1Doc?")).toBe(
+      "ultima-conferencia",
+    );
+    expect(classificarIntencao("Como está a integração do Muse?")).toBe("ultima-conferencia");
+    const comJob = respostaDeterministica(
+      "ultima-conferencia",
+      resumo({
+        ultimoJob:
+          "Última conferência do Muse: concluido (5/5 conferidas, 2 concluídas) em 2026-11-24.",
+      }),
+    );
+    expect(comJob).toContain("5/5 conferidas");
+    const semJob = respostaDeterministica("ultima-conferencia", resumo());
+    expect(semJob).toContain("Nenhuma conferência pedida pelo Muse ainda");
+  });
+
+  it("secretaria citada na pergunta é extraída e a resposta foca nela", () => {
+    expect(extrairSecretaria("Quantas ouvidorias da Saúde?", ["Saúde", "Obras"])).toBe("Saúde");
+    expect(extrairSecretaria("E as de Obras?", ["Saúde", "Obras"])).toBe("Obras");
+    expect(extrairSecretaria("Qual secretaria tem mais atrasadas?", ["Saúde", "Obras"])).toBeNull();
+    const r = respostaDeterministica("secretaria", resumo({ secretariaBuscada: "Saúde" }));
+    expect(r).toContain("Saúde: 6 protocolo(s) no total, 2 atrasado(s)");
   });
 
   it("número de protocolo roteia para protocolo e extrai o número", () => {
