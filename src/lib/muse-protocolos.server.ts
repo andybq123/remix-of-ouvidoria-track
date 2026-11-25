@@ -71,6 +71,10 @@ export type ProtocoloMuse = {
   numero: string;
   secretaria: string;
   secretariaId: string | null;
+  /** UUID do local atual (UBS, Farmácia etc.), quando há um atribuído. */
+  localId: string | null;
+  /** True enquanto a ouvidoria aguarda triagem (/tarefas). */
+  triagemPendente: boolean;
   status: string;
   /** vencido | critico | atencao | no_prazo | concluido (prazo.ts). */
   situacao: string;
@@ -128,6 +132,8 @@ export function mapearProtocoloMuse(
     numero: row.numero,
     secretaria: row.secretarias?.nome ?? "Sem secretaria",
     secretariaId: row.secretaria_id,
+    localId: row.local_id ?? null,
+    triagemPendente: !!row.triagem_pendente,
     status,
     situacao: sla.situacao,
     tipo,
@@ -162,6 +168,8 @@ export type FiltrosProtocolosMuse = {
   tipo?: TipoProtocolo;
   /** Só os não concluídos com prazo final em 0..7 dias (mesma conta do chat). */
   vencendo?: boolean;
+  /** Só os que aguardam triagem (true) ou só os já triados (false). */
+  triagemPendente?: boolean;
   /** Número (com ou sem ponto, ex.: 3.768/2026) ou texto em assunto/descrição. */
   busca?: string;
   limite?: number;
@@ -198,6 +206,10 @@ export function classificarProtocolos(
     lista = lista.filter(
       (p) => p.status !== "concluido" && p.diasRestantes >= 0 && p.diasRestantes <= 7,
     );
+  }
+
+  if (filtros.triagemPendente !== undefined) {
+    lista = lista.filter((p) => p.triagemPendente === filtros.triagemPendente);
   }
   const termo = filtros.busca?.trim().toLowerCase();
   if (termo) {
@@ -286,6 +298,45 @@ export async function listarSecretariasMuse(client: SupabaseAdminLike): Promise<
     id: s.id,
     nome: s.nome,
     sigla: s.sigla ?? null,
+  }));
+}
+
+export type LocalMuse = {
+  id: string;
+  nome: string;
+  secretariaId: string;
+  secretaria: string;
+};
+
+/**
+ * Todos os locais (UBS, Farmácia etc.), por nome — para concluir a
+ * triagem sem precisar saber o UUID antes. Com secretariaId, só os
+ * locais daquela secretaria. Leitura pura, não altera nada.
+ */
+export async function listarLocaisMuse(
+  client: SupabaseAdminLike,
+  secretariaId?: string,
+): Promise<LocalMuse[]> {
+  let query = client
+    .from("locais")
+    .select("id,nome,secretaria_id,secretarias(nome)")
+    .order("nome", { ascending: true });
+  if (secretariaId) query = query.eq("secretaria_id", secretariaId);
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  type LocalRow = {
+    id: string;
+    nome: string;
+    secretaria_id: string;
+    secretarias?: { nome: string | null } | null;
+  };
+  return ((data ?? []) as LocalRow[]).map((l) => ({
+    id: l.id,
+    nome: l.nome,
+    secretariaId: l.secretaria_id,
+    secretaria: l.secretarias?.nome ?? "Sem secretaria",
   }));
 }
 
