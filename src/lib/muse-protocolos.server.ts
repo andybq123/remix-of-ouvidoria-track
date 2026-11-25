@@ -27,7 +27,7 @@ type SupabaseAdminLike = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   from: (tabela: string) => any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  rpc: (fn: string, args: Record<string, unknown>) => any;
+  rpc(fn: string, args: Record<string, unknown>): any;
 };
 
 export type ProtocoloMuseRow = {
