@@ -392,7 +392,7 @@ export type EdicaoMuseAplicada = {
 
 /**
  * Aplica o PATCH de campos seguros via RPC aplicar_edicao_muse
- * (migração 0036). A RPC só aceita os campos da allow-list, confere
+ * (migrações 0036/0038). A RPC só aceita os campos da allow-list, confere
  * secretaria/local, e grava com app.muse=on para o trigger
  * log_protocolo_changes registrar autor "Muse" em protocolo_historico
  * — a mesma auditoria da edição do painel e da conferência do 1Doc.
@@ -421,6 +421,7 @@ export async function aplicarEdicaoMuse(
   }
   if (body.secretaria_id !== undefined) patch.secretaria_id = body.secretaria_id;
   if (body.local_id !== undefined) patch.local_id = body.local_id;
+  if (body.url !== undefined) patch.url = body.url;
 
   const { error } = await client.rpc("aplicar_edicao_muse", { p_id: id, p_patch: patch });
   if (error) throw error;

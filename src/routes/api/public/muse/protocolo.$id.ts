@@ -12,10 +12,11 @@ const UUID_RE = /^[0-9a-f-]{36}$/i;
  * GET /api/public/muse/protocolo/{id} — detalhe completo de um protocolo.
  * PATCH /api/public/muse/protocolo/{id} — atualiza campos seguros
  * (endereco, latitude, longitude, assunto, descricao, solicitante,
- * categoria, secretaria_id, local_id), os mesmos que o painel deixa
- * editar no detalhe do protocolo.
+ * categoria, secretaria_id, local_id, url), os mesmos que o painel deixa
+ * editar no detalhe do protocolo — mais `url`, o link do 1Doc, que só
+ * a API corrige (o painel não edita o link).
  *
- * O PATCH grava via RPC aplicar_edicao_muse (migração 0036) e a mudança
+ * O PATCH grava via RPC aplicar_edicao_muse (migrações 0036/0038) e a mudança
  * é auditada pelo trigger log_protocolo_changes em protocolo_historico,
  * com autor "Muse" — a mesma auditoria da edição do painel e da
  * conferência do 1Doc. O PATCH nunca altera status, data_conclusao,
