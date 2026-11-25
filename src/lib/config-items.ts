@@ -1,4 +1,4 @@
-import { Mail, Bot, Link2Off, RefreshCw, Users, Sparkles, DatabaseBackup, ScrollText, Bug, KeyRound, type LucideIcon } from "lucide-react";
+import { Mail, Bot, Link2Off, RefreshCw, Users, Sparkles, DatabaseBackup, ScrollText, Bug, KeyRound, Server, type LucideIcon } from "lucide-react";
 
 export type ConfigItem = { to: string; label: string; icon: LucideIcon; descricao: string };
 export type ConfigGrupo = { titulo: string; itens: ConfigItem[] };
@@ -28,8 +28,10 @@ export const CONFIG_GRUPOS: ConfigGrupo[] = [
     itens: [
       { to: "/registro", label: "Registro do sistema", icon: ScrollText, descricao: "Todas as alterações feitas pelos usuários." },
       { to: "/debug", label: "Debug", icon: Bug, descricao: "Ferramentas técnicas e assuntos alterados." },
+      { to: "/configuracoes/vps", label: "Estatísticas da VPS", icon: Server, descricao: "CPU, memória, disco, uptime e containers da VPS." },
     ],
   },
 ];
 
 export const CONFIG_ITEMS: ConfigItem[] = CONFIG_GRUPOS.flatMap((g) => g.itens);
+

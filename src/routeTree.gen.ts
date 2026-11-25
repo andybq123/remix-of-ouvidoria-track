@@ -24,6 +24,7 @@ import { Route as AuthenticatedAtrasadosRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAtualizacaoRouteImport } from './routes/_authenticated/atualizacao'
 import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated/backup'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
+import { Route as AuthenticatedConfiguracoesVpsRouteImport } from './routes/_authenticated/configuracoes.vps'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDebugRouteImport } from './routes/_authenticated/debug'
 import { Route as AuthenticatedEmailInboxRouteImport } from './routes/_authenticated/email-inbox'
@@ -58,6 +59,7 @@ import { Route as ApiPublicMuseProtocoloIdTriarRouteImport } from './routes/api/
 import { Route as ApiPublicMuseProtocolosRouteImport } from './routes/api/public/muse/protocolos'
 import { Route as ApiPublicMuseResumoRouteImport } from './routes/api/public/muse/resumo'
 import { Route as ApiPublicMuseSecretariasRouteImport } from './routes/api/public/muse/secretarias'
+import { Route as ApiVpsStatsRouteImport } from './routes/api/vps-stats'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -133,6 +135,12 @@ const AuthenticatedConfiguracoesRoute =
   AuthenticatedConfiguracoesRouteImport.update({
     id: '/configuracoes',
     path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedConfiguracoesVpsRoute =
+  AuthenticatedConfiguracoesVpsRouteImport.update({
+    id: '/configuracoes/vps',
+    path: '/configuracoes/vps',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -318,6 +326,11 @@ const ApiPublicMuseSecretariasRoute =
     path: '/api/public/muse/secretarias',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiVpsStatsRoute = ApiVpsStatsRouteImport.update({
+  id: '/api/vps-stats',
+  path: '/api/vps-stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -334,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/backup': typeof AuthenticatedBackupRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/configuracoes/vps': typeof AuthenticatedConfiguracoesVpsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
   '/email-inbox': typeof AuthenticatedEmailInboxRoute
@@ -368,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/api/public/muse/protocolos': typeof ApiPublicMuseProtocolosRoute
   '/api/public/muse/resumo': typeof ApiPublicMuseResumoRoute
   '/api/public/muse/secretarias': typeof ApiPublicMuseSecretariasRoute
+  '/api/vps-stats': typeof ApiVpsStatsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -384,6 +399,7 @@ export interface FileRoutesByTo {
   '/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/backup': typeof AuthenticatedBackupRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/configuracoes/vps': typeof AuthenticatedConfiguracoesVpsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
   '/email-inbox': typeof AuthenticatedEmailInboxRoute
@@ -417,6 +433,7 @@ export interface FileRoutesByTo {
   '/api/public/muse/protocolos': typeof ApiPublicMuseProtocolosRoute
   '/api/public/muse/resumo': typeof ApiPublicMuseResumoRoute
   '/api/public/muse/secretarias': typeof ApiPublicMuseSecretariasRoute
+  '/api/vps-stats': typeof ApiVpsStatsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -435,6 +452,7 @@ export interface FileRoutesById {
   '/_authenticated/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/_authenticated/backup': typeof AuthenticatedBackupRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/_authenticated/configuracoes/vps': typeof AuthenticatedConfiguracoesVpsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/debug': typeof AuthenticatedDebugRoute
   '/_authenticated/email-inbox': typeof AuthenticatedEmailInboxRoute
@@ -469,6 +487,7 @@ export interface FileRoutesById {
   '/api/public/muse/protocolos': typeof ApiPublicMuseProtocolosRoute
   '/api/public/muse/resumo': typeof ApiPublicMuseResumoRoute
   '/api/public/muse/secretarias': typeof ApiPublicMuseSecretariasRoute
+  '/api/vps-stats': typeof ApiVpsStatsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -487,6 +506,7 @@ export interface FileRouteTypes {
     | '/atualizacao'
     | '/backup'
     | '/configuracoes'
+    | '/configuracoes/vps'
     | '/dashboard'
     | '/debug'
     | '/email-inbox'
@@ -521,6 +541,7 @@ export interface FileRouteTypes {
     | '/api/public/muse/protocolos'
     | '/api/public/muse/resumo'
     | '/api/public/muse/secretarias'
+    | '/api/vps-stats'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -537,6 +558,7 @@ export interface FileRouteTypes {
     | '/atualizacao'
     | '/backup'
     | '/configuracoes'
+    | '/configuracoes/vps'
     | '/dashboard'
     | '/debug'
     | '/email-inbox'
@@ -570,6 +592,7 @@ export interface FileRouteTypes {
     | '/api/public/muse/protocolos'
     | '/api/public/muse/resumo'
     | '/api/public/muse/secretarias'
+    | '/api/vps-stats'
   id:
     | '__root__'
     | '/'
@@ -587,6 +610,7 @@ export interface FileRouteTypes {
     | '/_authenticated/atualizacao'
     | '/_authenticated/backup'
     | '/_authenticated/configuracoes'
+    | '/_authenticated/configuracoes/vps'
     | '/_authenticated/dashboard'
     | '/_authenticated/debug'
     | '/_authenticated/email-inbox'
@@ -621,6 +645,7 @@ export interface FileRouteTypes {
     | '/api/public/muse/protocolos'
     | '/api/public/muse/resumo'
     | '/api/public/muse/secretarias'
+    | '/api/vps-stats'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -646,6 +671,7 @@ export interface RootRouteChildren {
   ApiPublicMuseProtocolosRoute: typeof ApiPublicMuseProtocolosRoute
   ApiPublicMuseResumoRoute: typeof ApiPublicMuseResumoRoute
   ApiPublicMuseSecretariasRoute: typeof ApiPublicMuseSecretariasRoute
+  ApiVpsStatsRoute: typeof ApiVpsStatsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -753,6 +779,13 @@ declare module '@tanstack/react-router' {
       path: '/configuracoes'
       fullPath: '/configuracoes'
       preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configuracoes/vps': {
+      id: '/_authenticated/configuracoes/vps'
+      path: '/configuracoes/vps'
+      fullPath: '/configuracoes/vps'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesVpsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -993,6 +1026,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMuseSecretariasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/vps-stats': {
+      id: '/api/vps-stats'
+      path: '/api/vps-stats'
+      fullPath: '/api/vps-stats'
+      preLoaderRoute: typeof ApiVpsStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1020,6 +1060,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAtualizacaoRoute: typeof AuthenticatedAtualizacaoRoute
   AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
+  AuthenticatedConfiguracoesVpsRoute: typeof AuthenticatedConfiguracoesVpsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDebugRoute: typeof AuthenticatedDebugRoute
   AuthenticatedEmailInboxRoute: typeof AuthenticatedEmailInboxRoute
@@ -1048,6 +1089,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAtualizacaoRoute: AuthenticatedAtualizacaoRoute,
   AuthenticatedBackupRoute: AuthenticatedBackupRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
+  AuthenticatedConfiguracoesVpsRoute: AuthenticatedConfiguracoesVpsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDebugRoute: AuthenticatedDebugRoute,
   AuthenticatedEmailInboxRoute: AuthenticatedEmailInboxRoute,
@@ -1097,6 +1139,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMuseProtocolosRoute: ApiPublicMuseProtocolosRoute,
   ApiPublicMuseResumoRoute: ApiPublicMuseResumoRoute,
   ApiPublicMuseSecretariasRoute: ApiPublicMuseSecretariasRoute,
+  ApiVpsStatsRoute: ApiVpsStatsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
@@ -1111,3 +1154,4 @@ declare module '@tanstack/react-start' {
     config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }
+

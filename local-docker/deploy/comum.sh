@@ -226,3 +226,20 @@ UNIT
     || aviso "Não consegui agendar o heartbeat da licença."
   systemctl start ouvidesk-licenca.service >/dev/null 2>&1 || true
 }
+
+# Coletor de estatísticas da VPS (1x/min via cron do root).
+# O script grava local-docker/vps-stats/vps-stats.json, que o app lê em /app.
+instalar_coletor_vps_stats() {
+  local script="$DEPLOY_DIR/coletar-vps-stats.sh"
+  [ "$(id -u)" -eq 0 ] || return 0
+  command -v crontab >/dev/null 2>&1 || { aviso "Sem cron: estatísticas da VPS não agendadas."; return 0; }
+  [ -f "$script" ] || { aviso "Coletor de estatísticas não encontrado ($script)."; return 0; }
+  chmod +x "$script" 2>/dev/null || true
+  # Remove entradas antigas e grava a atual (idempotente).
+  ( crontab -l 2>/dev/null | grep -v "coletar-vps-stats.sh" ; echo "* * * * * /bin/bash $script >/tmp/ouvidesk-vps-stats.log 2>&1" ) | crontab - \
+    && info "Coletor de estatísticas da VPS agendado (a cada 1 min)." \
+    || aviso "Não consegui agendar o coletor de estatísticas da VPS."
+  # Primeira coleta imediata, para a página já ter dados.
+  /bin/bash "$script" >/dev/null 2>&1 || true
+}
+

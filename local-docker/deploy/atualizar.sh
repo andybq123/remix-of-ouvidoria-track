@@ -92,6 +92,7 @@ if [ "$(id -u)" -eq 0 ] && [ -z "${OUVIDESK_AGENTE_ATUALIZACAO:-}" ] && command 
     || aviso "Não consegui ativar o serviço do botão de atualização (veja $LOG)."
 fi
 instalar_timer_licenca >>"$LOG" 2>&1 || true
+instalar_coletor_vps_stats >>"$LOG" 2>&1 || true
 PRONTO=0; LOCAL_BUILD=0; TOTAL=120
 
 # ---------- 2. compilação ----------
@@ -219,3 +220,4 @@ while [ "$(date +%s)" -lt "$FIM" ]; do
   sleep 0.5
 done
 falha "O sistema ainda não respondeu após $((TOTAL/60)) minutos." "Veja os logs com: docker compose logs -f app"
+
