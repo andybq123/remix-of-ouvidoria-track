@@ -42,6 +42,7 @@ import { Route as AuthenticatedSecretariasRouteImport } from './routes/_authenti
 import { Route as AuthenticatedSemLink1docRouteImport } from './routes/_authenticated/sem-link-1doc'
 import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticated/tarefas'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedConfiguracoesIndexRouteImport } from './routes/_authenticated/configuracoes.index'
 import { Route as AuthenticatedProtocolosAntigosIndexRouteImport } from './routes/_authenticated/protocolos-antigos.index'
 import { Route as AuthenticatedRelatoriosIndexRouteImport } from './routes/_authenticated/relatorios.index'
 import { Route as ApiPublicCheckProtocolosRouteImport } from './routes/api/public/check-protocolos'
@@ -139,9 +140,9 @@ const AuthenticatedConfiguracoesRoute =
   } as any)
 const AuthenticatedConfiguracoesVpsRoute =
   AuthenticatedConfiguracoesVpsRouteImport.update({
-    id: '/configuracoes/vps',
-    path: '/configuracoes/vps',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/vps',
+    path: '/vps',
+    getParentRoute: () => AuthenticatedConfiguracoesRoute,
   } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
@@ -230,6 +231,12 @@ const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConfiguracoesIndexRoute =
+  AuthenticatedConfiguracoesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedConfiguracoesRoute,
+  } as any)
 const AuthenticatedProtocolosAntigosIndexRoute =
   AuthenticatedProtocolosAntigosIndexRouteImport.update({
     id: '/protocolos-antigos/',
@@ -346,7 +353,7 @@ export interface FileRoutesByFullPath {
   '/atrasados': typeof AuthenticatedAtrasadosRoute
   '/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/backup': typeof AuthenticatedBackupRoute
-  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRouteWithChildren
   '/configuracoes/vps': typeof AuthenticatedConfiguracoesVpsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
@@ -369,6 +376,7 @@ export interface FileRoutesByFullPath {
   '/api/public/email-sync': typeof ApiPublicEmailSyncRoute
   '/api/public/gmail-sync': typeof ApiPublicGmailSyncRoute
   '/api/public/ingest-protocolos': typeof ApiPublicIngestProtocolosRoute
+  '/configuracoes/': typeof AuthenticatedConfiguracoesIndexRoute
   '/protocolos-antigos/': typeof AuthenticatedProtocolosAntigosIndexRoute
   '/relatorios/': typeof AuthenticatedRelatoriosIndexRoute
   '/protocolos-antigos/$source/$numero': typeof AuthenticatedProtocolosAntigosSourceNumeroRoute
@@ -398,7 +406,6 @@ export interface FileRoutesByTo {
   '/atrasados': typeof AuthenticatedAtrasadosRoute
   '/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/backup': typeof AuthenticatedBackupRoute
-  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/configuracoes/vps': typeof AuthenticatedConfiguracoesVpsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
@@ -420,6 +427,7 @@ export interface FileRoutesByTo {
   '/api/public/email-sync': typeof ApiPublicEmailSyncRoute
   '/api/public/gmail-sync': typeof ApiPublicGmailSyncRoute
   '/api/public/ingest-protocolos': typeof ApiPublicIngestProtocolosRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesIndexRoute
   '/protocolos-antigos': typeof AuthenticatedProtocolosAntigosIndexRoute
   '/relatorios': typeof AuthenticatedRelatoriosIndexRoute
   '/protocolos-antigos/$source/$numero': typeof AuthenticatedProtocolosAntigosSourceNumeroRoute
@@ -451,7 +459,7 @@ export interface FileRoutesById {
   '/_authenticated/atrasados': typeof AuthenticatedAtrasadosRoute
   '/_authenticated/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/_authenticated/backup': typeof AuthenticatedBackupRoute
-  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRouteWithChildren
   '/_authenticated/configuracoes/vps': typeof AuthenticatedConfiguracoesVpsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/debug': typeof AuthenticatedDebugRoute
@@ -474,6 +482,7 @@ export interface FileRoutesById {
   '/api/public/email-sync': typeof ApiPublicEmailSyncRoute
   '/api/public/gmail-sync': typeof ApiPublicGmailSyncRoute
   '/api/public/ingest-protocolos': typeof ApiPublicIngestProtocolosRoute
+  '/_authenticated/configuracoes/': typeof AuthenticatedConfiguracoesIndexRoute
   '/_authenticated/protocolos-antigos/': typeof AuthenticatedProtocolosAntigosIndexRoute
   '/_authenticated/relatorios/': typeof AuthenticatedRelatoriosIndexRoute
   '/_authenticated/protocolos-antigos/$source/$numero': typeof AuthenticatedProtocolosAntigosSourceNumeroRoute
@@ -528,6 +537,7 @@ export interface FileRouteTypes {
     | '/api/public/email-sync'
     | '/api/public/gmail-sync'
     | '/api/public/ingest-protocolos'
+    | '/configuracoes/'
     | '/protocolos-antigos/'
     | '/relatorios/'
     | '/protocolos-antigos/$source/$numero'
@@ -557,7 +567,6 @@ export interface FileRouteTypes {
     | '/atrasados'
     | '/atualizacao'
     | '/backup'
-    | '/configuracoes'
     | '/configuracoes/vps'
     | '/dashboard'
     | '/debug'
@@ -579,6 +588,7 @@ export interface FileRouteTypes {
     | '/api/public/email-sync'
     | '/api/public/gmail-sync'
     | '/api/public/ingest-protocolos'
+    | '/configuracoes'
     | '/protocolos-antigos'
     | '/relatorios'
     | '/protocolos-antigos/$source/$numero'
@@ -632,6 +642,7 @@ export interface FileRouteTypes {
     | '/api/public/email-sync'
     | '/api/public/gmail-sync'
     | '/api/public/ingest-protocolos'
+    | '/_authenticated/configuracoes/'
     | '/_authenticated/protocolos-antigos/'
     | '/_authenticated/relatorios/'
     | '/_authenticated/protocolos-antigos/$source/$numero'
@@ -783,10 +794,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/configuracoes/vps': {
       id: '/_authenticated/configuracoes/vps'
-      path: '/configuracoes/vps'
+      path: '/vps'
       fullPath: '/configuracoes/vps'
       preLoaderRoute: typeof AuthenticatedConfiguracoesVpsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedConfiguracoesRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
@@ -906,6 +917,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/users'
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configuracoes/': {
+      id: '/_authenticated/configuracoes/'
+      path: '/'
+      fullPath: '/configuracoes/'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesIndexRouteImport
+      parentRoute: typeof AuthenticatedConfiguracoesRoute
     }
     '/_authenticated/protocolos-antigos/': {
       id: '/_authenticated/protocolos-antigos/'
@@ -1036,6 +1054,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedConfiguracoesRouteChildren {
+  AuthenticatedConfiguracoesIndexRoute: typeof AuthenticatedConfiguracoesIndexRoute
+  AuthenticatedConfiguracoesVpsRoute: typeof AuthenticatedConfiguracoesVpsRoute
+}
+
+const AuthenticatedConfiguracoesRouteChildren: AuthenticatedConfiguracoesRouteChildren =
+  {
+    AuthenticatedConfiguracoesIndexRoute: AuthenticatedConfiguracoesIndexRoute,
+    AuthenticatedConfiguracoesVpsRoute: AuthenticatedConfiguracoesVpsRoute,
+  }
+
+const AuthenticatedConfiguracoesRouteWithChildren =
+  AuthenticatedConfiguracoesRoute._addFileChildren(
+    AuthenticatedConfiguracoesRouteChildren,
+  )
+
 interface AuthenticatedRelatoriosRouteChildren {
   AuthenticatedRelatoriosIndexRoute: typeof AuthenticatedRelatoriosIndexRoute
   AuthenticatedRelatoriosSecretariaIdRoute: typeof AuthenticatedRelatoriosSecretariaIdRoute
@@ -1059,8 +1093,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAtrasadosRoute: typeof AuthenticatedAtrasadosRoute
   AuthenticatedAtualizacaoRoute: typeof AuthenticatedAtualizacaoRoute
   AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
-  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
-  AuthenticatedConfiguracoesVpsRoute: typeof AuthenticatedConfiguracoesVpsRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDebugRoute: typeof AuthenticatedDebugRoute
   AuthenticatedEmailInboxRoute: typeof AuthenticatedEmailInboxRoute
@@ -1088,8 +1121,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAtrasadosRoute: AuthenticatedAtrasadosRoute,
   AuthenticatedAtualizacaoRoute: AuthenticatedAtualizacaoRoute,
   AuthenticatedBackupRoute: AuthenticatedBackupRoute,
-  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
-  AuthenticatedConfiguracoesVpsRoute: AuthenticatedConfiguracoesVpsRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDebugRoute: AuthenticatedDebugRoute,
   AuthenticatedEmailInboxRoute: AuthenticatedEmailInboxRoute,
