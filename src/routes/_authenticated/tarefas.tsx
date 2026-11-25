@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Inbox, Eye, CheckCheck, Lock, Trash2, MapPin, ArrowLeft } from "lucide-react";
+import { Inbox, Eye, CheckCheck, Lock, Trash2, MapPin, ArrowLeft, Bot } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { excluirProtocolos } from "@/lib/debug.functions";
 import { toast } from "sonner";
@@ -42,6 +42,17 @@ const LOCK_TTL_MS = 10 * 60 * 1000;
 function isLockAtivo(p: any) {
   if (!p.triagem_lock_em || !p.triagem_lock_por) return false;
   return Date.now() - new Date(p.triagem_lock_em).getTime() < LOCK_TTL_MS;
+}
+
+/** Trava do Ouvidorizinho: sem usuário (lock_por NULL), marcada pela origem (migração 0037). */
+function isLockMuseAtivo(p: any) {
+  if ((p as any).triagem_origem !== "muse" || !p.triagem_lock_em) return false;
+  return Date.now() - new Date(p.triagem_lock_em).getTime() < LOCK_TTL_MS;
+}
+
+/** Trava de outra parte (humano ou Muse): o cartão fica só para visualização. */
+function lockDeOutro(p: any, meId: string | null | undefined) {
+  return (isLockAtivo(p) && p.triagem_lock_por !== meId) || isLockMuseAtivo(p);
 }
 
 const ASSUNTOS_SAUDE_TRIAGEM = new Set([
@@ -335,7 +346,7 @@ function TarefasConteudo() {
   });
 
   // Items that are locked by someone else are not selectable in batch
-  const selecionaveis = filtrados.filter((p: any) => !(isLockAtivo(p) && p.triagem_lock_por !== meId));
+  const selecionaveis = filtrados.filter((p: any) => !lockDeOutro(p, meId));
 
   const locaisFiltrados = (locais as any[]).filter((l) => !batchSec || l.secretaria_id === batchSec);
 
@@ -493,13 +504,13 @@ function TarefasConteudo() {
             Selecionar todos
           </label>
           {filtrados.map((p: any) => (
-            <Card key={p.id} className={`hover:bg-accent/30 transition-colors ${isLockAtivo(p) && p.triagem_lock_por !== meId ? "opacity-70" : ""}`}>
+            <Card key={p.id} className={`hover:bg-accent/30 transition-colors ${lockDeOutro(p, meId) ? "opacity-70" : ""}`}>
               <CardContent className="py-3 flex items-center gap-3 flex-wrap">
                 <Checkbox
                   checked={selected.has(p.id)}
                   onCheckedChange={() => toggle(p.id)}
                   onClick={(e) => e.stopPropagation()}
-                  disabled={isLockAtivo(p) && p.triagem_lock_por !== meId}
+                  disabled={lockDeOutro(p, meId)}
                 />
                 <div className="flex-1 min-w-[260px]">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -521,15 +532,21 @@ function TarefasConteudo() {
                         {p.triagem_lock_por === meId ? "você está triando" : `em triagem por ${p.lock_profile?.nome ?? "outro usuário"}`}
                       </Badge>
                     )}
+                    {isLockMuseAtivo(p) && (
+                      <Badge variant="outline" className="text-[10px] border-violet-500/50 text-violet-700 dark:text-violet-300 bg-violet-500/10 gap-1">
+                        <Bot className="h-3 w-3" />
+                        Triando com o Ouvidorizinho
+                      </Badge>
+                    )}
                   </div>
                   <div className="font-medium text-sm">{p.assunto}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">
                     Aberto em {formatDate(p.data_abertura)} · {p.solicitante ?? "Solicitante não informado"}
                   </div>
                 </div>
-                <Button size="sm" onClick={() => setDetail(p)} variant={isLockAtivo(p) && p.triagem_lock_por !== meId ? "outline" : "default"}>
+                <Button size="sm" onClick={() => setDetail(p)} variant={lockDeOutro(p, meId) ? "outline" : "default"}>
                   <Eye className="h-4 w-4 mr-1" />
-                  {isLockAtivo(p) && p.triagem_lock_por !== meId ? "Visualizar" : "Triar"}
+                  {lockDeOutro(p, meId) ? "Visualizar" : "Triar"}
                 </Button>
                 {isAdminTriagem && <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive"
                   aria-label={`Excluir protocolo ${p.numero}`} title="Excluir protocolo"

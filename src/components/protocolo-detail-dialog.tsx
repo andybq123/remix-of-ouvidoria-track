@@ -506,6 +506,13 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
             Esta tarefa já foi triada por <strong>{lockState.por}</strong> em {new Date(lockState.em).toLocaleString("pt-BR")}.
           </div>
         )}
+        {/* Triada pelo Ouvidorizinho: o selo fica no registro, não na reserva — depois de triada a reserva não é mais pedida e o lockState fica idle. A coluna triagem_origem vem da migração 0037. */}
+        {!protocolo.triagem_pendente && (protocolo as any).triagem_origem === "muse" && protocolo.triagem_concluida_em && (
+          <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4" />
+            Triado pelo Ouvidorizinho em {new Date(protocolo.triagem_concluida_em).toLocaleString("pt-BR")}.
+          </div>
+        )}
 
         {/* Ações rápidas — apenas admins */}
         {podeAgir && <div className="flex flex-wrap items-center gap-2 border-y py-3">
