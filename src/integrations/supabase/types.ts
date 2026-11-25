@@ -64,31 +64,37 @@ export type Database = {
       }
       allowed_emails: {
         Row: {
+          boas_vindas_visto: boolean
           created_at: string
           created_by: string | null
           email: string
           id: string
           nome: string | null
+          ouvidorzinho_habilitado: boolean
           pode_editar: boolean
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string
         }
         Insert: {
+          boas_vindas_visto?: boolean
           created_at?: string
           created_by?: string | null
           email: string
           id?: string
           nome?: string | null
+          ouvidorzinho_habilitado?: boolean
           pode_editar?: boolean
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
         }
         Update: {
+          boas_vindas_visto?: boolean
           created_at?: string
           created_by?: string | null
           email?: string
           id?: string
           nome?: string | null
+          ouvidorzinho_habilitado?: boolean
           pode_editar?: boolean
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
@@ -1109,6 +1115,7 @@ export type Database = {
           updated_at: string
         }[]
       }
+      boas_vindas_visto: { Args: never; Returns: boolean }
       dashboard_protocolos: { Args: never; Returns: Json }
       formatar_numero_esic: { Args: { p_numero: string }; Returns: string }
       has_role: {
@@ -1124,6 +1131,7 @@ export type Database = {
       licenca_bloqueada: { Args: never; Returns: boolean }
       limpar_vinculos_usuarios_inexistentes: { Args: never; Returns: number }
       listar_protocolos_pagina: { Args: { p_filtros?: Json }; Returns: Json }
+      marcar_boas_vindas_visto: { Args: never; Returns: boolean }
       meses_protocolos_listagem: {
         Args: never
         Returns: {
@@ -1139,6 +1147,7 @@ export type Database = {
       }
       pode_triar: { Args: never; Returns: boolean }
       posso_editar: { Args: never; Returns: boolean }
+      posso_usar_ouvidorzinho: { Args: never; Returns: boolean }
       protocolo_esic_por_numero: {
         Args: { p_numero: string }
         Returns: {

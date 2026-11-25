@@ -9,7 +9,7 @@ export const CONFIG_GRUPOS: ConfigGrupo[] = [
     itens: [
       { to: "/email-inbox", label: "E-mails", icon: Mail, descricao: "Caixas de entrada e coleta de ouvidorias e e-SIC." },
       { to: "/agente-1doc", label: "Agente 1Doc", icon: Bot, descricao: "Acesso ao 1Doc, conferências e histórico." },
-      { to: "/muse", label: "Ouvidorizinho", icon: Sparkles, descricao: "Assistente movido pelo Muse: status, conferências de atrasadas e pausa." },
+      { to: "/muse", label: "Ouvidorzinho", icon: Sparkles, descricao: "Assistente movido pelo Muse: status, conferências de atrasadas e pausa." },
       { to: "/sem-link-1doc", label: "Sem link 1Doc", icon: Link2Off, descricao: "Ouvidorias que ainda não têm link do 1Doc." },
       { to: "/ia-config", label: "IA", icon: Sparkles, descricao: "Provedores e chaves da inteligência artificial." },
     ],

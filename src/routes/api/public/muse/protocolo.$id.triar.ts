@@ -11,7 +11,7 @@ import {
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
 /**
- * POST /api/public/muse/protocolo/{id}/triar — triagem pelo Ouvidorizinho.
+ * POST /api/public/muse/protocolo/{id}/triar — triagem pelo Ouvidorzinho.
  *
  * Replica o "Concluir triagem" do painel (protocolo-detail-dialog.tsx):
  * secretaria obrigatória, descrição (breve relato) com no mínimo 5
@@ -23,9 +23,9 @@ const UUID_RE = /^[0-9a-f-]{36}$/i;
  *
  * `acao` (opcional, padrão "concluir"):
  * - "iniciar" — reserva o protocolo por 10 min; a lista e o detalhe
- *   passam a mostrar "Triando com o Ouvidorizinho".
+ *   passam a mostrar "Triando com o Ouvidorzinho".
  * - "concluir" — aplica secretaria/local/descrição e limpa a triagem;
- *   o detalhe mostra o card "Triado pelo Ouvidorizinho".
+ *   o detalhe mostra o card "Triado pelo Ouvidorzinho".
  * - "cancelar" — libera a reserva do Muse quando ele desiste.
  *
  * Erros: 404 protocolo inexistente; 400 e-SIC, descrição curta ou

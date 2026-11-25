@@ -19,7 +19,9 @@ import { OnlineUsersProvider, useOnlineUsers } from "@/hooks/use-online-users";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { LayoutMode } from "@/hooks/use-layout-mode";
 import { OnedocBackgroundProvider } from "@/components/onedoc-background-provider";
-import { OuvidorizinhoFloat } from "@/components/ouvidorizinho-float";
+import { OuvidorzinhoFloat } from "@/components/ouvidorizinho-float";
+import { BoasVindasCard } from "@/components/boas-vindas-card";
+import { useOuvidorzinhoHabilitado } from "@/hooks/use-ouvidorzinho-habilitado";
 import { AtualizacaoOverlay } from "@/components/atualizacao-overlay";
 import { usePodeEditar } from "@/hooks/use-pode-editar";
 import { useSomenteSaude } from "@/hooks/use-somente-saude";
@@ -45,7 +47,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthLayout() {
   const { user } = Route.useRouteContext();
-  return <OnedocBackgroundProvider key={user.id} userId={user.id}><LicencaAviso /><AuthLayoutContent /><AtualizacaoOverlay /><OuvidorizinhoFloat /></OnedocBackgroundProvider>;
+  return <OnedocBackgroundProvider key={user.id} userId={user.id}><LicencaAviso /><AuthLayoutContent /><AtualizacaoOverlay /><OuvidorzinhoFloat /><BoasVindasCard /></OnedocBackgroundProvider>;
 }
 
 function AuthLayoutContent() {
@@ -67,6 +69,8 @@ function AuthLayoutContent() {
   const podeTriar = isAdmin || podeEditar;
   const soSaude = useSomenteSaude() && !isAdmin;
   const soVigilancia = useSomenteVigilancia() && !isAdmin;
+  // Ouvidorzinho desabilitado para o usuário: o item some do menu.
+  const ouvidorzinhoHabilitado = useOuvidorzinhoHabilitado();
 
   const displayName =
     (user.user_metadata as any)?.nome ||
@@ -97,7 +101,7 @@ function AuthLayoutContent() {
   ]) as { to: string; label: string; icon: any }[];
 
   const configItems = (isAdmin
-    ? [{ to: "/configuracoes", label: "Configurações", icon: Settings }, ...CONFIG_ITEMS]
+    ? [{ to: "/configuracoes", label: "Configurações", icon: Settings }, ...CONFIG_ITEMS.filter((i) => ouvidorzinhoHabilitado || i.to !== "/muse")]
     : []) as { to: string; label: string; icon: any }[];
   const configActive = configItems.some(c => pathname.startsWith(c.to));
 

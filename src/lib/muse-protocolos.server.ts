@@ -12,7 +12,7 @@ import type { MuseEditarProtocoloBody } from "@/lib/muse-api.server";
  * Leitura genérica de protocolos e edição auditada para a integração Muse.
  *
  * Reusa a regra de prazo de src/lib/prazo.ts (mesma conta da tela
- * Atrasados e do chat do Ouvidorizinho) e a seleção de atrasadas de
+ * Atrasados e do chat do Ouvidorzinho) e a seleção de atrasadas de
  * muse-atrasadas.server.ts, para os números baterem com os que o
  * painel já mostra. Nada aqui conclui, encerra ou arquiva protocolo:
  * a única escrita é o PATCH de campos seguros via RPC

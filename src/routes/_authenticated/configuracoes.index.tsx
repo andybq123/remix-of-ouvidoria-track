@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronRight, Settings } from "lucide-react";
 import { CONFIG_GRUPOS } from "@/lib/config-items";
+import { useOuvidorzinhoHabilitado } from "@/hooks/use-ouvidorzinho-habilitado";
 
 export const Route = createFileRoute("/_authenticated/configuracoes/")({
   head: () => ({
@@ -17,6 +18,12 @@ export const Route = createFileRoute("/_authenticated/configuracoes/")({
 });
 
 function ConfiguracoesPage() {
+  // Ouvidorzinho desabilitado para o usuário: o cartão some do hub.
+  const ouvidorzinhoHabilitado = useOuvidorzinhoHabilitado();
+  const grupos = CONFIG_GRUPOS.map((g) => ({
+    ...g,
+    itens: g.itens.filter((i) => ouvidorzinhoHabilitado || i.to !== "/muse"),
+  })).filter((g) => g.itens.length > 0);
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <header className="flex items-center gap-3">
@@ -29,7 +36,7 @@ function ConfiguracoesPage() {
         </div>
       </header>
 
-      {CONFIG_GRUPOS.map((grupo) => (
+      {grupos.map((grupo) => (
         <section key={grupo.titulo} className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{grupo.titulo}</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

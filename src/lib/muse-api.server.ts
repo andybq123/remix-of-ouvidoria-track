@@ -127,7 +127,7 @@ export type MuseConferirBody = z.infer<typeof museConferirBodySchema>;
  * `acao` é opcional e o padrão é "concluir", então o uso principal é
  * POST /triar { secretaria_id, local_id, descricao } — igual ao
  * "Concluir triagem" do painel. "iniciar" reserva o protocolo para o
- * Muse (a UI mostra "Triando com o Ouvidorizinho") e "cancelar" libera
+ * Muse (a UI mostra "Triando com o Ouvidorzinho") e "cancelar" libera
  * a reserva. Em "concluir", secretaria_id e descricao (mín. 5
  * caracteres, como no painel) são obrigatórios; endereco/latitude/
  * longitude seguem os mesmos limites do PATCH (endereco 1–300).

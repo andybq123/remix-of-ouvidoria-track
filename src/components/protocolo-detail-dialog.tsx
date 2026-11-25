@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { usePodeEditar } from "@/hooks/use-pode-editar";
+import { useOuvidorzinhoHabilitado } from "@/hooks/use-ouvidorzinho-habilitado";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,6 +47,9 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
   const isAdmin = useIsAdmin();
   const podeEditar = usePodeEditar();
   const podeAgir = isAdmin || podeEditar;
+  // Ouvidorzinho desabilitado para o usuário: o card de triagem dele e o
+  // botão "Conferir com o Ouvidorzinho" somem do detalhe.
+  const ouvidorzinhoHabilitado = useOuvidorzinhoHabilitado();
   const reverter = useServerFn(reverterAlteracaoOnedoc);
   const [revertendo, setRevertendo] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -506,11 +510,11 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
             Esta tarefa já foi triada por <strong>{lockState.por}</strong> em {new Date(lockState.em).toLocaleString("pt-BR")}.
           </div>
         )}
-        {/* Triada pelo Ouvidorizinho: o selo fica no registro, não na reserva — depois de triada a reserva não é mais pedida e o lockState fica idle. A coluna triagem_origem vem da migração 0037. */}
-        {!protocolo.triagem_pendente && (protocolo as any).triagem_origem === "muse" && protocolo.triagem_concluida_em && (
+        {/* Triada pelo Ouvidorzinho: o selo fica no registro, não na reserva — depois de triada a reserva não é mais pedida e o lockState fica idle. A coluna triagem_origem vem da migração 0037. */}
+        {ouvidorzinhoHabilitado && !protocolo.triagem_pendente && (protocolo as any).triagem_origem === "muse" && protocolo.triagem_concluida_em && (
           <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4" />
-            Triado pelo Ouvidorizinho em {new Date(protocolo.triagem_concluida_em).toLocaleString("pt-BR")}.
+            Triado pelo Ouvidorzinho em {new Date(protocolo.triagem_concluida_em).toLocaleString("pt-BR")}.
           </div>
         )}
 
@@ -546,10 +550,10 @@ export function ProtocoloDetailDialog({ protocolo: protocoloProp, open, onOpenCh
                 "Abre o protocolo no sistema 1Doc em uma nova aba"
               )
             )}
-            {isAdmin && !isLegacy && link1doc && (
+            {isAdmin && ouvidorzinhoHabilitado && !isLegacy && link1doc && (
               wrapTooltip(
                 "agente-1doc",
-                <span><OnedocAgentButton tipo="unitario" protocoloId={protocolo.id} label="Conferir com o Ouvidorizinho" /></span>,
+                <span><OnedocAgentButton tipo="unitario" protocoloId={protocolo.id} label="Conferir com o Ouvidorzinho" /></span>,
                 protocolo.onedoc_verificado_em
                   ? `Última conferência: ${new Date(protocolo.onedoc_verificado_em).toLocaleString("pt-BR")} — ${protocolo.onedoc_situacao ?? ""}${protocolo.onedoc_baixado_em ? `, baixa em ${new Date(protocolo.onedoc_baixado_em).toLocaleString("pt-BR")}` : ""}${protocolo.onedoc_arquivado_em ? `, arquivada em ${new Date(protocolo.onedoc_arquivado_em).toLocaleString("pt-BR")}` : ""}`
                   : "O agente entra no 1Doc e confere se a ouvidoria foi baixada e arquivada"

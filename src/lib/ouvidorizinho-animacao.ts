@@ -1,5 +1,5 @@
 /**
- * Animação do Ouvidorizinho — máquina de estados pura (testável sem DOM).
+ * Animação do Ouvidorzinho — máquina de estados pura (testável sem DOM).
  *
  * Estados:
  * - "idle": loop parado, digitando no notebook.
@@ -21,7 +21,7 @@ export const VIDEO_POR_ESTADO: Record<EstadoAnimacao, string> = {
   desconfiado: "/ouvidorizinho-desconfiado.mp4",
 };
 
-export const POSTER_OUVIDORIZINHO = "/ouvidorizinho.png";
+export const POSTER_OUVIDORZINHO = "/ouvidorizinho.png";
 
 export const INTERVALO_TELEFONE_MIN_MS = 45_000;
 export const INTERVALO_TELEFONE_MAX_MS = 90_000;

@@ -3,7 +3,7 @@ import { museCorsHeaders, validarTokenMuse } from "@/lib/muse-api.server";
 
 /**
  * GET /api/public/muse/resumo — contagens operacionais dos protocolos,
- * com a mesma conta de prazo do dashboard e do chat do Ouvidorizinho
+ * com a mesma conta de prazo do dashboard e do chat do Ouvidorzinho
  * (resumoOperacional, em prazo.ts). Leitura pura, não altera nada.
  *
  * `atrasadas` conta os vencidos pela regra de prazo do próprio tipo;

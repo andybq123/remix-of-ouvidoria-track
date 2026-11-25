@@ -17,6 +17,7 @@ import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { BulkConcluirDialog } from "@/components/bulk-concluir-dialog";
 import { useIsAdmin } from "@/hooks/use-is-admin";
+import { useOuvidorzinhoHabilitado } from "@/hooks/use-ouvidorzinho-habilitado";
 import { CheckCheck } from "lucide-react";
 import { OnedocAgentButton } from "@/components/onedoc-agent-button";
 import { MuseUltimaConferenciaFaixa, useMuseStatus } from "@/components/muse-status-card";
@@ -43,6 +44,7 @@ function AtrasadosPage() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const isAdmin = useIsAdmin();
   const { data: museStatus } = useMuseStatus(isAdmin);
+  const ouvidorzinhoHabilitado = useOuvidorzinhoHabilitado();
 
   const { data: protocolos = [] } = useQuery({
     queryKey: ["protocolos"],
@@ -175,12 +177,12 @@ function AtrasadosPage() {
               <CheckCheck className="h-4 w-4 mr-1" /> Concluir em massa
             </Button>
           )}
-          {isAdmin && (
+          {isAdmin && ouvidorzinhoHabilitado && (
             <OnedocAgentButton
               tipo="lote"
               protocoloIds={museIds}
               escopo="lote:muse-atrasadas"
-              label="Conferir atrasadas com o Ouvidorizinho"
+              label="Conferir atrasadas com o Ouvidorzinho"
               confirmacao="Conferir no 1Doc as ouvidorias atrasadas desta tela? Isso roda em segundo plano."
               disabled={museIds.length === 0}
               size="default"

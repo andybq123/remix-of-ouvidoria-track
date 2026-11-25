@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { ArrowRight, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import { OnedocAgentButton } from "@/components/onedoc-agent-button";
 import { validarFiltrosProtocolos } from "@/lib/protocolos-listagem";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { perguntarAssistenteMuse } from "@/lib/muse-chat.functions";
-import { CAPACIDADES_OUVIDORIZINHO, LIMITES_OUVIDORIZINHO } from "@/lib/muse-chat";
+import { LIMITES_OUVIDORZINHO } from "@/lib/muse-chat";
 import type { OnedocJob } from "@/lib/onedoc.functions";
 
 const SUGESTOES = [
@@ -68,7 +68,7 @@ function textoResultadoConferenciaUnitaria(job: OnedocJob, numero: string): stri
 }
 
 /**
- * Botão para abrir a tela pedida ao Ouvidorizinho. As rotas são literais
+ * Botão para abrir a tela pedida ao Ouvidorzinho. As rotas são literais
  * (o roteador tipa cada `to`), por isso o mapa explícito em vez de
  * interpolar a string da ação.
  */
@@ -147,7 +147,7 @@ function BotaoNavegar({ rota, rotulo }: { rota: string; rotulo: string }): React
 }
 
 /**
- * Painel de conversa do Ouvidorizinho, o assistente do OuviDesk movido
+ * Painel de conversa do Ouvidorzinho, o assistente do OuviDesk movido
  * pelo Muse. Usado na página /muse-chat e no drawer do mascote flutuante.
  *
  * O que ele pode e não pode fazer está no cabeçalho: responde e navega
@@ -192,7 +192,7 @@ export function MuseChatPanel({
         ...ms,
         { papel: "assistente", texto: `Não consegui responder: ${msg}` },
       ]);
-      toast.error("Falha ao perguntar ao Ouvidorizinho");
+      toast.error("Falha ao perguntar ao Ouvidorzinho");
     } finally {
       setEnviando(false);
     }
@@ -204,51 +204,50 @@ export function MuseChatPanel({
         <CardTitle className="flex items-center gap-2">
           <img
             src="/ouvidorizinho.png"
-            alt="Ouvidorizinho"
+            alt="Ouvidorzinho"
             className="h-10 w-10 rounded-full border object-cover"
           />
-          Ouvidorizinho
+          Ouvidorzinho
           <Badge variant="secondary">movido pelo Muse</Badge>
         </CardTitle>
-        <CardDescription>
-          Pergunte sobre os dados do OuviDesk — resumo, atrasadas, prazos, secretarias, conferências
-          no 1Doc — ou peça para abrir uma tela. As respostas usam a IA já configurada em
-          Configurações &gt; IA (Groq/Gemini) e, sem ela, os números diretos do sistema.
-        </CardDescription>
-        <div className="flex flex-wrap gap-1.5 pt-1">
-          {CAPACIDADES_OUVIDORIZINHO.map((c) => (
-            <Badge key={c} variant="outline" className="font-normal">
-              {c}
-            </Badge>
-          ))}
-        </div>
-        <p className="flex items-start gap-1.5 pt-1 text-xs text-muted-foreground">
-          <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          {LIMITES_OUVIDORIZINHO}
-        </p>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          {SUGESTOES.map((s) => (
-            <Button
-              key={s}
-              variant="outline"
-              size="sm"
-              onClick={() => void enviar(s)}
-              disabled={enviando}
-            >
-              {s}
-            </Button>
-          ))}
-        </div>
-
-        <div className={`space-y-3 ${alturaMensagens ?? "min-h-[120px]"}`}>
-          {mensagens.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Nenhuma pergunta ainda nesta sessão. O histórico fica só aqui — ao sair da página, ele
-              é apagado.
+        {mensagens.length === 0 && (
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-base font-semibold">
+                Olá! Eu sou o Ouvidorzinho e estou aqui para te ajudar.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Pergunte sobre os dados do OuviDesk — resumo, atrasadas, prazos, secretarias e
+                conferências no 1Doc — ou peça para abrir uma tela.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Posso te ajudar com:</p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {SUGESTOES.map((s) => (
+                  <Button
+                    key={s}
+                    variant="outline"
+                    size="sm"
+                    className="h-auto justify-start whitespace-normal text-left"
+                    onClick={() => void enviar(s)}
+                    disabled={enviando}
+                  >
+                    {s}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Nenhuma pergunta ainda nesta sessão.
             </p>
-          )}
+          </div>
+        )}
+
+        {(mensagens.length > 0 || enviando) && (
+        <div className={`space-y-3 ${alturaMensagens ?? "min-h-[120px]"}`}>
           {mensagens.map((m, i) => (
             <div
               key={i}
@@ -257,7 +256,7 @@ export function MuseChatPanel({
               }`}
             >
               <p className="text-xs font-semibold text-muted-foreground mb-1">
-                {m.papel === "usuario" ? "Você" : "Ouvidorizinho"}
+                {m.papel === "usuario" ? "Você" : "Ouvidorzinho"}
                 {m.papel === "assistente" && m.fonte === "regras" && (
                   <span className="font-normal"> · resposta direta dos dados (sem IA)</span>
                 )}
@@ -346,6 +345,7 @@ export function MuseChatPanel({
           ))}
           {enviando && <p className="text-sm text-muted-foreground">Pensando…</p>}
         </div>
+        )}
 
         <div className="flex gap-2">
           <Input
@@ -356,7 +356,7 @@ export function MuseChatPanel({
             }}
             placeholder="Ex.: Quantas ouvidorias estão atrasadas?"
             disabled={enviando}
-            aria-label="Pergunta ao Ouvidorizinho"
+            aria-label="Pergunta ao Ouvidorzinho"
           />
           <Button
             onClick={() => void enviar(pergunta)}
@@ -365,6 +365,15 @@ export function MuseChatPanel({
             <Send className="h-4 w-4 mr-1" /> Perguntar
           </Button>
         </div>
+
+        <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+          <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>
+            {LIMITES_OUVIDORZINHO} O histórico fica só nesta sessão e é apagado ao sair da
+            página. Respostas usam a IA configurada em Configurações &gt; IA (Groq/Gemini) ou, sem
+            ela, os números diretos do sistema.
+          </span>
+        </p>
       </CardContent>
     </Card>
   );

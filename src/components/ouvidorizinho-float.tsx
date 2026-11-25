@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Maximize2, Minus, X } from "lucide-react";
 import { MuseChatPanel } from "@/components/muse-chat-panel";
+import { useOuvidorzinhoHabilitado } from "@/hooks/use-ouvidorzinho-habilitado";
 import {
-  POSTER_OUVIDORIZINHO,
+  POSTER_OUVIDORZINHO,
   VIDEO_POR_ESTADO,
   estadoTocaUmaVez,
   inclinacaoParaCursor,
@@ -11,7 +12,7 @@ import {
   resolverEstadoAnimacao,
 } from "@/lib/ouvidorizinho-animacao";
 import {
-  CHAVE_POSICAO_OUVIDORIZINHO,
+  CHAVE_POSICAO_OUVIDORZINHO,
   TAMANHO_MASCOTE,
   clampPosicao,
   deserializarPosicao,
@@ -21,7 +22,7 @@ import {
 } from "@/lib/ouvidorizinho-posicao";
 
 /**
- * Ouvidorizinho flutuante e animado — mascote global do OuviDesk.
+ * Ouvidorzinho flutuante e animado — mascote global do OuviDesk.
  *
  * Renderizado uma só vez no layout autenticado, aparece em todas as
  * páginas logadas. O botão é um vídeo do mascote (circular, com borda e
@@ -43,7 +44,10 @@ import {
  *
  * z-index 200: acima de modais, menus e do overlay de atualização.
  */
-export function OuvidorizinhoFloat() {
+export function OuvidorzinhoFloat() {
+  // Desabilitado para o usuário (aba Usuários): o mascote some por
+  // completo — o retorno null vem depois dos hooks, na saída do componente.
+  const ouvidorzinhoHabilitado = useOuvidorzinhoHabilitado();
   const [pos, setPos] = useState<PosicaoWidget | null>(null);
   const [viewport, setViewport] = useState({ w: 0, h: 0 });
   const [aberto, setAberto] = useState(false);
@@ -74,7 +78,7 @@ export function OuvidorizinhoFloat() {
       const h = window.innerHeight;
       setViewport({ w, h });
       const guardada = deserializarPosicao(
-        window.localStorage.getItem(CHAVE_POSICAO_OUVIDORIZINHO),
+        window.localStorage.getItem(CHAVE_POSICAO_OUVIDORZINHO),
       );
       setPos((atual) => clampPosicao(guardada ?? atual ?? posicaoPadrao(w, h), w, h));
     };
@@ -156,7 +160,7 @@ export function OuvidorizinhoFloat() {
     if (!a.moveu) {
       setAberto((v) => !v);
     } else if (posRef.current) {
-      window.localStorage.setItem(CHAVE_POSICAO_OUVIDORIZINHO, serializarPosicao(posRef.current));
+      window.localStorage.setItem(CHAVE_POSICAO_OUVIDORZINHO, serializarPosicao(posRef.current));
     }
   }
 
@@ -185,7 +189,7 @@ export function OuvidorizinhoFloat() {
     setInclinacao({ rotacao: 0, deslocamentoX: 0 });
   }
 
-  if (!pos || viewport.w === 0) return null;
+  if (!ouvidorzinhoHabilitado || !pos || viewport.w === 0) return null;
 
   const drawerW = Math.min(400, viewport.w - 24);
   const drawerH = Math.min(560, viewport.h - 24);
@@ -211,15 +215,15 @@ export function OuvidorizinhoFloat() {
             zIndex: 200,
           }}
           role="dialog"
-          aria-label="Chat com o Ouvidorizinho"
+          aria-label="Chat com o Ouvidorzinho"
         >
           <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2">
             <img
-              src={POSTER_OUVIDORIZINHO}
+              src={POSTER_OUVIDORZINHO}
               alt=""
               className="h-8 w-8 rounded-full border object-cover"
             />
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold">Ouvidorizinho</span>
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold">Ouvidorzinho</span>
             <Link
               to="/muse-chat"
               className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
@@ -272,8 +276,8 @@ export function OuvidorizinhoFloat() {
           zIndex: 200,
           transform: `translateX(${inclinacao.deslocamentoX}px) rotate(${inclinacao.rotacao}deg)`,
         }}
-        title="Ouvidorizinho — assistente do OuviDesk (arraste para mover)"
-        aria-label={aberto ? "Fechar o Ouvidorizinho" : "Abrir o Ouvidorizinho"}
+        title="Ouvidorzinho — assistente do OuviDesk (arraste para mover)"
+        aria-label={aberto ? "Fechar o Ouvidorzinho" : "Abrir o Ouvidorzinho"}
         aria-expanded={aberto}
       >
         {animado ? (
@@ -281,7 +285,7 @@ export function OuvidorizinhoFloat() {
             key={estado}
             ref={videoRef}
             src={VIDEO_POR_ESTADO[estado]}
-            poster={POSTER_OUVIDORIZINHO}
+            poster={POSTER_OUVIDORZINHO}
             className="h-full w-full rounded-full object-cover"
             muted
             playsInline
@@ -294,8 +298,8 @@ export function OuvidorizinhoFloat() {
           />
         ) : (
           <img
-            src={POSTER_OUVIDORIZINHO}
-            alt="Ouvidorizinho"
+            src={POSTER_OUVIDORZINHO}
+            alt="Ouvidorzinho"
             className="h-full w-full rounded-full object-cover"
             draggable={false}
           />

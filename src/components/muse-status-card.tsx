@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getMuseStatus, setMusePausado, type MuseStatus } from "@/lib/muse.functions";
+import { useOuvidorzinhoHabilitado } from "@/hooks/use-ouvidorzinho-habilitado";
 import type { OnedocJob } from "@/lib/onedoc.functions";
 
 export function useMuseStatus(enabled: boolean) {
@@ -67,19 +68,22 @@ export function MusePausarButton({ pausado, onDone }: { pausado: boolean; onDone
   );
 }
 
-/** Cartão "Ouvidorizinho" — status, última conferência e freio manual. */
+/** Cartão "Ouvidorzinho" — status, última conferência e freio manual. */
 export function MuseStatusCard() {
-  const { data, isLoading, error } = useMuseStatus(true);
+  // Desabilitado para o usuário: o cartão some (Agente 1Doc e painel /muse).
+  const ouvidorzinhoHabilitado = useOuvidorzinhoHabilitado();
+  const { data, isLoading, error } = useMuseStatus(ouvidorzinhoHabilitado);
   const ultimo = data?.jobs?.[0];
+  if (!ouvidorzinhoHabilitado) return null;
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Bot className="h-5 w-5" /> Ouvidorizinho
+          <Bot className="h-5 w-5" /> Ouvidorzinho
           <Badge variant="secondary">Muse</Badge>
         </CardTitle>
         <CardDescription>
-          O Ouvidorizinho, movido pelo Muse, confere as ouvidorias atrasadas no 1Doc e encerra no OuviDesk as que já foram
+          O Ouvidorzinho, movido pelo Muse, confere as ouvidorias atrasadas no 1Doc e encerra no OuviDesk as que já foram
           baixadas lá. Ele nunca escreve direto em protocolos: só enfileira a conferência, e o
           agente do 1Doc aplica a regra de baixa.
         </CardDescription>
@@ -126,7 +130,7 @@ export function MuseStatusCard() {
             <div className="flex flex-wrap gap-2">
               {data && <MusePausarButton pausado={data.pausado} />}
               <Button size="sm" variant="outline" asChild>
-                <Link to="/muse">Ver Ouvidorizinho</Link>
+                <Link to="/muse">Ver Ouvidorzinho</Link>
               </Button>
             </div>
           </>
@@ -138,8 +142,10 @@ export function MuseStatusCard() {
 
 /** Faixa compacta com a última conferência do Muse, para a tela Atrasados. */
 export function MuseUltimaConferenciaFaixa({ status }: { status: MuseStatus }) {
+  // Desabilitado para o usuário: a faixa (com o link "Ver Ouvidorzinho") some.
+  const ouvidorzinhoHabilitado = useOuvidorzinhoHabilitado();
   const ultimo = status.jobs?.[0];
-  if (!ultimo) return null;
+  if (!ouvidorzinhoHabilitado || !ultimo) return null;
   return (
     <Card className="border-primary/40">
       <CardContent className="p-3 flex flex-wrap items-center gap-2 text-sm">
@@ -149,7 +155,7 @@ export function MuseUltimaConferenciaFaixa({ status }: { status: MuseStatus }) {
           {UltimaConferenciaTexto(ultimo)}
         </span>
         <Link to="/muse" className="ml-auto text-primary underline underline-offset-2">
-          Ver Ouvidorizinho
+          Ver Ouvidorzinho
         </Link>
       </CardContent>
     </Card>
