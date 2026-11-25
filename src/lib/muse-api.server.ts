@@ -168,8 +168,11 @@ export type MuseTriarProtocoloBody = z.infer<typeof museTriarProtocoloBodySchema
  * já deixa editar no detalhe do protocolo (protocolo-detail-dialog.tsx),
  * menos tudo que mexe em prazo, identidade ou conclusão: fora ficam
  * numero, tipo, status, data_abertura, data_conclusao, data_prorrogacao
- * e prorrogado. Nenhum campo novo pode entrar aqui sem passar pela
- * allow-list da RPC aplicar_edicao_muse (migração 0036).
+ * e prorrogado. `url` é a exceção: o link do 1Doc só é corrigível pela
+ * API (o painel não edita o link), porque links guardados errados
+ * (rastreador el.1docmail.com.br ou hash antigo) fazem o agente 1Doc
+ * falhar a conferência. Nenhum campo novo pode entrar aqui sem passar
+ * pela allow-list da RPC aplicar_edicao_muse (migrações 0036/0038).
  */
 export const CAMPOS_EDITAVEIS_MUSE = [
   "endereco",
@@ -181,9 +184,29 @@ export const CAMPOS_EDITAVEIS_MUSE = [
   "categoria",
   "secretaria_id",
   "local_id",
+  "url",
 ] as const;
 
 export type CampoEditavelMuse = (typeof CAMPOS_EDITAVEIS_MUSE)[number];
+
+/** Hosts que o agente 1Doc sabe tratar como link de protocolo. */
+export const HOSTS_URL_1DOC = ["brusque.1doc.com.br", "el.1docmail.com.br"] as const;
+
+/**
+ * Valida um link do 1Doc: http(s) e host na lista acima. O rastreador
+ * el.1docmail.com.br vem nas notificações por e-mail e o agente o
+ * resolve para o documento (resolverRastreio1doc, em url.mjs); qualquer
+ * outro host é rejeitado para o link não virar porta de saída.
+ */
+export function url1docValida(valor: string): boolean {
+  try {
+    const u = new URL(valor);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return false;
+    return (HOSTS_URL_1DOC as readonly string[]).includes(u.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
 
 const CATEGORIAS_MUSE = CATEGORIAS.map((c) => c.value) as [
   CategoriaProtocolo,
@@ -197,7 +220,9 @@ const CATEGORIAS_MUSE = CATEGORIAS.map((c) => c.value) as [
  * 5–300 caracteres; o painel não impõe limite explícito) e aceita null
  * para limpar, como o painel; assunto e solicitante seguem o teto
  * prático do painel (500); descricao aceita texto longo e vazio vira
- * null, como no painel.
+ * null, como no painel. `url` só aceita link do 1Doc (http(s),
+ * brusque.1doc.com.br ou el.1docmail.com.br, até 2000 caracteres) e
+ * não aceita null: protocolo sem link não é conferido pelo agente.
  */
 export const museEditarProtocoloBodySchema = z
   .object({
@@ -210,6 +235,9 @@ export const museEditarProtocoloBodySchema = z
     categoria: z.enum(CATEGORIAS_MUSE).optional(),
     secretaria_id: z.string().uuid().nullable().optional(),
     local_id: z.string().uuid().nullable().optional(),
+    url: z.string().trim().min(1).max(2000).refine(url1docValida, {
+      message: "Informe um link do 1Doc (brusque.1doc.com.br ou el.1docmail.com.br).",
+    }).optional(),
   })
   .strict()
   .refine((b) => Object.keys(b).length > 0, {

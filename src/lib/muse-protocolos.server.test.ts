@@ -244,6 +244,32 @@ describe("corpo do PATCH de protocolo", () => {
     }
   });
 
+  it("aceita link do 1Doc (direto ou rastreador) e rejeita host estranho", () => {
+    expect(
+      museEditarProtocoloBodySchema.safeParse({
+        url: "https://brusque.1doc.com.br/?pg=doc/ver&hash=abc123&itd=15",
+      }).success,
+    ).toBe(true);
+    expect(
+      museEditarProtocoloBodySchema.safeParse({
+        url: "http://el.1docmail.com.br/ls/click?upn=abc",
+      }).success,
+    ).toBe(true);
+    expect(
+      museEditarProtocoloBodySchema.safeParse({ url: "https://exemplo.com/protocolo/1" })
+        .success,
+    ).toBe(false);
+    expect(
+      museEditarProtocoloBodySchema.safeParse({ url: "ftp://brusque.1doc.com.br/x" }).success,
+    ).toBe(false);
+    expect(museEditarProtocoloBodySchema.safeParse({ url: "nao-e-url" }).success).toBe(false);
+    expect(
+      museEditarProtocoloBodySchema.safeParse({
+        url: "https://brusque.1doc.com.br/?pg=doc/ver&hash=" + "a".repeat(1960),
+      }).success,
+    ).toBe(false);
+  });
+
   it("rejeita endereço vazio ou acima de 300, coordenadas fora do mapa e categoria inválida", () => {
     expect(museEditarProtocoloBodySchema.safeParse({ endereco: "" }).success).toBe(false);
     expect(museEditarProtocoloBodySchema.safeParse({ endereco: "x".repeat(301) }).success).toBe(
@@ -306,6 +332,23 @@ describe("aplicação da edição (RPC aplicar_edicao_muse)", () => {
     expect(client.rpcArgs()?.fn).toBe("aplicar_edicao_muse");
     expect((client.rpcArgs()?.args.p_patch as Record<string, unknown>).endereco).toBe(
       "R. Arnoldo Ristow, 422",
+    );
+  });
+
+  it("atualiza o link do 1Doc e o inclui nos campos alterados", async () => {
+    const atual = row({ url: "http://el.1docmail.com.br/ls/click?upn=antigo" });
+    const atualizado = row({ url: "https://brusque.1doc.com.br/?pg=doc/ver&hash=novo" });
+    const client = clienteEdicao({ atual, atualizado });
+    const r = await aplicarEdicaoMuse(
+      client as never,
+      "id-1",
+      { url: "https://brusque.1doc.com.br/?pg=doc/ver&hash=novo" },
+      REF,
+    );
+    expect(r.camposAlterados).toEqual(["url"]);
+    expect(r.protocolo.url).toBe("https://brusque.1doc.com.br/?pg=doc/ver&hash=novo");
+    expect((client.rpcArgs()?.args.p_patch as Record<string, unknown>).url).toBe(
+      "https://brusque.1doc.com.br/?pg=doc/ver&hash=novo",
     );
   });
 
