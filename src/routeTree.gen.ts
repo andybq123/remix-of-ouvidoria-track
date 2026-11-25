@@ -53,7 +53,11 @@ import { Route as ApiPublicInboundEmailTokenRouteImport } from './routes/api/pub
 import { Route as ApiPublicMuseAtrasadasRouteImport } from './routes/api/public/muse/atrasadas'
 import { Route as ApiPublicMuseConferirAtrasadasRouteImport } from './routes/api/public/muse/conferir-atrasadas'
 import { Route as ApiPublicMuseJobsIdRouteImport } from './routes/api/public/muse/jobs.$id'
+import { Route as ApiPublicMuseProtocoloIdRouteImport } from './routes/api/public/muse/protocolo.$id'
 import { Route as ApiPublicMuseProtocoloIdTriarRouteImport } from './routes/api/public/muse/protocolo.$id.triar'
+import { Route as ApiPublicMuseProtocolosRouteImport } from './routes/api/public/muse/protocolos'
+import { Route as ApiPublicMuseResumoRouteImport } from './routes/api/public/muse/resumo'
+import { Route as ApiPublicMuseSecretariasRouteImport } from './routes/api/public/muse/secretarias'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -286,10 +290,32 @@ const ApiPublicMuseJobsIdRoute = ApiPublicMuseJobsIdRouteImport.update({
   path: '/api/public/muse/jobs/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMuseProtocoloIdRoute =
+  ApiPublicMuseProtocoloIdRouteImport.update({
+    id: '/api/public/muse/protocolo/$id',
+    path: '/api/public/muse/protocolo/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMuseProtocoloIdTriarRoute =
   ApiPublicMuseProtocoloIdTriarRouteImport.update({
     id: '/api/public/muse/protocolo/$id/triar',
     path: '/api/public/muse/protocolo/$id/triar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicMuseProtocolosRoute = ApiPublicMuseProtocolosRouteImport.update({
+  id: '/api/public/muse/protocolos',
+  path: '/api/public/muse/protocolos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicMuseResumoRoute = ApiPublicMuseResumoRouteImport.update({
+  id: '/api/public/muse/resumo',
+  path: '/api/public/muse/resumo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicMuseSecretariasRoute =
+  ApiPublicMuseSecretariasRouteImport.update({
+    id: '/api/public/muse/secretarias',
+    path: '/api/public/muse/secretarias',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -337,7 +363,11 @@ export interface FileRoutesByFullPath {
   '/api/public/muse/atrasadas': typeof ApiPublicMuseAtrasadasRoute
   '/api/public/muse/conferir-atrasadas': typeof ApiPublicMuseConferirAtrasadasRoute
   '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
+  '/api/public/muse/protocolo/$id': typeof ApiPublicMuseProtocoloIdRoute
   '/api/public/muse/protocolo/$id/triar': typeof ApiPublicMuseProtocoloIdTriarRoute
+  '/api/public/muse/protocolos': typeof ApiPublicMuseProtocolosRoute
+  '/api/public/muse/resumo': typeof ApiPublicMuseResumoRoute
+  '/api/public/muse/secretarias': typeof ApiPublicMuseSecretariasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -382,7 +412,11 @@ export interface FileRoutesByTo {
   '/api/public/muse/atrasadas': typeof ApiPublicMuseAtrasadasRoute
   '/api/public/muse/conferir-atrasadas': typeof ApiPublicMuseConferirAtrasadasRoute
   '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
+  '/api/public/muse/protocolo/$id': typeof ApiPublicMuseProtocoloIdRoute
   '/api/public/muse/protocolo/$id/triar': typeof ApiPublicMuseProtocoloIdTriarRoute
+  '/api/public/muse/protocolos': typeof ApiPublicMuseProtocolosRoute
+  '/api/public/muse/resumo': typeof ApiPublicMuseResumoRoute
+  '/api/public/muse/secretarias': typeof ApiPublicMuseSecretariasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -430,7 +464,11 @@ export interface FileRoutesById {
   '/api/public/muse/atrasadas': typeof ApiPublicMuseAtrasadasRoute
   '/api/public/muse/conferir-atrasadas': typeof ApiPublicMuseConferirAtrasadasRoute
   '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
+  '/api/public/muse/protocolo/$id': typeof ApiPublicMuseProtocoloIdRoute
   '/api/public/muse/protocolo/$id/triar': typeof ApiPublicMuseProtocoloIdTriarRoute
+  '/api/public/muse/protocolos': typeof ApiPublicMuseProtocolosRoute
+  '/api/public/muse/resumo': typeof ApiPublicMuseResumoRoute
+  '/api/public/muse/secretarias': typeof ApiPublicMuseSecretariasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -478,7 +516,11 @@ export interface FileRouteTypes {
     | '/api/public/muse/atrasadas'
     | '/api/public/muse/conferir-atrasadas'
     | '/api/public/muse/jobs/$id'
+    | '/api/public/muse/protocolo/$id'
     | '/api/public/muse/protocolo/$id/triar'
+    | '/api/public/muse/protocolos'
+    | '/api/public/muse/resumo'
+    | '/api/public/muse/secretarias'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -523,7 +565,11 @@ export interface FileRouteTypes {
     | '/api/public/muse/atrasadas'
     | '/api/public/muse/conferir-atrasadas'
     | '/api/public/muse/jobs/$id'
+    | '/api/public/muse/protocolo/$id'
     | '/api/public/muse/protocolo/$id/triar'
+    | '/api/public/muse/protocolos'
+    | '/api/public/muse/resumo'
+    | '/api/public/muse/secretarias'
   id:
     | '__root__'
     | '/'
@@ -570,7 +616,11 @@ export interface FileRouteTypes {
     | '/api/public/muse/atrasadas'
     | '/api/public/muse/conferir-atrasadas'
     | '/api/public/muse/jobs/$id'
+    | '/api/public/muse/protocolo/$id'
     | '/api/public/muse/protocolo/$id/triar'
+    | '/api/public/muse/protocolos'
+    | '/api/public/muse/resumo'
+    | '/api/public/muse/secretarias'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -591,7 +641,11 @@ export interface RootRouteChildren {
   ApiPublicMuseAtrasadasRoute: typeof ApiPublicMuseAtrasadasRoute
   ApiPublicMuseConferirAtrasadasRoute: typeof ApiPublicMuseConferirAtrasadasRoute
   ApiPublicMuseJobsIdRoute: typeof ApiPublicMuseJobsIdRoute
+  ApiPublicMuseProtocoloIdRoute: typeof ApiPublicMuseProtocoloIdRoute
   ApiPublicMuseProtocoloIdTriarRoute: typeof ApiPublicMuseProtocoloIdTriarRoute
+  ApiPublicMuseProtocolosRoute: typeof ApiPublicMuseProtocolosRoute
+  ApiPublicMuseResumoRoute: typeof ApiPublicMuseResumoRoute
+  ApiPublicMuseSecretariasRoute: typeof ApiPublicMuseSecretariasRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -904,11 +958,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMuseJobsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/muse/protocolo/$id': {
+      id: '/api/public/muse/protocolo/$id'
+      path: '/api/public/muse/protocolo/$id'
+      fullPath: '/api/public/muse/protocolo/$id'
+      preLoaderRoute: typeof ApiPublicMuseProtocoloIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/muse/protocolo/$id/triar': {
       id: '/api/public/muse/protocolo/$id/triar'
       path: '/api/public/muse/protocolo/$id/triar'
       fullPath: '/api/public/muse/protocolo/$id/triar'
       preLoaderRoute: typeof ApiPublicMuseProtocoloIdTriarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/muse/protocolos': {
+      id: '/api/public/muse/protocolos'
+      path: '/api/public/muse/protocolos'
+      fullPath: '/api/public/muse/protocolos'
+      preLoaderRoute: typeof ApiPublicMuseProtocolosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/muse/resumo': {
+      id: '/api/public/muse/resumo'
+      path: '/api/public/muse/resumo'
+      fullPath: '/api/public/muse/resumo'
+      preLoaderRoute: typeof ApiPublicMuseResumoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/muse/secretarias': {
+      id: '/api/public/muse/secretarias'
+      path: '/api/public/muse/secretarias'
+      fullPath: '/api/public/muse/secretarias'
+      preLoaderRoute: typeof ApiPublicMuseSecretariasRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -1010,7 +1092,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMuseAtrasadasRoute: ApiPublicMuseAtrasadasRoute,
   ApiPublicMuseConferirAtrasadasRoute: ApiPublicMuseConferirAtrasadasRoute,
   ApiPublicMuseJobsIdRoute: ApiPublicMuseJobsIdRoute,
+  ApiPublicMuseProtocoloIdRoute: ApiPublicMuseProtocoloIdRoute,
   ApiPublicMuseProtocoloIdTriarRoute: ApiPublicMuseProtocoloIdTriarRoute,
+  ApiPublicMuseProtocolosRoute: ApiPublicMuseProtocolosRoute,
+  ApiPublicMuseResumoRoute: ApiPublicMuseResumoRoute,
+  ApiPublicMuseSecretariasRoute: ApiPublicMuseSecretariasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,19 +1,23 @@
 import { z } from "zod";
 import type { OnedocResultado } from "@/lib/onedoc-history";
+import { CATEGORIAS, type CategoriaProtocolo } from "@/lib/prazo";
 
 /**
  * Helpers compartilhados pelas rotas públicas do Muse
  * (src/routes/api/public/muse/*) e pelos testes.
  *
- * Nada aqui toca no banco nem conclui protocolo: a única escrita da
- * integração continua sendo o enfileiramento em onedoc_jobs, processado
- * pelo agente da VPS com a regra de baixa de parse.mjs.
+ * Escritas da integração: o enfileiramento em onedoc_jobs (conferência
+ * no 1Doc, processada pelo agente da VPS) e a edição de campos seguros
+ * de protocolo via RPC aplicar_edicao_muse (PATCH /protocolo/{id}),
+ * auditada pelo trigger log_protocolo_changes. Nada aqui conclui,
+ * encerra ou arquiva protocolo: isso continua sendo só o agente do
+ * 1Doc, com a regra de baixa de parse.mjs.
  */
 
 export function museCorsHeaders(): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
   };
@@ -158,6 +162,61 @@ export const museTriarProtocoloBodySchema = z
   });
 
 export type MuseTriarProtocoloBody = z.infer<typeof museTriarProtocoloBodySchema>;
+
+/**
+ * Campos que o PATCH /protocolo/{id} pode alterar — só os que o painel
+ * já deixa editar no detalhe do protocolo (protocolo-detail-dialog.tsx),
+ * menos tudo que mexe em prazo, identidade ou conclusão: fora ficam
+ * numero, tipo, status, data_abertura, data_conclusao, data_prorrogacao
+ * e prorrogado. Nenhum campo novo pode entrar aqui sem passar pela
+ * allow-list da RPC aplicar_edicao_muse (migração 0036).
+ */
+export const CAMPOS_EDITAVEIS_MUSE = [
+  "endereco",
+  "latitude",
+  "longitude",
+  "assunto",
+  "descricao",
+  "solicitante",
+  "categoria",
+  "secretaria_id",
+  "local_id",
+] as const;
+
+export type CampoEditavelMuse = (typeof CAMPOS_EDITAVEIS_MUSE)[number];
+
+const CATEGORIAS_MUSE = CATEGORIAS.map((c) => c.value) as [
+  CategoriaProtocolo,
+  ...CategoriaProtocolo[],
+];
+
+/**
+ * Corpo do PATCH /protocolo/{id} (.strict(): qualquer outro campo —
+ * status, data_conclusao, tipo, numero, onedoc_* — é rejeitado com 400).
+ * Limites: endereco segue o teto do extrator do agente 1Doc (parse.mjs,
+ * 5–300 caracteres; o painel não impõe limite explícito) e aceita null
+ * para limpar, como o painel; assunto e solicitante seguem o teto
+ * prático do painel (500); descricao aceita texto longo e vazio vira
+ * null, como no painel.
+ */
+export const museEditarProtocoloBodySchema = z
+  .object({
+    endereco: z.string().trim().min(1).max(300).nullable().optional(),
+    latitude: z.number().min(-90).max(90).nullable().optional(),
+    longitude: z.number().min(-180).max(180).nullable().optional(),
+    assunto: z.string().trim().min(1).max(500).optional(),
+    descricao: z.string().trim().max(20000).nullable().optional(),
+    solicitante: z.string().trim().max(500).nullable().optional(),
+    categoria: z.enum(CATEGORIAS_MUSE).optional(),
+    secretaria_id: z.string().uuid().nullable().optional(),
+    local_id: z.string().uuid().nullable().optional(),
+  })
+  .strict()
+  .refine((b) => Object.keys(b).length > 0, {
+    message: "Informe ao menos um campo para atualizar",
+  });
+
+export type MuseEditarProtocoloBody = z.infer<typeof museEditarProtocoloBodySchema>;
 
 export type ResumoJobMuse = {
   encerradas: number;
