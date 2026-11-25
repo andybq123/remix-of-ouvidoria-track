@@ -113,13 +113,16 @@ export function mapearProtocoloMuse(
   if (tipo !== "ouvidoria" && tipo !== "lai" && tipo !== "esic") return null;
   if (!row.data_abertura) return null;
   const status = (row.status ?? "aberto") as StatusProtocolo;
-  const sla = calcularSla({
-    tipo,
-    data_abertura: row.data_abertura,
-    prorrogado: !!row.prorrogado,
-    status,
-    data_conclusao: row.data_conclusao,
-  });
+  const sla = calcularSla(
+    {
+      tipo,
+      data_abertura: row.data_abertura,
+      prorrogado: !!row.prorrogado,
+      status,
+      data_conclusao: row.data_conclusao,
+    },
+    refDate,
+  );
   return {
     id: row.id,
     numero: row.numero,
