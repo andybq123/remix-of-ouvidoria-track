@@ -24,7 +24,6 @@ import { Route as AuthenticatedAtrasadosRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAtualizacaoRouteImport } from './routes/_authenticated/atualizacao'
 import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated/backup'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
-import { Route as AuthenticatedConfiguracoesVpsRouteImport } from './routes/_authenticated/configuracoes.vps'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDebugRouteImport } from './routes/_authenticated/debug'
 import { Route as AuthenticatedEmailInboxRouteImport } from './routes/_authenticated/email-inbox'
@@ -42,7 +41,9 @@ import { Route as AuthenticatedSecretariasRouteImport } from './routes/_authenti
 import { Route as AuthenticatedSemLink1docRouteImport } from './routes/_authenticated/sem-link-1doc'
 import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticated/tarefas'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as ApiVpsStatsRouteImport } from './routes/api/vps-stats'
 import { Route as AuthenticatedConfiguracoesIndexRouteImport } from './routes/_authenticated/configuracoes.index'
+import { Route as AuthenticatedConfiguracoesVpsRouteImport } from './routes/_authenticated/configuracoes.vps'
 import { Route as AuthenticatedProtocolosAntigosIndexRouteImport } from './routes/_authenticated/protocolos-antigos.index'
 import { Route as AuthenticatedRelatoriosIndexRouteImport } from './routes/_authenticated/relatorios.index'
 import { Route as ApiPublicCheckProtocolosRouteImport } from './routes/api/public/check-protocolos'
@@ -54,13 +55,12 @@ import { Route as AuthenticatedRelatoriosSecretariaIdRouteImport } from './route
 import { Route as ApiPublicInboundEmailTokenRouteImport } from './routes/api/public/inbound-email.$token'
 import { Route as ApiPublicMuseAtrasadasRouteImport } from './routes/api/public/muse/atrasadas'
 import { Route as ApiPublicMuseConferirAtrasadasRouteImport } from './routes/api/public/muse/conferir-atrasadas'
-import { Route as ApiPublicMuseJobsIdRouteImport } from './routes/api/public/muse/jobs.$id'
-import { Route as ApiPublicMuseProtocoloIdRouteImport } from './routes/api/public/muse/protocolo.$id'
-import { Route as ApiPublicMuseProtocoloIdTriarRouteImport } from './routes/api/public/muse/protocolo.$id.triar'
 import { Route as ApiPublicMuseProtocolosRouteImport } from './routes/api/public/muse/protocolos'
 import { Route as ApiPublicMuseResumoRouteImport } from './routes/api/public/muse/resumo'
 import { Route as ApiPublicMuseSecretariasRouteImport } from './routes/api/public/muse/secretarias'
-import { Route as ApiVpsStatsRouteImport } from './routes/api/vps-stats'
+import { Route as ApiPublicMuseJobsIdRouteImport } from './routes/api/public/muse/jobs.$id'
+import { Route as ApiPublicMuseProtocoloIdRouteImport } from './routes/api/public/muse/protocolo.$id'
+import { Route as ApiPublicMuseProtocoloIdTriarRouteImport } from './routes/api/public/muse/protocolo.$id.triar'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -137,12 +137,6 @@ const AuthenticatedConfiguracoesRoute =
     id: '/configuracoes',
     path: '/configuracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedConfiguracoesVpsRoute =
-  AuthenticatedConfiguracoesVpsRouteImport.update({
-    id: '/vps',
-    path: '/vps',
-    getParentRoute: () => AuthenticatedConfiguracoesRoute,
   } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
@@ -231,10 +225,21 @@ const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiVpsStatsRoute = ApiVpsStatsRouteImport.update({
+  id: '/api/vps-stats',
+  path: '/api/vps-stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedConfiguracoesIndexRoute =
   AuthenticatedConfiguracoesIndexRouteImport.update({
     id: '/',
     path: '/',
+    getParentRoute: () => AuthenticatedConfiguracoesRoute,
+  } as any)
+const AuthenticatedConfiguracoesVpsRoute =
+  AuthenticatedConfiguracoesVpsRouteImport.update({
+    id: '/vps',
+    path: '/vps',
     getParentRoute: () => AuthenticatedConfiguracoesRoute,
   } as any)
 const AuthenticatedProtocolosAntigosIndexRoute =
@@ -300,23 +305,6 @@ const ApiPublicMuseConferirAtrasadasRoute =
     path: '/api/public/muse/conferir-atrasadas',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicMuseJobsIdRoute = ApiPublicMuseJobsIdRouteImport.update({
-  id: '/api/public/muse/jobs/$id',
-  path: '/api/public/muse/jobs/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicMuseProtocoloIdRoute =
-  ApiPublicMuseProtocoloIdRouteImport.update({
-    id: '/api/public/muse/protocolo/$id',
-    path: '/api/public/muse/protocolo/$id',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicMuseProtocoloIdTriarRoute =
-  ApiPublicMuseProtocoloIdTriarRouteImport.update({
-    id: '/api/public/muse/protocolo/$id/triar',
-    path: '/api/public/muse/protocolo/$id/triar',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicMuseProtocolosRoute = ApiPublicMuseProtocolosRouteImport.update({
   id: '/api/public/muse/protocolos',
   path: '/api/public/muse/protocolos',
@@ -333,11 +321,23 @@ const ApiPublicMuseSecretariasRoute =
     path: '/api/public/muse/secretarias',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiVpsStatsRoute = ApiVpsStatsRouteImport.update({
-  id: '/api/vps-stats',
-  path: '/api/vps-stats',
+const ApiPublicMuseJobsIdRoute = ApiPublicMuseJobsIdRouteImport.update({
+  id: '/api/public/muse/jobs/$id',
+  path: '/api/public/muse/jobs/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMuseProtocoloIdRoute =
+  ApiPublicMuseProtocoloIdRouteImport.update({
+    id: '/api/public/muse/protocolo/$id',
+    path: '/api/public/muse/protocolo/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicMuseProtocoloIdTriarRoute =
+  ApiPublicMuseProtocoloIdTriarRouteImport.update({
+    id: '/triar',
+    path: '/triar',
+    getParentRoute: () => ApiPublicMuseProtocoloIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -354,7 +354,6 @@ export interface FileRoutesByFullPath {
   '/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/backup': typeof AuthenticatedBackupRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRouteWithChildren
-  '/configuracoes/vps': typeof AuthenticatedConfiguracoesVpsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
   '/email-inbox': typeof AuthenticatedEmailInboxRoute
@@ -372,6 +371,8 @@ export interface FileRoutesByFullPath {
   '/sem-link-1doc': typeof AuthenticatedSemLink1docRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
   '/users': typeof AuthenticatedUsersRoute
+  '/api/vps-stats': typeof ApiVpsStatsRoute
+  '/configuracoes/vps': typeof AuthenticatedConfiguracoesVpsRoute
   '/api/public/check-protocolos': typeof ApiPublicCheckProtocolosRoute
   '/api/public/email-sync': typeof ApiPublicEmailSyncRoute
   '/api/public/gmail-sync': typeof ApiPublicGmailSyncRoute
@@ -384,13 +385,12 @@ export interface FileRoutesByFullPath {
   '/api/public/inbound-email/$token': typeof ApiPublicInboundEmailTokenRoute
   '/api/public/muse/atrasadas': typeof ApiPublicMuseAtrasadasRoute
   '/api/public/muse/conferir-atrasadas': typeof ApiPublicMuseConferirAtrasadasRoute
-  '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
-  '/api/public/muse/protocolo/$id': typeof ApiPublicMuseProtocoloIdRoute
-  '/api/public/muse/protocolo/$id/triar': typeof ApiPublicMuseProtocoloIdTriarRoute
   '/api/public/muse/protocolos': typeof ApiPublicMuseProtocolosRoute
   '/api/public/muse/resumo': typeof ApiPublicMuseResumoRoute
   '/api/public/muse/secretarias': typeof ApiPublicMuseSecretariasRoute
-  '/api/vps-stats': typeof ApiVpsStatsRoute
+  '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
+  '/api/public/muse/protocolo/$id': typeof ApiPublicMuseProtocoloIdRouteWithChildren
+  '/api/public/muse/protocolo/$id/triar': typeof ApiPublicMuseProtocoloIdTriarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -406,7 +406,6 @@ export interface FileRoutesByTo {
   '/atrasados': typeof AuthenticatedAtrasadosRoute
   '/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/backup': typeof AuthenticatedBackupRoute
-  '/configuracoes/vps': typeof AuthenticatedConfiguracoesVpsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/debug': typeof AuthenticatedDebugRoute
   '/email-inbox': typeof AuthenticatedEmailInboxRoute
@@ -423,6 +422,8 @@ export interface FileRoutesByTo {
   '/sem-link-1doc': typeof AuthenticatedSemLink1docRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
   '/users': typeof AuthenticatedUsersRoute
+  '/api/vps-stats': typeof ApiVpsStatsRoute
+  '/configuracoes/vps': typeof AuthenticatedConfiguracoesVpsRoute
   '/api/public/check-protocolos': typeof ApiPublicCheckProtocolosRoute
   '/api/public/email-sync': typeof ApiPublicEmailSyncRoute
   '/api/public/gmail-sync': typeof ApiPublicGmailSyncRoute
@@ -435,13 +436,12 @@ export interface FileRoutesByTo {
   '/api/public/inbound-email/$token': typeof ApiPublicInboundEmailTokenRoute
   '/api/public/muse/atrasadas': typeof ApiPublicMuseAtrasadasRoute
   '/api/public/muse/conferir-atrasadas': typeof ApiPublicMuseConferirAtrasadasRoute
-  '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
-  '/api/public/muse/protocolo/$id': typeof ApiPublicMuseProtocoloIdRoute
-  '/api/public/muse/protocolo/$id/triar': typeof ApiPublicMuseProtocoloIdTriarRoute
   '/api/public/muse/protocolos': typeof ApiPublicMuseProtocolosRoute
   '/api/public/muse/resumo': typeof ApiPublicMuseResumoRoute
   '/api/public/muse/secretarias': typeof ApiPublicMuseSecretariasRoute
-  '/api/vps-stats': typeof ApiVpsStatsRoute
+  '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
+  '/api/public/muse/protocolo/$id': typeof ApiPublicMuseProtocoloIdRouteWithChildren
+  '/api/public/muse/protocolo/$id/triar': typeof ApiPublicMuseProtocoloIdTriarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -460,7 +460,6 @@ export interface FileRoutesById {
   '/_authenticated/atualizacao': typeof AuthenticatedAtualizacaoRoute
   '/_authenticated/backup': typeof AuthenticatedBackupRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRouteWithChildren
-  '/_authenticated/configuracoes/vps': typeof AuthenticatedConfiguracoesVpsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/debug': typeof AuthenticatedDebugRoute
   '/_authenticated/email-inbox': typeof AuthenticatedEmailInboxRoute
@@ -478,6 +477,8 @@ export interface FileRoutesById {
   '/_authenticated/sem-link-1doc': typeof AuthenticatedSemLink1docRoute
   '/_authenticated/tarefas': typeof AuthenticatedTarefasRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
+  '/api/vps-stats': typeof ApiVpsStatsRoute
+  '/_authenticated/configuracoes/vps': typeof AuthenticatedConfiguracoesVpsRoute
   '/api/public/check-protocolos': typeof ApiPublicCheckProtocolosRoute
   '/api/public/email-sync': typeof ApiPublicEmailSyncRoute
   '/api/public/gmail-sync': typeof ApiPublicGmailSyncRoute
@@ -490,13 +491,12 @@ export interface FileRoutesById {
   '/api/public/inbound-email/$token': typeof ApiPublicInboundEmailTokenRoute
   '/api/public/muse/atrasadas': typeof ApiPublicMuseAtrasadasRoute
   '/api/public/muse/conferir-atrasadas': typeof ApiPublicMuseConferirAtrasadasRoute
-  '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
-  '/api/public/muse/protocolo/$id': typeof ApiPublicMuseProtocoloIdRoute
-  '/api/public/muse/protocolo/$id/triar': typeof ApiPublicMuseProtocoloIdTriarRoute
   '/api/public/muse/protocolos': typeof ApiPublicMuseProtocolosRoute
   '/api/public/muse/resumo': typeof ApiPublicMuseResumoRoute
   '/api/public/muse/secretarias': typeof ApiPublicMuseSecretariasRoute
-  '/api/vps-stats': typeof ApiVpsStatsRoute
+  '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
+  '/api/public/muse/protocolo/$id': typeof ApiPublicMuseProtocoloIdRouteWithChildren
+  '/api/public/muse/protocolo/$id/triar': typeof ApiPublicMuseProtocoloIdTriarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -515,7 +515,6 @@ export interface FileRouteTypes {
     | '/atualizacao'
     | '/backup'
     | '/configuracoes'
-    | '/configuracoes/vps'
     | '/dashboard'
     | '/debug'
     | '/email-inbox'
@@ -533,6 +532,8 @@ export interface FileRouteTypes {
     | '/sem-link-1doc'
     | '/tarefas'
     | '/users'
+    | '/api/vps-stats'
+    | '/configuracoes/vps'
     | '/api/public/check-protocolos'
     | '/api/public/email-sync'
     | '/api/public/gmail-sync'
@@ -545,13 +546,12 @@ export interface FileRouteTypes {
     | '/api/public/inbound-email/$token'
     | '/api/public/muse/atrasadas'
     | '/api/public/muse/conferir-atrasadas'
-    | '/api/public/muse/jobs/$id'
-    | '/api/public/muse/protocolo/$id'
-    | '/api/public/muse/protocolo/$id/triar'
     | '/api/public/muse/protocolos'
     | '/api/public/muse/resumo'
     | '/api/public/muse/secretarias'
-    | '/api/vps-stats'
+    | '/api/public/muse/jobs/$id'
+    | '/api/public/muse/protocolo/$id'
+    | '/api/public/muse/protocolo/$id/triar'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -567,7 +567,6 @@ export interface FileRouteTypes {
     | '/atrasados'
     | '/atualizacao'
     | '/backup'
-    | '/configuracoes/vps'
     | '/dashboard'
     | '/debug'
     | '/email-inbox'
@@ -584,6 +583,8 @@ export interface FileRouteTypes {
     | '/sem-link-1doc'
     | '/tarefas'
     | '/users'
+    | '/api/vps-stats'
+    | '/configuracoes/vps'
     | '/api/public/check-protocolos'
     | '/api/public/email-sync'
     | '/api/public/gmail-sync'
@@ -596,13 +597,12 @@ export interface FileRouteTypes {
     | '/api/public/inbound-email/$token'
     | '/api/public/muse/atrasadas'
     | '/api/public/muse/conferir-atrasadas'
-    | '/api/public/muse/jobs/$id'
-    | '/api/public/muse/protocolo/$id'
-    | '/api/public/muse/protocolo/$id/triar'
     | '/api/public/muse/protocolos'
     | '/api/public/muse/resumo'
     | '/api/public/muse/secretarias'
-    | '/api/vps-stats'
+    | '/api/public/muse/jobs/$id'
+    | '/api/public/muse/protocolo/$id'
+    | '/api/public/muse/protocolo/$id/triar'
   id:
     | '__root__'
     | '/'
@@ -620,7 +620,6 @@ export interface FileRouteTypes {
     | '/_authenticated/atualizacao'
     | '/_authenticated/backup'
     | '/_authenticated/configuracoes'
-    | '/_authenticated/configuracoes/vps'
     | '/_authenticated/dashboard'
     | '/_authenticated/debug'
     | '/_authenticated/email-inbox'
@@ -638,6 +637,8 @@ export interface FileRouteTypes {
     | '/_authenticated/sem-link-1doc'
     | '/_authenticated/tarefas'
     | '/_authenticated/users'
+    | '/api/vps-stats'
+    | '/_authenticated/configuracoes/vps'
     | '/api/public/check-protocolos'
     | '/api/public/email-sync'
     | '/api/public/gmail-sync'
@@ -650,13 +651,12 @@ export interface FileRouteTypes {
     | '/api/public/inbound-email/$token'
     | '/api/public/muse/atrasadas'
     | '/api/public/muse/conferir-atrasadas'
-    | '/api/public/muse/jobs/$id'
-    | '/api/public/muse/protocolo/$id'
-    | '/api/public/muse/protocolo/$id/triar'
     | '/api/public/muse/protocolos'
     | '/api/public/muse/resumo'
     | '/api/public/muse/secretarias'
-    | '/api/vps-stats'
+    | '/api/public/muse/jobs/$id'
+    | '/api/public/muse/protocolo/$id'
+    | '/api/public/muse/protocolo/$id/triar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -669,6 +669,7 @@ export interface RootRouteChildren {
   InicioRoute: typeof InicioRoute
   OuvidoriaRoute: typeof OuvidoriaRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiVpsStatsRoute: typeof ApiVpsStatsRoute
   ApiPublicCheckProtocolosRoute: typeof ApiPublicCheckProtocolosRoute
   ApiPublicEmailSyncRoute: typeof ApiPublicEmailSyncRoute
   ApiPublicGmailSyncRoute: typeof ApiPublicGmailSyncRoute
@@ -676,13 +677,11 @@ export interface RootRouteChildren {
   ApiPublicInboundEmailTokenRoute: typeof ApiPublicInboundEmailTokenRoute
   ApiPublicMuseAtrasadasRoute: typeof ApiPublicMuseAtrasadasRoute
   ApiPublicMuseConferirAtrasadasRoute: typeof ApiPublicMuseConferirAtrasadasRoute
-  ApiPublicMuseJobsIdRoute: typeof ApiPublicMuseJobsIdRoute
-  ApiPublicMuseProtocoloIdRoute: typeof ApiPublicMuseProtocoloIdRoute
-  ApiPublicMuseProtocoloIdTriarRoute: typeof ApiPublicMuseProtocoloIdTriarRoute
   ApiPublicMuseProtocolosRoute: typeof ApiPublicMuseProtocolosRoute
   ApiPublicMuseResumoRoute: typeof ApiPublicMuseResumoRoute
   ApiPublicMuseSecretariasRoute: typeof ApiPublicMuseSecretariasRoute
-  ApiVpsStatsRoute: typeof ApiVpsStatsRoute
+  ApiPublicMuseJobsIdRoute: typeof ApiPublicMuseJobsIdRoute
+  ApiPublicMuseProtocoloIdRoute: typeof ApiPublicMuseProtocoloIdRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -791,13 +790,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/configuracoes'
       preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/configuracoes/vps': {
-      id: '/_authenticated/configuracoes/vps'
-      path: '/vps'
-      fullPath: '/configuracoes/vps'
-      preLoaderRoute: typeof AuthenticatedConfiguracoesVpsRouteImport
-      parentRoute: typeof AuthenticatedConfiguracoesRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
@@ -918,11 +910,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/vps-stats': {
+      id: '/api/vps-stats'
+      path: '/api/vps-stats'
+      fullPath: '/api/vps-stats'
+      preLoaderRoute: typeof ApiVpsStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/configuracoes/': {
       id: '/_authenticated/configuracoes/'
       path: '/'
       fullPath: '/configuracoes/'
       preLoaderRoute: typeof AuthenticatedConfiguracoesIndexRouteImport
+      parentRoute: typeof AuthenticatedConfiguracoesRoute
+    }
+    '/_authenticated/configuracoes/vps': {
+      id: '/_authenticated/configuracoes/vps'
+      path: '/vps'
+      fullPath: '/configuracoes/vps'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesVpsRouteImport
       parentRoute: typeof AuthenticatedConfiguracoesRoute
     }
     '/_authenticated/protocolos-antigos/': {
@@ -1002,27 +1008,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMuseConferirAtrasadasRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/muse/jobs/$id': {
-      id: '/api/public/muse/jobs/$id'
-      path: '/api/public/muse/jobs/$id'
-      fullPath: '/api/public/muse/jobs/$id'
-      preLoaderRoute: typeof ApiPublicMuseJobsIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/muse/protocolo/$id': {
-      id: '/api/public/muse/protocolo/$id'
-      path: '/api/public/muse/protocolo/$id'
-      fullPath: '/api/public/muse/protocolo/$id'
-      preLoaderRoute: typeof ApiPublicMuseProtocoloIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/muse/protocolo/$id/triar': {
-      id: '/api/public/muse/protocolo/$id/triar'
-      path: '/api/public/muse/protocolo/$id/triar'
-      fullPath: '/api/public/muse/protocolo/$id/triar'
-      preLoaderRoute: typeof ApiPublicMuseProtocoloIdTriarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/muse/protocolos': {
       id: '/api/public/muse/protocolos'
       path: '/api/public/muse/protocolos'
@@ -1044,25 +1029,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMuseSecretariasRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/vps-stats': {
-      id: '/api/vps-stats'
-      path: '/api/vps-stats'
-      fullPath: '/api/vps-stats'
-      preLoaderRoute: typeof ApiVpsStatsRouteImport
+    '/api/public/muse/jobs/$id': {
+      id: '/api/public/muse/jobs/$id'
+      path: '/api/public/muse/jobs/$id'
+      fullPath: '/api/public/muse/jobs/$id'
+      preLoaderRoute: typeof ApiPublicMuseJobsIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/public/muse/protocolo/$id': {
+      id: '/api/public/muse/protocolo/$id'
+      path: '/api/public/muse/protocolo/$id'
+      fullPath: '/api/public/muse/protocolo/$id'
+      preLoaderRoute: typeof ApiPublicMuseProtocoloIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/muse/protocolo/$id/triar': {
+      id: '/api/public/muse/protocolo/$id/triar'
+      path: '/triar'
+      fullPath: '/api/public/muse/protocolo/$id/triar'
+      preLoaderRoute: typeof ApiPublicMuseProtocoloIdTriarRouteImport
+      parentRoute: typeof ApiPublicMuseProtocoloIdRoute
     }
   }
 }
 
 interface AuthenticatedConfiguracoesRouteChildren {
-  AuthenticatedConfiguracoesIndexRoute: typeof AuthenticatedConfiguracoesIndexRoute
   AuthenticatedConfiguracoesVpsRoute: typeof AuthenticatedConfiguracoesVpsRoute
+  AuthenticatedConfiguracoesIndexRoute: typeof AuthenticatedConfiguracoesIndexRoute
 }
 
 const AuthenticatedConfiguracoesRouteChildren: AuthenticatedConfiguracoesRouteChildren =
   {
-    AuthenticatedConfiguracoesIndexRoute: AuthenticatedConfiguracoesIndexRoute,
     AuthenticatedConfiguracoesVpsRoute: AuthenticatedConfiguracoesVpsRoute,
+    AuthenticatedConfiguracoesIndexRoute: AuthenticatedConfiguracoesIndexRoute,
   }
 
 const AuthenticatedConfiguracoesRouteWithChildren =
@@ -1148,6 +1147,20 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ApiPublicMuseProtocoloIdRouteChildren {
+  ApiPublicMuseProtocoloIdTriarRoute: typeof ApiPublicMuseProtocoloIdTriarRoute
+}
+
+const ApiPublicMuseProtocoloIdRouteChildren: ApiPublicMuseProtocoloIdRouteChildren =
+  {
+    ApiPublicMuseProtocoloIdTriarRoute: ApiPublicMuseProtocoloIdTriarRoute,
+  }
+
+const ApiPublicMuseProtocoloIdRouteWithChildren =
+  ApiPublicMuseProtocoloIdRoute._addFileChildren(
+    ApiPublicMuseProtocoloIdRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -1158,6 +1171,7 @@ const rootRouteChildren: RootRouteChildren = {
   InicioRoute: InicioRoute,
   OuvidoriaRoute: OuvidoriaRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiVpsStatsRoute: ApiVpsStatsRoute,
   ApiPublicCheckProtocolosRoute: ApiPublicCheckProtocolosRoute,
   ApiPublicEmailSyncRoute: ApiPublicEmailSyncRoute,
   ApiPublicGmailSyncRoute: ApiPublicGmailSyncRoute,
@@ -1165,13 +1179,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicInboundEmailTokenRoute: ApiPublicInboundEmailTokenRoute,
   ApiPublicMuseAtrasadasRoute: ApiPublicMuseAtrasadasRoute,
   ApiPublicMuseConferirAtrasadasRoute: ApiPublicMuseConferirAtrasadasRoute,
-  ApiPublicMuseJobsIdRoute: ApiPublicMuseJobsIdRoute,
-  ApiPublicMuseProtocoloIdRoute: ApiPublicMuseProtocoloIdRoute,
-  ApiPublicMuseProtocoloIdTriarRoute: ApiPublicMuseProtocoloIdTriarRoute,
   ApiPublicMuseProtocolosRoute: ApiPublicMuseProtocolosRoute,
   ApiPublicMuseResumoRoute: ApiPublicMuseResumoRoute,
   ApiPublicMuseSecretariasRoute: ApiPublicMuseSecretariasRoute,
-  ApiVpsStatsRoute: ApiVpsStatsRoute,
+  ApiPublicMuseJobsIdRoute: ApiPublicMuseJobsIdRoute,
+  ApiPublicMuseProtocoloIdRoute: ApiPublicMuseProtocoloIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
@@ -1186,4 +1198,3 @@ declare module '@tanstack/react-start' {
     config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }
-

@@ -6,7 +6,7 @@ import {
   serializarPosicao,
 } from "./ouvidorizinho-posicao";
 
-describe("posição do widget Ouvidorizinho", () => {
+describe("posição do widget Ouvidorzinho", () => {
   it("posição padrão fica no canto inferior direito", () => {
     const p = posicaoPadrao(1280, 800);
     expect(p.x).toBe(1280 - 72 - 24);

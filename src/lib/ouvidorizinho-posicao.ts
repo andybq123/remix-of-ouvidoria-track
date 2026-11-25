@@ -1,5 +1,5 @@
 /**
- * Posição do widget flutuante do Ouvidorizinho — funções puras.
+ * Posição do widget flutuante do Ouvidorzinho — funções puras.
  *
  * A posição é o canto superior-esquerdo do botão do mascote, em pixels
  * da viewport, e fica guardada em localStorage. Tudo aqui é testável
@@ -8,7 +8,7 @@
 
 export type PosicaoWidget = { x: number; y: number };
 
-export const CHAVE_POSICAO_OUVIDORIZINHO = "ouvidorizinho-posicao-v1";
+export const CHAVE_POSICAO_OUVIDORZINHO = "ouvidorizinho-posicao-v1";
 export const TAMANHO_MASCOTE = 72;
 export const MARGEM_WIDGET = 12;
 

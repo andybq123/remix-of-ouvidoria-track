@@ -1,7 +1,7 @@
 /**
- * Chat do Ouvidorizinho — intenção e resposta determinística.
+ * Chat do Ouvidorzinho — intenção e resposta determinística.
  *
- * O Ouvidorizinho é o assistente do OuviDesk movido pelo Muse: ele é o
+ * O Ouvidorzinho é o assistente do OuviDesk movido pelo Muse: ele é o
  * "cérebro" do sistema para perguntas e navegação, mas nunca escreve
  * direto em protocolos nem conclui nada por conta própria. Tudo aqui é
  * puro (sem banco, sem IA): a pergunta vira uma intenção, e a resposta
@@ -119,7 +119,7 @@ export function extrairNumeroProtocolo(pergunta: string): string | null {
 }
 
 /**
- * Destinos que o Ouvidorizinho pode abrir, por palavra-chave.
+ * Destinos que o Ouvidorzinho pode abrir, por palavra-chave.
  * A rota é um caminho interno do OuviDesk, nunca URL externa.
  */
 export const DESTINOS_NAVEGACAO = [
@@ -131,7 +131,7 @@ export const DESTINOS_NAVEGACAO = [
     rota: "/ia-config",
     rotulo: "Configurações > IA",
   },
-  { chaves: ["assistente", "muse", "ouvidorizinho"], rota: "/muse", rotulo: "Ouvidorizinho" },
+  { chaves: ["assistente", "muse", "ouvidorzinho"], rota: "/muse", rotulo: "Ouvidorzinho" },
   { chaves: ["protocolo"], rota: "/protocolos", rotulo: "Protocolos" },
   { chaves: ["relatorio"], rota: "/relatorios", rotulo: "Relatórios" },
   { chaves: ["triagem", "tarefa"], rota: "/tarefas", rotulo: "Triagem" },
@@ -311,16 +311,6 @@ export function respostaDeterministica(intencao: IntencaoChat, r: ResumoChat): s
   }
 }
 
-/** Lista curta de capacidades, exibida no cabeçalho do chat. */
-export const CAPACIDADES_OUVIDORIZINHO = [
-  "Resumo operacional e atrasadas",
-  "Buscar protocolo por número",
-  "Listar por secretaria e por status",
-  "Vencendo esta semana",
-  "Última conferência no 1Doc",
-  "Abrir a tela certa (Atrasados, Agente 1Doc, Dashboard…)",
-] as const;
-
-/** O que o Ouvidorizinho não faz — exibido no cabeçalho do chat. */
-export const LIMITES_OUVIDORIZINHO =
+/** O que o Ouvidorzinho não faz — exibido no rodapé do chat. */
+export const LIMITES_OUVIDORZINHO =
   "Não concluo nem edito protocolos diretamente e não abro a página do 1Doc: conferências no 1Doc só são enfileiradas (admin, com confirmação) e executadas pelo agente do 1Doc na VPS.";

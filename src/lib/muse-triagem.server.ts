@@ -18,10 +18,10 @@ import type { MuseTriarProtocoloBody } from "@/lib/muse-api.server";
  * O fluxo do Muse é em dois passos, para a UI mostrar o estado:
  * 1. iniciarTriagemMuse — reserva o protocolo (trava de 10 min, mesmo
  *    TTL do painel); a lista e o detalhe passam a mostrar
- *    "Triando com o Ouvidorizinho".
+ *    "Triando com o Ouvidorzinho".
  * 2. concluirTriagemMuse — aplica secretaria/local/descrição (e
  *    endereço quando houver) e limpa a triagem; o detalhe mostra o
- *    card "Triado pelo Ouvidorizinho" e o Histórico registra o autor.
+ *    card "Triado pelo Ouvidorzinho" e o Histórico registra o autor.
  * cancelarTriagemMuse libera a reserva quando o Muse desiste.
  */
 

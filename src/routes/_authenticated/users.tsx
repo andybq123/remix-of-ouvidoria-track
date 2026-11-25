@@ -13,8 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
-  listarUsuarios, criarUsuario, atualizarUsuario, removerUsuario,
+  listarUsuarios, criarUsuario, atualizarUsuario, removerUsuario, definirOuvidorzinhoUsuario,
 } from "@/lib/users.functions";
+import { Switch } from "@/components/ui/switch";
 import { useIsUserOnline } from "@/hooks/use-online-users";
 import { supabase } from "@/integrations/supabase/client";
 import { PasswordStrengthIndicator } from "@/components/password-strength";
@@ -60,6 +61,7 @@ function UsersPage() {
   const criar = useServerFn(criarUsuario);
   const atualizar = useServerFn(atualizarUsuario);
   const remover = useServerFn(removerUsuario);
+  const definirOuvidorzinho = useServerFn(definirOuvidorzinhoUsuario);
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["allowed-users"],
@@ -68,6 +70,17 @@ function UsersPage() {
   const { data: secretarias = [] } = useSecretarias();
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["allowed-users"] });
+
+  const mOuvidorzinho = useMutation({
+    mutationFn: ({ id, habilitado }: { id: string; habilitado: boolean }) =>
+      definirOuvidorzinho({ data: { id, habilitado } }),
+    onSuccess: (_d, v) => {
+      toast.success(v.habilitado ? "Ouvidorzinho habilitado para o usuário" : "Ouvidorzinho desabilitado para o usuário");
+      refresh();
+      void qc.invalidateQueries({ queryKey: ["ouvidorzinho-habilitado"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro"),
+  });
 
   const mDel = useMutation({
     mutationFn: (id: string) => remover({ data: { id } }),
@@ -113,6 +126,8 @@ function UsersPage() {
             secretarias={secretarias}
             onEdit={async (v) => { await atualizar({ data: { id: u.id, ...v } as any }); toast.success("Usuário atualizado"); refresh(); }}
             onDelete={() => { if (confirm(`Remover ${u.email}?`)) mDel.mutate(u.id); }}
+            onToggleOuvidorzinho={(habilitado: boolean) => mOuvidorzinho.mutate({ id: u.id, habilitado })}
+            toggleOuvidorzinhoPending={mOuvidorzinho.isPending}
           />
         ))}
       </div>
@@ -120,8 +135,9 @@ function UsersPage() {
   );
 }
 
-function UserCard({ u, secretarias, onEdit, onDelete }: { u: any; secretarias: Secretaria[]; onEdit: (v: any) => Promise<void>; onDelete: () => void }) {
+function UserCard({ u, secretarias, onEdit, onDelete, onToggleOuvidorzinho, toggleOuvidorzinhoPending }: { u: any; secretarias: Secretaria[]; onEdit: (v: any) => Promise<void>; onDelete: () => void; onToggleOuvidorzinho: (habilitado: boolean) => void; toggleOuvidorzinhoPending: boolean }) {
   const online = useIsUserOnline(u.id);
+  const ouvidorzinhoHabilitado = u.ouvidorzinho_habilitado !== false;
   return (
     <Card>
       <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
@@ -151,6 +167,9 @@ function UserCard({ u, secretarias, onEdit, onDelete }: { u: any; secretarias: S
                   {u.registered
                     ? <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30" variant="outline">Ativo</Badge>
                     : <Badge variant="secondary">Aguardando 1º login</Badge>}
+                  {!ouvidorzinhoHabilitado && (
+                    <Badge variant="secondary">Ouvidorzinho desligado</Badge>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{u.email}</p>
                 {u.role !== "admin" && (
@@ -167,6 +186,18 @@ function UserCard({ u, secretarias, onEdit, onDelete }: { u: any; secretarias: S
                 )}
               </div>
               <div className="flex items-center gap-2">
+                <label
+                  className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer"
+                  title="Quando desligado, o mascote, o chat e os botões do Ouvidorzinho somem para este usuário."
+                >
+                  <Switch
+                    checked={ouvidorzinhoHabilitado}
+                    onCheckedChange={onToggleOuvidorzinho}
+                    disabled={toggleOuvidorzinhoPending}
+                    aria-label="Ouvidorzinho habilitado para este usuário"
+                  />
+                  Ouvidorzinho
+                </label>
                 <UserDialog
                   title="Editar usuário"
                   initial={u}
@@ -190,7 +221,7 @@ function UserDialog({
   trigger: React.ReactNode;
   initial?: any;
   secretarias: Secretaria[];
-  onSubmit: (v: { email?: string; nome?: string; role: "admin" | "user"; senha?: string; novaSenha?: string; secretaria_ids?: string[]; pode_editar?: boolean }) => Promise<void>;
+  onSubmit: (v: { email?: string; nome?: string; role: "admin" | "user"; senha?: string; novaSenha?: string; secretaria_ids?: string[]; pode_editar?: boolean; ouvidorzinho_habilitado?: boolean }) => Promise<void>;
 }) {
   const isEdit = !!initial;
   const [open, setOpen] = useState(false);
@@ -200,6 +231,7 @@ function UserDialog({
   const [senha, setSenha] = useState("");
   const [areas, setAreas] = useState<string[]>(initial?.secretaria_ids ?? []);
   const [podeEditar, setPodeEditar] = useState<boolean>(!!initial?.pode_editar);
+  const [ouvidorzinho, setOuvidorzinho] = useState<boolean>(initial?.ouvidorzinho_habilitado !== false);
   const [loading, setLoading] = useState(false);
 
   function toggleArea(id: string) {
@@ -214,9 +246,9 @@ function UserDialog({
     setLoading(true);
     try {
       if (isEdit) {
-        await onSubmit({ nome, role, novaSenha: senha || undefined, secretaria_ids: areas, pode_editar: podeEditar });
+        await onSubmit({ nome, role, novaSenha: senha || undefined, secretaria_ids: areas, pode_editar: podeEditar, ouvidorzinho_habilitado: ouvidorzinho });
       } else {
-        await onSubmit({ email, nome, role, senha: senha || undefined, secretaria_ids: areas, pode_editar: podeEditar });
+        await onSubmit({ email, nome, role, senha: senha || undefined, secretaria_ids: areas, pode_editar: podeEditar, ouvidorzinho_habilitado: ouvidorzinho });
       }
       setOpen(false);
       setSenha("");
@@ -251,6 +283,16 @@ function UserDialog({
               </SelectContent>
             </Select>
           </div>
+          <label className="flex items-start gap-2 rounded-md border p-2 text-sm cursor-pointer">
+            <input type="checkbox" className="h-4 w-4 mt-0.5" checked={ouvidorzinho}
+              onChange={e => setOuvidorzinho(e.target.checked)} />
+            <span>
+              <strong>Pode usar o Ouvidorzinho</strong>
+              <span className="block text-xs text-muted-foreground">
+                Desmarcado: o mascote, o chat e os botões do Ouvidorzinho somem para este usuário.
+              </span>
+            </span>
+          </label>
           {role === "user" && (
             <label className="flex items-start gap-2 rounded-md border p-2 text-sm cursor-pointer">
               <input type="checkbox" className="h-4 w-4 mt-0.5" checked={podeEditar}

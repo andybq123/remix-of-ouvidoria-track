@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useIsAdmin } from "@/hooks/use-is-admin";
+import { supabase } from "@/integrations/supabase/client";
 import {
   MusePausarButton,
   MuseStatusCard,
@@ -12,14 +13,19 @@ import {
 } from "@/components/muse-status-card";
 
 export const Route = createFileRoute("/_authenticated/muse")({
+  beforeLoad: async () => {
+    // Ouvidorzinho desabilitado para o usuário (aba Usuários): o painel não abre.
+    const { data } = await supabase.rpc("posso_usar_ouvidorzinho");
+    if (data === false) throw redirect({ to: "/dashboard" });
+  },
   head: () => ({
     meta: [
-      { title: "Ouvidorizinho — OuviDesk" },
+      { title: "Ouvidorzinho — OuviDesk" },
       {
         name: "description",
-        content: "Ouvidorizinho, movido pelo Muse: status, conferências de ouvidorias atrasadas no 1Doc e pausa.",
+        content: "Ouvidorzinho, movido pelo Muse: status, conferências de ouvidorias atrasadas no 1Doc e pausa.",
       },
-      { property: "og:title", content: "Ouvidorizinho — OuviDesk" },
+      { property: "og:title", content: "Ouvidorzinho — OuviDesk" },
       {
         property: "og:description",
         content: "Integração Muse: conferências de atrasadas no 1Doc.",
@@ -49,10 +55,10 @@ function MusePage() {
     <div className="space-y-6 max-w-4xl">
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Sparkles className="h-6 w-6" /> Ouvidorizinho
+          <Sparkles className="h-6 w-6" /> Ouvidorzinho
         </h1>
         <p className="text-sm text-muted-foreground">
-          O Ouvidorizinho é o assistente do OuviDesk, movido pelo Muse, um agente externo: ele chama a API do OuviDesk para listar as ouvidorias
+          O Ouvidorzinho é o assistente do OuviDesk, movido pelo Muse, um agente externo: ele chama a API do OuviDesk para listar as ouvidorias
           atrasadas, pedir a conferência no 1Doc e acompanhar o resultado. A conferência é pedida e
           acompanhada pelo Assistente; a leitura da página do 1Doc e a baixa continuam sendo feitas
           pelo agente do 1Doc na VPS, com auditoria e reversão.
@@ -91,7 +97,7 @@ function MusePage() {
             500; com ele errado, 401.
           </p>
           <Button size="sm" asChild>
-            <Link to="/muse-chat">Perguntar ao Ouvidorizinho</Link>
+            <Link to="/muse-chat">Perguntar ao Ouvidorzinho</Link>
           </Button>
           {data && <MusePausarButton pausado={data.pausado} />}
         </CardContent>

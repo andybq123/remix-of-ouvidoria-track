@@ -22,9 +22,9 @@ import {
 } from "@/lib/muse-chat";
 
 /**
- * Chat do Ouvidorizinho — perguntas sobre os dados do OuviDesk.
+ * Chat do Ouvidorzinho — perguntas sobre os dados do OuviDesk.
  *
- * O Ouvidorizinho é o assistente do OuviDesk movido pelo Muse. Ele pede,
+ * O Ouvidorzinho é o assistente do OuviDesk movido pelo Muse. Ele pede,
  * acompanha e reporta a conferência no 1Doc: quando o usuário pede para
  * conferir uma ouvidoria (ou as atrasadas), a verificação é enfileirada
  * e o agente do 1Doc na VPS — o único componente que pode abrir a página
@@ -33,7 +33,7 @@ import {
  * fluxo auditado existente. O chat nunca conclui um protocolo
  * diretamente nem abre a página do 1Doc por conta própria.
  *
- * Além das perguntas, o Ouvidorizinho navega: quando o usuário pede para
+ * Além das perguntas, o Ouvidorzinho navega: quando o usuário pede para
  * abrir uma tela (Atrasados, Agente 1Doc, Dashboard, Configurações > IA…),
  * o chat devolve a ação de navegação e a UI mostra o botão para abrir.
  * Nenhuma ação que muda estado é feita pelo chat além de enfileirar a
@@ -116,6 +116,13 @@ export const perguntarAssistenteMuse = createServerFn({ method: "POST" })
     const intencao = classificarIntencao(pergunta);
     const agora = new Date();
     const admin = await ehAdmin(context);
+
+    // Ouvidorzinho desabilitado para o usuário (aba Usuários): o chat não
+    // responde. Só o `false` estrito bloqueia (fail-open sem a função).
+    const { data: podeUsar } = await context.supabase.rpc("posso_usar_ouvidorzinho");
+    if (podeUsar === false) {
+      throw new Error("O Ouvidorzinho está desabilitado para o seu usuário.");
+    }
 
     const protocolos = await fetchAllPaginated<ProtocoloChatRow>((from, to) =>
       context.supabase
@@ -315,7 +322,7 @@ export const perguntarAssistenteMuse = createServerFn({ method: "POST" })
           {
             role: "system",
             content:
-              "Você é o Ouvidorizinho, o assistente do OuviDesk movido pelo Muse, sistema de gestão de ouvidorias da Prefeitura de Brusque. " +
+              "Você é o Ouvidorzinho, o assistente do OuviDesk movido pelo Muse, sistema de gestão de ouvidorias da Prefeitura de Brusque. " +
               "Responda em português, de forma curta e direta, usando SOMENTE os dados fornecidos abaixo. " +
               "Nunca invente números, nomes ou prazos. Se a resposta não estiver nos dados, diga que não sabe. " +
               "Quando o usuário pedir para abrir uma tela, o campo navegacao traz o destino: confirme que vai abrir aquela tela. " +

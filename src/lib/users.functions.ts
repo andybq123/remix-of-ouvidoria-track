@@ -70,7 +70,7 @@ export const listarUsuarios = createServerFn({ method: "GET" })
 
 export const criarUsuario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { email: string; nome?: string; role: "admin" | "user"; senha?: string; secretaria_ids?: string[]; pode_editar?: boolean }) => d)
+  .inputValidator((d: { email: string; nome?: string; role: "admin" | "user"; senha?: string; secretaria_ids?: string[]; pode_editar?: boolean; ouvidorzinho_habilitado?: boolean }) => d)
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const email = data.email.trim().toLowerCase();
@@ -80,11 +80,11 @@ export const criarUsuario = createServerFn({ method: "POST" })
 
     const { error: errIns } = await supabaseAdmin
       .from("allowed_emails")
-      .insert({ email, nome: data.nome ?? null, role: data.role, pode_editar: data.role === "user" && !!data.pode_editar, created_by: context.userId });
+      .insert({ email, nome: data.nome ?? null, role: data.role, pode_editar: data.role === "user" && !!data.pode_editar, ouvidorzinho_habilitado: data.ouvidorzinho_habilitado ?? true, created_by: context.userId });
     if (errIns && !errIns.message.includes("duplicate")) throw new Error(errIns.message);
     if (errIns) {
       await supabaseAdmin.from("allowed_emails")
-        .update({ pode_editar: data.role === "user" && !!data.pode_editar }).eq("email", email);
+        .update({ pode_editar: data.role === "user" && !!data.pode_editar, ouvidorzinho_habilitado: data.ouvidorzinho_habilitado ?? true }).eq("email", email);
     }
 
     await sincronizarAreas(supabaseAdmin, email, data.role === "user" ? data.secretaria_ids : []);
@@ -126,7 +126,7 @@ export const criarUsuario = createServerFn({ method: "POST" })
 
 export const atualizarUsuario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { id: string; nome?: string; role: "admin" | "user"; novaSenha?: string; secretaria_ids?: string[]; pode_editar?: boolean }) => d)
+  .inputValidator((d: { id: string; nome?: string; role: "admin" | "user"; novaSenha?: string; secretaria_ids?: string[]; pode_editar?: boolean; ouvidorzinho_habilitado?: boolean }) => d)
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
     const { adminComAutor } = await import("@/lib/audit-admin.server");
@@ -138,7 +138,7 @@ export const atualizarUsuario = createServerFn({ method: "POST" })
 
     const { error: e2 } = await supabaseAdmin
       .from("allowed_emails")
-      .update({ nome: data.nome ?? null, role: data.role, pode_editar: data.role === "user" && !!data.pode_editar })
+      .update({ nome: data.nome ?? null, role: data.role, pode_editar: data.role === "user" && !!data.pode_editar, ...(data.ouvidorzinho_habilitado !== undefined ? { ouvidorzinho_habilitado: data.ouvidorzinho_habilitado } : {}) })
       .eq("id", data.id);
     if (e2) throw new Error(e2.message);
 
@@ -154,6 +154,26 @@ export const atualizarUsuario = createServerFn({ method: "POST" })
         await supabaseAdmin.auth.admin.updateUserById(u.id, { password: data.novaSenha });
       }
     }
+    return { ok: true };
+  });
+
+/**
+ * Liga/desliga o Ouvidorzinho para um usuário (botão rápido da aba
+ * Usuários). Altera só o flag; admin-only, como as demais ações.
+ */
+export const definirOuvidorzinhoUsuario = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string; habilitado: boolean }) => d)
+  .handler(async ({ context, data }) => {
+    await assertAdmin(context);
+    const { adminComAutor } = await import("@/lib/audit-admin.server");
+    const supabaseAdmin = adminComAutor(context.userId);
+
+    const { error } = await supabaseAdmin
+      .from("allowed_emails")
+      .update({ ouvidorzinho_habilitado: data.habilitado })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 

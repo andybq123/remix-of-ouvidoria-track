@@ -150,7 +150,7 @@ function MuseTokenCard({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <KeyRound className="h-5 w-5" /> Ouvidorizinho
+          <KeyRound className="h-5 w-5" /> Ouvidorzinho
           {info.hasKey ? (
             <Badge variant="secondary">Token cadastrado {info.apiKeyMasked}</Badge>
           ) : info.origem === "env" ? (

@@ -9,7 +9,7 @@ import {
   INTERVALO_TELEFONE_MIN_MS,
 } from "./ouvidorizinho-animacao";
 
-describe("animação do Ouvidorizinho", () => {
+describe("animação do Ouvidorzinho", () => {
   it("cada estado tem um vídeo próprio", () => {
     expect(VIDEO_POR_ESTADO.idle).toBe("/ouvidorizinho-idle.mp4");
     expect(VIDEO_POR_ESTADO.telefone).toBe("/ouvidorizinho-telefone.mp4");

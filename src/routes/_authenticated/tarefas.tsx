@@ -18,6 +18,7 @@ import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
 import { formatDate, PRAZOS, categoriaLabel, categoriaBadgeClass, categoriaDoProtocolo, resumoPrazoMapa, type TipoProtocolo } from "@/lib/prazo";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
 import { mapDepartmentOf } from "@/lib/map-departments";
+import { useOuvidorzinhoHabilitado } from "@/hooks/use-ouvidorzinho-habilitado";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { MapPointPicker } from "@/components/map-point-picker";
 import { OnedocAgentButton } from "@/components/onedoc-agent-button";
@@ -44,7 +45,7 @@ function isLockAtivo(p: any) {
   return Date.now() - new Date(p.triagem_lock_em).getTime() < LOCK_TTL_MS;
 }
 
-/** Trava do Ouvidorizinho: sem usuário (lock_por NULL), marcada pela origem (migração 0037). */
+/** Trava do Ouvidorzinho: sem usuário (lock_por NULL), marcada pela origem (migração 0037). */
 function isLockMuseAtivo(p: any) {
   if ((p as any).triagem_origem !== "muse" || !p.triagem_lock_em) return false;
   return Date.now() - new Date(p.triagem_lock_em).getTime() < LOCK_TTL_MS;
@@ -290,6 +291,9 @@ function TarefasPage() {
 function TarefasConteudo() {
   const isAdminTriagem = useIsAdmin();
   const qc = useQueryClient();
+  // Ouvidorzinho desabilitado para o usuário: o selo "Triando com o
+  // Ouvidorzinho" some da lista (a trava em si continua valendo).
+  const ouvidorzinhoHabilitado = useOuvidorzinhoHabilitado();
   const [detail, setDetail] = useState<any | null>(null);
   const [modoAtrasadas, setModoAtrasadas] = useState(false);
   const [busca, setBusca] = useState("");
@@ -532,10 +536,10 @@ function TarefasConteudo() {
                         {p.triagem_lock_por === meId ? "você está triando" : `em triagem por ${p.lock_profile?.nome ?? "outro usuário"}`}
                       </Badge>
                     )}
-                    {isLockMuseAtivo(p) && (
+                    {ouvidorzinhoHabilitado && isLockMuseAtivo(p) && (
                       <Badge variant="outline" className="text-[10px] border-violet-500/50 text-violet-700 dark:text-violet-300 bg-violet-500/10 gap-1">
                         <Bot className="h-3 w-3" />
-                        Triando com o Ouvidorizinho
+                        Triando com o Ouvidorzinho
                       </Badge>
                     )}
                   </div>

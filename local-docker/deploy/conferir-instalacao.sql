@@ -15,7 +15,7 @@ BEGIN
   END LOOP;
 
   FOREACH f IN ARRAY ARRAY[
-    'has_role(uuid,app_role)','posso_editar()','pode_triar()','area_permitida(uuid,uuid)',
+    'has_role(uuid,app_role)','posso_editar()','posso_usar_ouvidorzinho()','boas_vindas_visto()','marcar_boas_vindas_visto()','pode_triar()','area_permitida(uuid,uuid)',
     'registrar_alteracao()','autor_registro_sistema()','aplicar_conferencia_1doc_job(uuid,uuid,jsonb,jsonb)','dashboard_protocolos()','handle_new_user()','limpar_vinculos_usuarios_inexistentes()',
     'backup_importar(text,jsonb)','backup_importar_usuarios(jsonb)','licenca_bloqueada()','bloquear_se_licenca()',
     'listar_protocolos_pagina(jsonb)','meses_protocolos_listagem()','normalizar_busca_protocolo(text)',
