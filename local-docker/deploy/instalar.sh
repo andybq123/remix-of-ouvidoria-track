@@ -243,6 +243,7 @@ else
 fi
 ok "Sistema no ar em modo produção"
 instalar_timer_licenca
+instalar_coletor_vps_stats
 if bash ./agente-atualizacao/instalar.sh >>"$LOG" 2>&1; then
   ok "Botão de atualização do sistema ativado"
 else
@@ -295,3 +296,4 @@ echo "   docker compose logs -f app          ver logs do sistema"
 echo "   docker compose logs -f coletor-email  ver coleta de e-mails"
 linha
 echo
+
