@@ -69,20 +69,26 @@ export function calcularPrazo(opts: {
   return { prazoFinal, diasTotais };
 }
 
-export function diasRestantes(prazoFinal: Date): number {
-  return differenceInCalendarDays(prazoFinal, new Date());
+export function diasRestantes(
+  prazoFinal: Date,
+  refDate: Date = new Date(),
+): number {
+  return differenceInCalendarDays(prazoFinal, refDate);
 }
 
 export type Situacao = "vencido" | "critico" | "atencao" | "no_prazo" | "concluido";
 
-export function situacaoProtocolo(p: {
-  tipo: TipoProtocolo;
-  data_abertura: string;
-  prorrogado: boolean;
-  status: StatusProtocolo;
-}): { situacao: Situacao; dias: number; prazoFinal: Date } {
+export function situacaoProtocolo(
+  p: {
+    tipo: TipoProtocolo;
+    data_abertura: string;
+    prorrogado: boolean;
+    status: StatusProtocolo;
+  },
+  refDate: Date = new Date(),
+): { situacao: Situacao; dias: number; prazoFinal: Date } {
   const { prazoFinal } = calcularPrazo(p);
-  const dias = diasRestantes(prazoFinal);
+  const dias = diasRestantes(prazoFinal, refDate);
   if (p.status === "concluido") return { situacao: "concluido", dias, prazoFinal };
   if (dias < 0) return { situacao: "vencido", dias, prazoFinal };
   if (dias <= 3) return { situacao: "critico", dias, prazoFinal };
@@ -193,10 +199,13 @@ export type Sla = {
 };
 
 /** Cálculo único e canônico do SLA de um protocolo. */
-export function calcularSla(p: ProtocoloSlaInput): Sla {
+export function calcularSla(
+  p: ProtocoloSlaInput,
+  refDate: Date = new Date(),
+): Sla {
   const { prazoFinal, diasTotais } = calcularPrazo(p);
-  const dias = diasRestantes(prazoFinal);
-  const { situacao } = situacaoProtocolo(p);
+  const dias = diasRestantes(prazoFinal, refDate);
+  const { situacao } = situacaoProtocolo(p, refDate);
   const concluido = p.status === "concluido";
   const { prorrogacao } = PRAZOS[p.tipo];
   return {
