@@ -174,7 +174,10 @@ export function formatarBytes(bytes: number): string {
     valor /= 1024;
     unidade += 1;
   }
-  const texto = unidade === 0 ? String(Math.round(valor)) : valor.toFixed(1).replace(".", ",");
+  const texto =
+    unidade === 0
+      ? String(Math.round(valor))
+      : valor.toFixed(1).replace(".", ",").replace(/,0$/, "");
   return `${texto} ${UNIDADES_BYTES[unidade]}`;
 }
 
