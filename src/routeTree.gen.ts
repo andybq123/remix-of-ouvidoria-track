@@ -54,6 +54,7 @@ import { Route as ApiPublicMuseAtrasadasRouteImport } from './routes/api/public/
 import { Route as ApiPublicMuseConferirAtrasadasRouteImport } from './routes/api/public/muse/conferir-atrasadas'
 import { Route as ApiPublicMuseJobsIdRouteImport } from './routes/api/public/muse/jobs.$id'
 import { Route as ApiPublicMuseProtocoloIdRouteImport } from './routes/api/public/muse/protocolo.$id'
+import { Route as ApiPublicMuseProtocoloIdTriarRouteImport } from './routes/api/public/muse/protocolo.$id.triar'
 import { Route as ApiPublicMuseProtocolosRouteImport } from './routes/api/public/muse/protocolos'
 import { Route as ApiPublicMuseResumoRouteImport } from './routes/api/public/muse/resumo'
 import { Route as ApiPublicMuseSecretariasRouteImport } from './routes/api/public/muse/secretarias'
@@ -295,6 +296,12 @@ const ApiPublicMuseProtocoloIdRoute =
     path: '/api/public/muse/protocolo/$id',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMuseProtocoloIdTriarRoute =
+  ApiPublicMuseProtocoloIdTriarRouteImport.update({
+    id: '/api/public/muse/protocolo/$id/triar',
+    path: '/api/public/muse/protocolo/$id/triar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMuseProtocolosRoute = ApiPublicMuseProtocolosRouteImport.update({
   id: '/api/public/muse/protocolos',
   path: '/api/public/muse/protocolos',
@@ -357,6 +364,7 @@ export interface FileRoutesByFullPath {
   '/api/public/muse/conferir-atrasadas': typeof ApiPublicMuseConferirAtrasadasRoute
   '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
   '/api/public/muse/protocolo/$id': typeof ApiPublicMuseProtocoloIdRoute
+  '/api/public/muse/protocolo/$id/triar': typeof ApiPublicMuseProtocoloIdTriarRoute
   '/api/public/muse/protocolos': typeof ApiPublicMuseProtocolosRoute
   '/api/public/muse/resumo': typeof ApiPublicMuseResumoRoute
   '/api/public/muse/secretarias': typeof ApiPublicMuseSecretariasRoute
@@ -405,6 +413,7 @@ export interface FileRoutesByTo {
   '/api/public/muse/conferir-atrasadas': typeof ApiPublicMuseConferirAtrasadasRoute
   '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
   '/api/public/muse/protocolo/$id': typeof ApiPublicMuseProtocoloIdRoute
+  '/api/public/muse/protocolo/$id/triar': typeof ApiPublicMuseProtocoloIdTriarRoute
   '/api/public/muse/protocolos': typeof ApiPublicMuseProtocolosRoute
   '/api/public/muse/resumo': typeof ApiPublicMuseResumoRoute
   '/api/public/muse/secretarias': typeof ApiPublicMuseSecretariasRoute
@@ -456,6 +465,7 @@ export interface FileRoutesById {
   '/api/public/muse/conferir-atrasadas': typeof ApiPublicMuseConferirAtrasadasRoute
   '/api/public/muse/jobs/$id': typeof ApiPublicMuseJobsIdRoute
   '/api/public/muse/protocolo/$id': typeof ApiPublicMuseProtocoloIdRoute
+  '/api/public/muse/protocolo/$id/triar': typeof ApiPublicMuseProtocoloIdTriarRoute
   '/api/public/muse/protocolos': typeof ApiPublicMuseProtocolosRoute
   '/api/public/muse/resumo': typeof ApiPublicMuseResumoRoute
   '/api/public/muse/secretarias': typeof ApiPublicMuseSecretariasRoute
@@ -507,6 +517,7 @@ export interface FileRouteTypes {
     | '/api/public/muse/conferir-atrasadas'
     | '/api/public/muse/jobs/$id'
     | '/api/public/muse/protocolo/$id'
+    | '/api/public/muse/protocolo/$id/triar'
     | '/api/public/muse/protocolos'
     | '/api/public/muse/resumo'
     | '/api/public/muse/secretarias'
@@ -555,6 +566,7 @@ export interface FileRouteTypes {
     | '/api/public/muse/conferir-atrasadas'
     | '/api/public/muse/jobs/$id'
     | '/api/public/muse/protocolo/$id'
+    | '/api/public/muse/protocolo/$id/triar'
     | '/api/public/muse/protocolos'
     | '/api/public/muse/resumo'
     | '/api/public/muse/secretarias'
@@ -605,6 +617,7 @@ export interface FileRouteTypes {
     | '/api/public/muse/conferir-atrasadas'
     | '/api/public/muse/jobs/$id'
     | '/api/public/muse/protocolo/$id'
+    | '/api/public/muse/protocolo/$id/triar'
     | '/api/public/muse/protocolos'
     | '/api/public/muse/resumo'
     | '/api/public/muse/secretarias'
@@ -629,6 +642,7 @@ export interface RootRouteChildren {
   ApiPublicMuseConferirAtrasadasRoute: typeof ApiPublicMuseConferirAtrasadasRoute
   ApiPublicMuseJobsIdRoute: typeof ApiPublicMuseJobsIdRoute
   ApiPublicMuseProtocoloIdRoute: typeof ApiPublicMuseProtocoloIdRoute
+  ApiPublicMuseProtocoloIdTriarRoute: typeof ApiPublicMuseProtocoloIdTriarRoute
   ApiPublicMuseProtocolosRoute: typeof ApiPublicMuseProtocolosRoute
   ApiPublicMuseResumoRoute: typeof ApiPublicMuseResumoRoute
   ApiPublicMuseSecretariasRoute: typeof ApiPublicMuseSecretariasRoute
@@ -951,6 +965,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMuseProtocoloIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/muse/protocolo/$id/triar': {
+      id: '/api/public/muse/protocolo/$id/triar'
+      path: '/api/public/muse/protocolo/$id/triar'
+      fullPath: '/api/public/muse/protocolo/$id/triar'
+      preLoaderRoute: typeof ApiPublicMuseProtocoloIdTriarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/muse/protocolos': {
       id: '/api/public/muse/protocolos'
       path: '/api/public/muse/protocolos'
@@ -1072,6 +1093,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMuseConferirAtrasadasRoute: ApiPublicMuseConferirAtrasadasRoute,
   ApiPublicMuseJobsIdRoute: ApiPublicMuseJobsIdRoute,
   ApiPublicMuseProtocoloIdRoute: ApiPublicMuseProtocoloIdRoute,
+  ApiPublicMuseProtocoloIdTriarRoute: ApiPublicMuseProtocoloIdTriarRoute,
   ApiPublicMuseProtocolosRoute: ApiPublicMuseProtocolosRoute,
   ApiPublicMuseResumoRoute: ApiPublicMuseResumoRoute,
   ApiPublicMuseSecretariasRoute: ApiPublicMuseSecretariasRoute,

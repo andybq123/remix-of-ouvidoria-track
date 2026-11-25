@@ -121,6 +121,49 @@ export const museConferirBodySchema = z.object({
 export type MuseConferirBody = z.infer<typeof museConferirBodySchema>;
 
 /**
+ * Corpo do POST /protocolo/{id}/triar (.strict(): qualquer outro campo —
+ * status, data_conclusao, tipo, numero, onedoc_* — é rejeitado com 400).
+ *
+ * `acao` é opcional e o padrão é "concluir", então o uso principal é
+ * POST /triar { secretaria_id, local_id, descricao } — igual ao
+ * "Concluir triagem" do painel. "iniciar" reserva o protocolo para o
+ * Muse (a UI mostra "Triando com o Ouvidorizinho") e "cancelar" libera
+ * a reserva. Em "concluir", secretaria_id e descricao (mín. 5
+ * caracteres, como no painel) são obrigatórios; endereco/latitude/
+ * longitude seguem os mesmos limites do PATCH (endereco 1–300).
+ */
+export const museTriarProtocoloBodySchema = z
+  .object({
+    acao: z.enum(["iniciar", "concluir", "cancelar"]).optional(),
+    secretaria_id: z.string().uuid().optional(),
+    local_id: z.string().uuid().nullable().optional(),
+    descricao: z.string().trim().min(5).max(20000).optional(),
+    endereco: z.string().trim().min(1).max(300).nullable().optional(),
+    latitude: z.number().min(-90).max(90).nullable().optional(),
+    longitude: z.number().min(-180).max(180).nullable().optional(),
+  })
+  .strict()
+  .superRefine((b, ctx) => {
+    if ((b.acao ?? "concluir") !== "concluir") return;
+    if (!b.secretaria_id) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["secretaria_id"],
+        message: "Defina a secretaria antes de concluir a triagem.",
+      });
+    }
+    if (!b.descricao || b.descricao.trim().length < 5) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["descricao"],
+        message: "Informe uma descrição (breve relato) antes de concluir a triagem.",
+      });
+    }
+  });
+
+export type MuseTriarProtocoloBody = z.infer<typeof museTriarProtocoloBodySchema>;
+
+/**
  * Campos que o PATCH /protocolo/{id} pode alterar — só os que o painel
  * já deixa editar no detalhe do protocolo (protocolo-detail-dialog.tsx),
  * menos tudo que mexe em prazo, identidade ou conclusão: fora ficam
