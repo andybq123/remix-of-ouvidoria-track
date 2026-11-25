@@ -71,50 +71,58 @@ BEGIN
 END;
 $$;
 
--- registrar_alteracao com autor Muse em registro_sistema (corpo da 0019 + linha app.muse).
+-- registrar_alteracao: corpo da 0026 (0028 no deploy) / 0033, mais o autor
+-- "Muse" quando app.muse='on' (service_role). NÃO é o corpo da 0019: ele é
+-- anterior ao registro de autoria real (0026) e perde a delegação para
+-- autor_registro_sistema() — sem ela, a criação por e-mail vira
+-- "Sistema (automático)" em vez de "E-mail", a edição administrativa pelo
+-- servidor perde o dono da conta, a importação não gera registro e o lote
+-- do 1Doc perde o solicitante (tests/instalacao/registro-autoria.sql).
 CREATE OR REPLACE FUNCTION public.registrar_alteracao()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO public AS $$
 DECLARE
-  v_uid uuid := auth.uid();
-  v_nome text; v_email text := auth.jwt() ->> 'email';
+  v_uid uuid; v_nome text; v_email text;
   v_old jsonb; v_new jsonb; v_campos text[] := '{}'; k text;
   v_ant jsonb := '{}'::jsonb; v_nov jsonb := '{}'::jsonb;
   v_id text; v_resumo text;
-  ignorar text[] := ARRAY['updated_at','triagem_lock_por','triagem_lock_em'];
+  ignorar text[] := ARRAY['updated_at','triagem_lock_por','triagem_lock_em','imap_password'];
 BEGIN
-  IF current_setting('app.importando', true) = 'on' THEN RETURN NULL; END IF;
+  IF TG_TABLE_NAME='licenca_estado' THEN RETURN NULL; END IF;
   IF TG_OP <> 'INSERT' THEN v_old := to_jsonb(OLD); END IF;
   IF TG_OP <> 'DELETE' THEN v_new := to_jsonb(NEW); END IF;
-
-  IF TG_OP = 'UPDATE' THEN
+  IF TG_TABLE_NAME='email_inbox_accounts' THEN
+    v_old := v_old-'imap_password'; v_new := v_new-'imap_password';
+  END IF;
+  IF TG_OP='UPDATE' THEN
     FOR k IN SELECT jsonb_object_keys(v_new) LOOP
-      IF NOT (k = ANY(ignorar)) AND (v_old -> k) IS DISTINCT FROM (v_new -> k) THEN
+      IF NOT (k=ANY(ignorar)) AND (v_old->k) IS DISTINCT FROM (v_new->k) THEN
         v_campos := v_campos || k;
-        v_ant := v_ant || jsonb_build_object(k, v_old -> k);
-        v_nov := v_nov || jsonb_build_object(k, v_new -> k);
+        v_ant := v_ant || jsonb_build_object(k,v_old->k);
+        v_nov := v_nov || jsonb_build_object(k,v_new->k);
       END IF;
     END LOOP;
-    IF cardinality(v_campos) = 0 THEN RETURN NULL; END IF;
-  ELSIF TG_OP = 'INSERT' THEN v_nov := v_new;
-  ELSE v_ant := v_old;
+    IF cardinality(v_campos)=0 THEN RETURN NULL; END IF;
+  ELSIF TG_OP='INSERT' THEN v_nov:=v_new;
+  ELSE v_ant:=v_old;
   END IF;
-
-  v_id := COALESCE(v_new ->> 'id', v_old ->> 'id');
-  v_resumo := COALESCE(v_new ->> 'numero', v_old ->> 'numero', v_new ->> 'nome', v_old ->> 'nome',
-                       v_new ->> 'email', v_old ->> 'email', v_new ->> 'role', v_old ->> 'role');
-
-  IF v_uid IS NOT NULL THEN SELECT nome INTO v_nome FROM public.profiles WHERE id = v_uid; END IF;
-  IF current_setting('app.agente_1doc', true) = 'on' THEN v_nome := 'Agente 1Doc';
-  ELSIF current_setting('app.muse', true) = 'on' THEN v_nome := 'Muse';
-  ELSIF v_uid IS NULL THEN v_nome := COALESCE(v_nome, 'Sistema (automático)');
+  v_id:=COALESCE(v_new->>'id',v_old->>'id');
+  v_resumo:=COALESCE(v_new->>'numero',v_old->>'numero',v_new->>'nome',v_old->>'nome',v_new->>'email',v_old->>'email',v_new->>'role',v_old->>'role');
+  SELECT a.autor_id,a.autor_nome,a.autor_email INTO v_uid,v_nome,v_email FROM public.autor_registro_sistema() a;
+  IF auth.role()='service_role' AND current_setting('app.muse',true)='on' THEN v_nome:='Muse';
+  ELSIF v_uid IS NULL THEN
+    IF TG_TABLE_NAME='protocolos' AND TG_OP='INSERT' AND (
+      lower(COALESCE(v_new->>'origem',''))='email' OR
+      COALESCE(v_new->>'descricao','') LIKE 'Nova Ouvidoria recebida.%' OR
+      COALESCE(v_new->>'descricao','') LIKE 'Novo Pedido e-SIC recebido.%'
+    ) THEN v_nome:='E-mail';
+    ELSIF auth.role()='service_role' AND current_setting('app.agente_1doc',true)='on' THEN v_nome:='Agente 1Doc';
+    ELSE v_nome:='Sistema (automático)'; END IF;
   END IF;
-
-  INSERT INTO public.registro_sistema(tabela, operacao, registro_id, resumo, campos, dados_anteriores, dados_novos, autor_id, autor_nome, autor_email)
-  VALUES (TG_TABLE_NAME, lower(TG_OP), v_id, v_resumo, v_campos,
-          NULLIF(v_ant, '{}'::jsonb), NULLIF(v_nov, '{}'::jsonb), v_uid, v_nome, v_email);
+  INSERT INTO public.registro_sistema(tabela,operacao,registro_id,resumo,campos,dados_anteriores,dados_novos,autor_id,autor_nome,autor_email)
+    VALUES(TG_TABLE_NAME,lower(TG_OP),v_id,v_resumo,v_campos,NULLIF(v_ant,'{}'::jsonb),NULLIF(v_nov,'{}'::jsonb),v_uid,v_nome,v_email);
   RETURN NULL;
-END;
-$$;
+END $$;
+REVOKE EXECUTE ON FUNCTION public.registrar_alteracao() FROM PUBLIC,anon,authenticated;
 
 -- concluir_triagem / reservar_triagem (0019) com consciência do lock do Muse.
 CREATE OR REPLACE FUNCTION public.concluir_triagem(p_id uuid, p_secretaria uuid, p_local uuid)
