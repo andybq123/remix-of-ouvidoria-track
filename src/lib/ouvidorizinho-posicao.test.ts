@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  TAMANHO_MASCOTE,
   clampPosicao,
   deserializarPosicao,
   posicaoPadrao,
@@ -9,15 +10,15 @@ import {
 describe("posição do widget Ouvidorzinho", () => {
   it("posição padrão fica no canto inferior direito", () => {
     const p = posicaoPadrao(1280, 800);
-    expect(p.x).toBe(1280 - 72 - 24);
-    expect(p.y).toBe(800 - 72 - 24);
+    expect(p.x).toBe(1280 - TAMANHO_MASCOTE - 24);
+    expect(p.y).toBe(800 - TAMANHO_MASCOTE - 24);
   });
 
   it("clamp mantém o botão dentro da viewport", () => {
     expect(clampPosicao({ x: -50, y: -10 }, 1280, 800)).toEqual({ x: 12, y: 12 });
     expect(clampPosicao({ x: 5000, y: 5000 }, 1280, 800)).toEqual({
-      x: 1280 - 72 - 12,
-      y: 800 - 72 - 12,
+      x: 1280 - TAMANHO_MASCOTE - 12,
+      y: 800 - TAMANHO_MASCOTE - 12,
     });
     expect(clampPosicao({ x: 100, y: 100 }, 1280, 800)).toEqual({ x: 100, y: 100 });
   });

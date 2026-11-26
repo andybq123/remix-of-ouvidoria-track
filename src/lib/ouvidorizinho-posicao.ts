@@ -9,7 +9,7 @@
 export type PosicaoWidget = { x: number; y: number };
 
 export const CHAVE_POSICAO_OUVIDORZINHO = "ouvidorizinho-posicao-v1";
-export const TAMANHO_MASCOTE = 72;
+export const TAMANHO_MASCOTE = 48;
 export const MARGEM_WIDGET = 12;
 
 /** Posição padrão: canto inferior direito, com margem. */
