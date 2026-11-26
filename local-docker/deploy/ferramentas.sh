@@ -14,6 +14,7 @@ cat <<EOF
   5) Retomar a coleta de e-mails após a importação
   6) Trocar a licença
   7) Reinstalar o serviço do botão "Atualizar"
+  8) Fazer backup automático agora (força a rotina)
   0) Sair
 
 EOF
@@ -28,6 +29,7 @@ case "$OP" in
       && ok "Existe pelo menos um administrador." || aviso "Nenhum administrador cadastrado. Use a opção 1."
     curl -fsS --max-time 5 -o /dev/null http://127.0.0.1:8080 && ok "Sistema respondendo." || aviso "O sistema não respondeu na porta interna."
     systemctl is-active --quiet ouvidesk-atualizador && ok "Serviço do botão Atualizar ativo." || aviso "Serviço do botão Atualizar parado (opção 7)."
+    systemctl is-active --quiet ouvidesk-backup.timer && ok "Backup automático agendado." || aviso "Backup automático não agendado (será instalado na próxima atualização)."
     docker ps --format '{{.Names}}' | grep -q agente-1doc && ok "Agente 1Doc rodando." || aviso "Agente 1Doc parado."
     printf "      ${C_D}•${C_0} Espaço livre: %s\n" "$(df -Ph "$RAIZ" | awk 'END {print $4}')"
     ;;
@@ -45,5 +47,6 @@ case "$OP" in
   5) bash "$DEPLOY_DIR/retomar-ingestao.sh" ;;
   6) pedir_licenca; validar_licenca; instalar_timer_licenca ;;
   7) bash "$LD/agente-atualizacao/instalar.sh" ;;
+  8) OUVIDESK_BACKUP_FORCAR=1 bash "$DEPLOY_DIR/backup-auto.sh" ;;
   *) exit 0 ;;
 esac

@@ -56,6 +56,9 @@ const POR_PREFIXO: Array<[string, number]> = [
   ["protocolos-mapa-setores", STALE.dashboard],
   ["protocolos-por-local-setores", STALE.dashboard],
   ["debug-lista", STALE.busca],
+  ["backup-alerta-login", STALE.alertas],
+  ["backup-auto-config", STALE.referencia],
+  ["backup-runs", STALE.lista],
 ];
 
 /** Não repetir em erros de autenticação, permissão ou validação. */

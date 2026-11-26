@@ -20,6 +20,7 @@ import {
   backupExportarTabela, backupExportarUsuarios, backupImportarTabela, backupImportarUsuarios,
   backupEstadoImportacao,
 } from "@/lib/backup.functions";
+import { BackupAutomaticoCard } from "@/components/backup-automatico-card";
 
 export const Route = createFileRoute("/_authenticated/backup")({
   head: () => ({
@@ -254,6 +255,8 @@ function BackupPage() {
           </CardContent>
         </Card>
       )}
+
+      <BackupAutomaticoCard />
 
       <Card>
         <CardHeader>
