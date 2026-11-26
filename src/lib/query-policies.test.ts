@@ -21,6 +21,11 @@ describe("políticas do TanStack Query", () => {
     expect(qc.getQueryDefaults(["protocolos-alertas"]).staleTime).toBe(3_600_000);
     expect(qc.getQueryDefaults(["triagem-pendentes-count"]).staleTime).toBe(3_600_000);
   });
+  it("backup automático: alerta 1 hora, config 5 minutos, histórico 30 segundos", () => {
+    expect(qc.getQueryDefaults(["backup-alerta-login"]).staleTime).toBe(3_600_000);
+    expect(qc.getQueryDefaults(["backup-auto-config"]).staleTime).toBe(300_000);
+    expect(qc.getQueryDefaults(["backup-runs"]).staleTime).toBe(30_000);
+  });
   it("não repete erro de permissão", () => {
     expect(shouldRetry(0, { status: 403 })).toBe(false);
     expect(shouldRetry(0, { code: "42501" })).toBe(false);

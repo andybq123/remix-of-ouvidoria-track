@@ -27,6 +27,7 @@ import { usePodeEditar } from "@/hooks/use-pode-editar";
 import { useSomenteSaude } from "@/hooks/use-somente-saude";
 import { useSomenteVigilancia } from "@/hooks/use-somente-vigilancia";
 import { LicencaAviso } from "@/components/licenca-aviso";
+import { BackupAlertaCard } from "@/components/backup-alerta-card";
 import { CONFIG_ITEMS } from "@/lib/config-items";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -47,7 +48,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthLayout() {
   const { user } = Route.useRouteContext();
-  return <OnedocBackgroundProvider key={user.id} userId={user.id}><LicencaAviso /><AuthLayoutContent /><AtualizacaoOverlay /><OuvidorzinhoFloat /><BoasVindasCard /></OnedocBackgroundProvider>;
+  return <OnedocBackgroundProvider key={user.id} userId={user.id}><LicencaAviso /><BackupAlertaCard /><AuthLayoutContent /><AtualizacaoOverlay /><OuvidorzinhoFloat /><BoasVindasCard /></OnedocBackgroundProvider>;
 }
 
 function AuthLayoutContent() {

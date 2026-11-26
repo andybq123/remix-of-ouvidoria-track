@@ -231,6 +231,38 @@ UNIT
   systemctl start ouvidesk-licenca.service >/dev/null 2>&1 || true
 }
 
+# Timer systemd que roda o backup automático a cada 15 minutos. O script
+# em si só executa quando o backup está vencido (ou foi solicitado no
+# painel), então a cadência curta não gera backups em excesso.
+instalar_timer_backup() {
+  command -v systemctl >/dev/null 2>&1 || { aviso "Sem systemd: backup automático não agendado."; return 0; }
+  [ "$(id -u)" -eq 0 ] || return 0
+  cat > /etc/systemd/system/ouvidesk-backup.service <<UNIT
+[Unit]
+Description=OuviDesk - backup automático
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash $DEPLOY_DIR/backup-auto.sh
+UNIT
+  cat > /etc/systemd/system/ouvidesk-backup.timer <<UNIT
+[Unit]
+Description=OuviDesk - backup automático a cada 15 minutos
+
+[Timer]
+OnBootSec=2min
+OnCalendar=*:0/15
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+UNIT
+  systemctl daemon-reload && systemctl enable --now ouvidesk-backup.timer >/dev/null 2>&1 \
+    && info "Backup automático agendado (a cada 15 min)." \
+    || aviso "Não consegui agendar o backup automático."
+}
+
 # Coletor de estatísticas da VPS (1x/min via cron do root).
 # O script grava local-docker/vps-stats/vps-stats.json, que o app lê em /app.
 instalar_coletor_vps_stats() {

@@ -115,7 +115,7 @@ if [ -f /etc/apt/sources.list.d/caddy-stable.list ] && ! gpg --show-keys /usr/sh
 fi
 chmod 644 /usr/share/keyrings/caddy-stable-archive-keyring.gpg 2>/dev/null || true
 rodar "Atualizando lista de pacotes" apt-get update -y
-rodar "Instalando ferramentas básicas" apt-get install -y ca-certificates curl gnupg openssl git debian-keyring debian-archive-keyring apt-transport-https
+rodar "Instalando ferramentas básicas" apt-get install -y ca-certificates curl gnupg openssl git debian-keyring debian-archive-keyring apt-transport-https rclone zip
 
 # ---------- 2. Memória ----------
 etapa "Verificando memória (swap)"
@@ -244,6 +244,7 @@ fi
 ok "Sistema no ar em modo produção"
 instalar_timer_licenca
 instalar_coletor_vps_stats
+instalar_timer_backup
 if bash ./agente-atualizacao/instalar.sh >>"$LOG" 2>&1; then
   ok "Botão de atualização do sistema ativado"
 else
