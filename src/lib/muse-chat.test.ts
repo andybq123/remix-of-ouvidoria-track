@@ -126,6 +126,22 @@ describe("chat do Assistente Muse — intenção", () => {
     expect(r).toContain("Saúde: 6 protocolo(s) no total, 2 atrasado(s)");
   });
 
+  it("secretaria no padrão SIGLA - Nome casa pelo miolo, pela sigla ou por palavra", () => {
+    const nomes = [
+      "SMS - SECRETARIA DE SAÚDE",
+      "SOSU - SECRETARIA DE OBRAS E SERVIÇOS URBANOS",
+      "SEDU - SECRETARIA DE EDUCAÇÃO",
+    ];
+    expect(extrairSecretaria("Quantas ouvidorias da Saúde?", nomes)).toBe(
+      "SMS - SECRETARIA DE SAÚDE",
+    );
+    expect(extrairSecretaria("Quantas da SMS?", nomes)).toBe("SMS - SECRETARIA DE SAÚDE");
+    expect(extrairSecretaria("E as de Obras?", nomes)).toBe(
+      "SOSU - SECRETARIA DE OBRAS E SERVIÇOS URBANOS",
+    );
+    expect(extrairSecretaria("Qual secretaria tem mais atrasadas?", nomes)).toBeNull();
+  });
+
   it("número de protocolo roteia para protocolo e extrai o número", () => {
     expect(extrairNumeroProtocolo("Como está a 3.321/2026?")).toBe("3321/2026");
     expect(extrairNumeroProtocolo("E a 3.677/2026, já foi baixada?")).toBe("3677/2026");

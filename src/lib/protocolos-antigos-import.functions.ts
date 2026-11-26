@@ -70,7 +70,7 @@ function matchSecretariaId(
   secretarias: { id: string; nome: string }[],
 ): string | null {
   if (source === "Saúde") {
-    const s = secretarias.find((x) => norm(x.nome) === "saude");
+    const s = secretarias.find((x) => norm(x.nome).includes("saude"));
     if (s) return s.id;
   }
   if (!setor) return null;
