@@ -149,7 +149,9 @@ registrar_evento_instalacao() {
   local url ev="$1" dom="${2:-}" det="${3:-}" chave="${LICENCA_PENDENTE:-}" final="" host so
   url="$(licenca_url 2>/dev/null)" || return 0
   [ -n "$url" ] || return 0
-  [ -n "$chave" ] || chave="$(cat "$LICENCA_ARQ" 2>/dev/null | tr -d '[:space:]')"
+  # Arquivo ausente (instalação nova) não pode derrubar o instalador:
+  # sem `|| true`, o cat falharia e o `set -e` mataria o script em silêncio.
+  [ -n "$chave" ] || chave="$(cat "$LICENCA_ARQ" 2>/dev/null | tr -d '[:space:]' || true)"
   [ -n "$chave" ] && final="${chave: -4}"
   host="$(hostname 2>/dev/null | tr -cd 'A-Za-z0-9._-')"
   so="$(. /etc/os-release 2>/dev/null && printf '%s' "${PRETTY_NAME:-}" | tr -cd 'A-Za-z0-9 ._-')"
@@ -172,7 +174,9 @@ validar_licenca() {
   fi
   dominio="${1:-$(grep -sE '^APP_DOMAIN=' "$LD/.env.local" | cut -d= -f2-)}"
   chave="${LICENCA_PENDENTE:-}"
-  [ -n "$chave" ] || chave="$(cat "$LICENCA_ARQ" 2>/dev/null | tr -d '[:space:]')"
+  # Mesmo motivo de registrar_evento_instalacao: arquivo ausente não pode
+  # derrubar o script em silêncio por causa do `set -e` + `pipefail`.
+  [ -n "$chave" ] || chave="$(cat "$LICENCA_ARQ" 2>/dev/null | tr -d '[:space:]' || true)"
   if [ -z "$chave" ]; then
     interativo || falha "Licença não cadastrada." "Rode: bash $RAIZ/deploy.sh ferramentas  e escolha 'Trocar a licença'."
     chave="$(ler_chave_licenca)"
