@@ -11,6 +11,7 @@ import { situacaoProtocolo, formatDate, PRAZOS, categoriaLabel, categoriaSigla, 
 import { HeartPulse, Inbox, Activity, CheckCircle2, AlarmClock, AlertTriangle } from "lucide-react";
 import { KpiCard, CAT_COLORS } from "@/components/kpi-card";
 import { fetchAllPaginated } from "@/lib/fetch-all";
+import { buscarSecretariaSaude } from "@/lib/saude-secretaria";
 import { sortProtocolosPorNumero } from "@/lib/sort-protocolos";
 import { termosBusca, matchProtocolo } from "@/lib/search-protocolos";
 import { ProtocoloDetailDialog } from "@/components/protocolo-detail-dialog";
@@ -59,10 +60,7 @@ function SaudePage() {
 
   const { data: saudeSec } = useQuery({
     queryKey: ["secretaria-saude"],
-    queryFn: async () => {
-      const { data } = await supabase.from("secretarias").select("id,nome").eq("nome", "Saúde").maybeSingle();
-      return data;
-    },
+    queryFn: () => buscarSecretariaSaude(supabase),
   });
 
   const { data: unidades = [] } = useQuery({
@@ -335,7 +333,7 @@ function SaudePage() {
           </Card>
         )}
         {saude.length === 0 && (
-          <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Nenhum protocolo da Saúde encontrado. Marque um protocolo definindo a Secretaria como "Saúde" e selecione a unidade no campo Local.</CardContent></Card>
+          <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Nenhum protocolo da Saúde encontrado. Marque um protocolo definindo a Secretaria como "SMS - SECRETARIA DE SAÚDE" e selecione a unidade no campo Local.</CardContent></Card>
         )}
         {saude.map(p => {
           const s = situacaoProtocolo(p as any);
