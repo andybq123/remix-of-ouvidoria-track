@@ -10,6 +10,10 @@ const QuerySchema = z.object({
     (v) => (v === "true" ? true : v === "false" ? false : v),
     z.boolean().optional(),
   ),
+  triagem_pendente: z.preprocess(
+    (v) => (v === "true" ? true : v === "false" ? false : v),
+    z.boolean().optional(),
+  ),
   busca: z.string().trim().min(1).max(200).optional(),
   limite: z.coerce.number().int().min(1).max(500).optional(),
   offset: z.coerce.number().int().min(0).max(100000).optional(),
@@ -21,7 +25,9 @@ const QuerySchema = z.object({
  * filtros combináveis e paginação. Leitura pura, não altera nada.
  *
  * Filtros: secretariaId, status, tipo, vencendo (prazo em 0..7 dias),
- * busca (número com ou sem ponto, ou texto em assunto/descrição).
+ * triagem_pendente (true = só os aguardando triagem, como a lista de
+ * /tarefas; false = só os já triados), busca (número com ou sem ponto,
+ * ou texto em assunto/descrição).
  * Ordem: abertura (mais recente primeiro, padrão), prazo (prazo final
  * crescente) ou atraso (mais atrasada primeiro). Paginação: limite
  * (padrão 50, máx. 500) e offset; `total` é o total filtrado, antes
@@ -44,6 +50,7 @@ export const Route = createFileRoute("/api/public/muse/protocolos")({
           status: url.searchParams.get("status") ?? undefined,
           tipo: url.searchParams.get("tipo") ?? undefined,
           vencendo: url.searchParams.get("vencendo") ?? undefined,
+          triagem_pendente: url.searchParams.get("triagem_pendente") ?? undefined,
           busca: url.searchParams.get("busca") ?? undefined,
           limite: url.searchParams.get("limite") ?? undefined,
           offset: url.searchParams.get("offset") ?? undefined,
@@ -63,6 +70,7 @@ export const Route = createFileRoute("/api/public/muse/protocolos")({
             status: parsed.data.status,
             tipo: parsed.data.tipo,
             vencendo: parsed.data.vencendo,
+            triagemPendente: parsed.data.triagem_pendente,
             busca: parsed.data.busca,
             limite: parsed.data.limite ?? 50,
             offset: parsed.data.offset ?? 0,

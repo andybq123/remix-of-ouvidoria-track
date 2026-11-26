@@ -4,6 +4,7 @@ import {
   buscarProtocoloMuse,
   calcularResumoMuse,
   classificarProtocolos,
+  listarLocaisMuse,
   listarProtocolosMuse,
   listarSecretariasMuse,
   mapearProtocoloMuse,
@@ -99,6 +100,17 @@ describe("mapeamento de protocolo do Muse", () => {
     );
     expect(mapearProtocoloMuse(row({ tipo: "desconhecido" }), REF)).toBeNull();
   });
+
+  it("expõe triagemPendente e localId para a triagem pela API", () => {
+    const p = mapearProtocoloMuse(
+      row({ triagem_pendente: true, local_id: "loc-farmacia" }),
+      REF,
+    );
+    expect(p?.triagemPendente).toBe(true);
+    expect(p?.localId).toBe("loc-farmacia");
+    expect(mapearProtocoloMuse(row({}), REF)?.triagemPendente).toBe(false);
+    expect(mapearProtocoloMuse(row({}), REF)?.localId).toBeNull();
+  });
 });
 
 describe("lista genérica de protocolos", () => {
@@ -116,6 +128,21 @@ describe("lista genérica de protocolos", () => {
       data_conclusao: "2026-11-01",
     }),
   ];
+
+  it("triagemPendente=true só traz os aguardando triagem", () => {
+    const linhas2 = [
+      row({ id: "a", numero: "4.101/2026", triagem_pendente: true }),
+      row({ id: "b", numero: "4.099/2026", triagem_pendente: true }),
+      row({ id: "c", numero: "4.096/2026", triagem_pendente: false }),
+    ];
+    expect(
+      classificarProtocolos(linhas2, { triagemPendente: true }, REF).protocolos.map(
+        (p) => p.numero,
+      ),
+    ).toEqual(["4.101/2026", "4.099/2026"]);
+    expect(classificarProtocolos(linhas2, { triagemPendente: false }, REF).total).toBe(1);
+    expect(classificarProtocolos(linhas2, {}, REF).total).toBe(3);
+  });
 
   it("vencendo=true só traz não concluídos com prazo em 0..7 dias", () => {
     const pag = classificarProtocolos(linhas, { vencendo: true }, REF);
@@ -446,5 +473,43 @@ describe("leituras com cliente falso", () => {
       { id: "s1", nome: "SOSU - Obras", sigla: "SOSU" },
       { id: "s2", nome: "Saúde", sigla: null },
     ]);
+  });
+
+  it("lista locais com secretaria e filtra por secretariaId", async () => {
+    const chamadas: string[] = [];
+    const dados = [
+      {
+        id: "l1",
+        nome: "Assistência Farmacêutica",
+        secretaria_id: "sec-saude",
+        secretarias: { nome: "Saúde" },
+      },
+      {
+        id: "l2",
+        nome: "UBS São Luiz",
+        secretaria_id: "sec-saude",
+        secretarias: { nome: "Saúde" },
+      },
+    ];
+    const chain: Record<string, (...a: never[]) => unknown> = {
+      eq: ((k: string, v: unknown) => {
+        chamadas.push(`eq:${k}=${v}`);
+        return chain;
+      }) as never,
+      order: (() => chain) as never,
+      then: ((resolve: (v: unknown) => void) =>
+        resolve({ data: dados, error: null })) as never,
+    };
+    const client = { from: () => ({ select: () => chain }) };
+    expect(await listarLocaisMuse(client as never, "sec-saude")).toEqual([
+      {
+        id: "l1",
+        nome: "Assistência Farmacêutica",
+        secretariaId: "sec-saude",
+        secretaria: "Saúde",
+      },
+      { id: "l2", nome: "UBS São Luiz", secretariaId: "sec-saude", secretaria: "Saúde" },
+    ]);
+    expect(chamadas).toContain("eq:secretaria_id=sec-saude");
   });
 });
