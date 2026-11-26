@@ -26,6 +26,3 @@ enabled = false
 
 [edge_runtime]
 enabled = false
-
-[inbucket]
-enabled = false
