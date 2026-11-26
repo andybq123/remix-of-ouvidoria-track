@@ -164,23 +164,39 @@ export function destinoNavegacao(pergunta: string): DestinoNavegacao | null {
 /**
  * Casa o nome de uma secretaria citada na pergunta com a lista real de
  * secretarias (maior nome que aparece vence). Sem casa: null.
+ * Nomes no padrão "SIGLA - Nome completo" casam pelo miolo ("saude"),
+ * pela sigla sozinha ("SMS") ou por uma palavra distintiva ("obras").
  */
 export function extrairSecretaria(pergunta: string, nomes: string[]): string | null {
   const t = norm(pergunta);
   let melhor: string | null = null;
+  const porPalavra: string[] = [];
   for (const nome of nomes) {
     const n = norm(nome);
     if (!n) continue;
+    // Nome no padrão "SIGLA - Nome completo": tira a sigla para achar o miolo.
+    const semSigla = n.replace(/^[a-z]{2,10} - /, "");
     // Nome completo ("secretaria de saude") ou só o miolo ("saude").
-    const curto = n.replace(/^secretaria (municipal )?(de |do |da )?/, "");
+    const curto = semSigla.replace(/^secretaria (municipal )?(de |do |da )?/, "");
+    // A sigla sozinha ("SMS") também casa, como palavra inteira.
+    const sigla = n.match(/^([a-z]{2,10}) - /)?.[1] ?? null;
+    const casaSigla = !!sigla && new RegExp(`\\b${sigla}\\b`).test(t);
     if (
-      (t.includes(n) || (curto.length >= 4 && t.includes(curto))) &&
+      (t.includes(n) || (curto.length >= 4 && t.includes(curto)) || casaSigla) &&
       (!melhor || n.length > norm(melhor).length)
     ) {
       melhor = nome;
     }
+    // Fallback: uma palavra distintiva do miolo ("obras", "saude").
+    const palavras = curto
+      .split(/[^a-z0-9]+/)
+      .filter((p) => p.length >= 5 && p !== "secretaria" && p !== "municipal");
+    if (palavras.some((p) => t.includes(p))) porPalavra.push(nome);
   }
-  return melhor;
+  if (melhor) return melhor;
+  // O fallback por palavra só vale quando um único nome casa — senão é ambíguo.
+  const unicos = [...new Set(porPalavra)];
+  return unicos.length === 1 ? unicos[0] : null;
 }
 
 /** Roteia a pergunta para a intenção — ordem importa (mais específico primeiro). */
