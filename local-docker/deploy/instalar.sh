@@ -164,7 +164,7 @@ etapa "Banco de dados e login locais"
 sed -i "s#^site_url = .*#site_url = \"https://$DOMAIN\"#" supabase/config.toml
 sed -i "s#^additional_redirect_urls = .*#additional_redirect_urls = [\"https://$DOMAIN\"]#" supabase/config.toml
 npx --yes supabase stop --no-backup >>"$LOG" 2>&1 || true
-rodar "Iniciando banco de dados (pode levar alguns minutos)" npx --yes supabase start -x vector,logflare,studio,imgproxy,edge-runtime,mailpit,inbucket,postgres-meta --ignore-health-check
+rodar "Iniciando banco de dados (pode levar alguns minutos)" npx --yes supabase start -x vector,logflare,studio,imgproxy,edge-runtime,mailpit,postgres-meta --ignore-health-check
 eval "$(npx --yes supabase status -o env 2>>"$LOG" | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
 [ -n "${ANON_KEY:-}" ] || falha "Não consegui ler as chaves do banco local."
 DBC="$({ docker ps --filter publish=54322 --format '{{.Names}}' | grep -E '^supabase_db_' || docker ps --format '{{.Names}}' | grep -E '^supabase_db_' | grep -v '^supabase_db_buraco-local'; } | head -1 || true)"
